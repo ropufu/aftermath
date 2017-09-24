@@ -42,7 +42,7 @@ std::int32_t main(std::int32_t argc, char* argv[], char* envp[])
     using dist_lognormal = ropufu::aftermath::probability::dist_lognormal;
 
     ropufu::test_aftermath::format_test formatter("./tests.temp.mat");
-    ropufu::test_aftermath::empirical_measure_test histogrammer;
+    //ropufu::test_aftermath::empirical_measure_test histogrammer;
     ropufu::test_aftermath::test_random<dist_lognormal> lognormal_tester(0.0, 1.0);
     ropufu::test_aftermath::test_random<dist_normal> normal_tester(0.0, 1.0);
     ropufu::test_aftermath::binomial_benchmark<> binomial_bench(10, 11, 0.8);
