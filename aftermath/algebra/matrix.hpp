@@ -6,6 +6,7 @@
 #include <cstring>   // For std::memcpy and std::memset.
 #include <new>
 #include <stdexcept>
+#include <type_traits>
 #include <utility>   // For std::move.
 #include <vector>
 
@@ -68,9 +69,15 @@ namespace ropufu
                 typedef t_data_type data_type;
                 typedef t_data_type value_type;
 
+                template <typename, bool> friend struct matrix;
+
             private:
                 typedef typename detail::matrix_arrangement<t_is_row_major> arrangement_type;
+                
+                template <typename t_other_data_type>
+                using other_t = matrix<t_other_data_type, t_is_row_major>;
 
+                data_type m_invalid = { };
                 data_type* m_data_pointer = nullptr; // Pointer to matrix data in memory (heap).
                 std::size_t m_height; // Height of the matrix.
                 std::size_t m_width; // Width of the matrix.
@@ -91,6 +98,12 @@ namespace ropufu
                 /** Creates an empty matrix. */
                 matrix() noexcept
                     : m_height(0), m_width(0), m_size(0)
+                {
+                }
+
+                /** Creates a matrix from a vector. */
+                matrix(const std::vector<data_type>& value) noexcept
+                    : matrix(value.size(), 1, value.data())
                 {
                 }
 
@@ -231,6 +244,12 @@ namespace ropufu
                     this->m_height = height;
                     this->m_width = width;
                 }
+                
+                /** Access the first matrix element. */
+                const data_type& front() const noexcept { return this->m_size == 0 ? this->m_invalid : this->m_data_pointer[0]; }
+                
+                /** Access the last matrix element. */
+                const data_type& back() const noexcept { return this->m_size == 0 ? this->m_invalid : this->m_data_pointer[this->m_size - 1]; }
 
                 /** @brief Access matrix elements.
                  *  @remark Does not perform size-related checks.
@@ -288,6 +307,117 @@ namespace ropufu
                 {
                     return !(this->operator ==(other));
                 }
+
+                /** @brief Adds another matrix to this one.
+                 *  @warning No size check is performed.
+                 */
+                template <typename t_other_data_type>
+                type& operator +=(const other_t<t_other_data_type>& other) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] += static_cast<data_type>(other.m_data_pointer[k]);
+                    return *this;
+                }
+
+                /** Adds \p factor to this matrix. */
+                template <typename t_scalar_type>
+                std::enable_if_t<std::is_arithmetic<t_scalar_type>::value, type&> operator +=(const t_scalar_type& factor) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] += static_cast<data_type>(factor);
+                    return *this;
+                }
+
+                /** @brief Subtracts another matrix from this one.
+                 *  @warning No size check is performed.
+                 */
+                template <typename t_other_data_type>
+                type& operator -=(const other_t<t_other_data_type>& other) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] -= static_cast<data_type>(other.m_data_pointer[k]);
+                    return *this;
+                }
+
+                /** Subtracts \p factor from this matrix. */
+                template <typename t_scalar_type>
+                std::enable_if_t<std::is_arithmetic<t_scalar_type>::value, type&> operator -=(const t_scalar_type& factor) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] -= static_cast<data_type>(factor);
+                    return *this;
+                }
+
+                /** @brief Multiples this matrix by another one, elementwise.
+                 *  @warning No size check is performed.
+                 */
+                template <typename t_other_data_type>
+                type& operator *=(const other_t<t_other_data_type>& other) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] *= static_cast<data_type>(other.m_data_pointer[k]);
+                    return *this;
+                }
+
+                /** Multiples this matrix by \p factor. */
+                template <typename t_scalar_type>
+                std::enable_if_t<std::is_arithmetic<t_scalar_type>::value, type&> operator *=(const t_scalar_type& factor) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] *= static_cast<data_type>(factor);
+                    return *this;
+                }
+
+                /** @brief Divides this matrix by another one, elementwise.
+                 *  @warning No size check is performed.
+                 */
+                template <typename t_other_data_type>
+                type& operator /=(const other_t<t_other_data_type>& other) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] /= static_cast<data_type>(other.m_data_pointer[k]);
+                    return *this;
+                }
+
+                /** Divides this matrix by \p factor. */
+                template <typename t_scalar_type>
+                std::enable_if_t<std::is_arithmetic<t_scalar_type>::value, type&> operator /=(const t_scalar_type& factor) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] /= static_cast<data_type>(factor);
+                    return *this;
+                }
+
+                /** @brief Does bitwise "and" of this matrix with another one, elementwise.
+                 *  @warning No size check is performed.
+                 */
+                template <typename t_other_data_type>
+                type& operator &=(const other_t<t_other_data_type>& other) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] &= static_cast<data_type>(other.m_data_pointer[k]);
+                    return *this;
+                }
+
+                /** @brief Does bitwise "or" of this matrix with another one, elementwise.
+                 *  @warning No size check is performed.
+                 */
+                template <typename t_other_data_type>
+                type& operator |=(const other_t<t_other_data_type>& other) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] |= static_cast<data_type>(other.m_data_pointer[k]);
+                    return *this;
+                }
+
+                /** @brief Does bitwise "xor" of this matrix with another one, elementwise.
+                 *  @warning No size check is performed.
+                 */
+                template <typename t_other_data_type>
+                type& operator ^=(const other_t<t_other_data_type>& other) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] ^= static_cast<data_type>(other.m_data_pointer[k]);
+                    return *this;
+                }
+                
+                /** Something clever taken from http://en.cppreference.com/w/cpp/language/operators */
+                friend type operator +(type left, const type& right) { left += right; return left; }
+                friend type operator -(type left, const type& right) { left -= right; return left; }
+                friend type operator *(type left, const type& right) { left *= right; return left; }
+                friend type operator /(type left, const type& right) { left /= right; return left; }
+                friend type operator &(type left, const type& right) { left &= right; return left; }
+                friend type operator |(type left, const type& right) { left |= right; return left; }
+                friend type operator ^(type left, const type& right) { left ^= right; return left; }
             };
         }
     }

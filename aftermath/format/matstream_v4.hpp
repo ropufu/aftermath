@@ -117,7 +117,6 @@ namespace ropufu
                 template <typename t_data_type, bool t_is_row_major>
                 type& operator <<(const algebra::matrix<t_data_type, t_is_row_major>& mat)
                 {
-                    typedef t_data_type data_type;
                     std::ofstream filestream;
 
                     // Initialize header.
