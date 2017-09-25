@@ -78,20 +78,18 @@ namespace ropufu
                 using other_t = matrix<t_other_data_type, t_is_row_major>;
 
                 data_type m_invalid = { };
-                data_type* m_data_pointer = nullptr; // Pointer to matrix data in memory (heap).
                 std::size_t m_height; // Height of the matrix.
                 std::size_t m_width; // Width of the matrix.
-                std::size_t m_size; // Total number of elements in the matrix.
+                std::size_t m_size; // Number of elements in the matrix.
+                data_type* m_data_pointer = nullptr; // Pointer to matrix data in memory (heap).
 
                 /** @brief Copies raw data from \p data_pointer to this matrix.
-                 *  @exception std::invalid_argument \p data_pointer is null.
                  *  @remark Does not perform size-related checks.
                  */
-                void copy_raw(std::size_t height, std::size_t width, const data_type* data_pointer)
+                void unchecked_copy_from(const data_type* data_pointer) noexcept
                 {
-                    if (this->m_data_pointer == nullptr) return; // Does nothing if this matrix is empty.
-                    if (data_pointer == nullptr) throw new std::invalid_argument("<data_pointer> cannot be nullptr.");
-                    std::memcpy(this->m_data_pointer, data_pointer, (height * width) * sizeof(data_type));
+                    if (this->m_size == 0) return;
+                    std::memcpy(this->m_data_pointer, data_pointer, this->m_size * sizeof(data_type));
                 }
 
             public:
@@ -101,17 +99,10 @@ namespace ropufu
                 {
                 }
 
-                /** Creates a matrix from a vector. */
-                matrix(const std::vector<data_type>& value) noexcept
-                    : matrix(value.size(), 1, value.data())
-                {
-                }
-
                 /** Creates a matrix of a given size. */
                 matrix(std::size_t height, std::size_t width) noexcept
                     : m_height(height), m_width(width), m_size(height * width)
                 {
-                    if (height == 0 || width == 0) return;
                     this->m_data_pointer = new (std::nothrow) data_type[this->m_size];
                     if (this->m_data_pointer == nullptr)
                     {
@@ -119,6 +110,32 @@ namespace ropufu
                         this->m_width = 0;
                         this->m_size = 0;
                     }
+                }
+
+                /** Creates a matrix as a copy. */
+                matrix(const type& other) noexcept
+                    : m_height(other.m_height), m_width(other.m_width), m_size(other.m_size)
+                {
+                    this->m_data_pointer = new (std::nothrow) data_type[this->m_size];
+                    if (this->m_data_pointer == nullptr)
+                    {
+                        this->m_height = 0;
+                        this->m_width = 0;
+                        this->m_size = 0;
+                    }
+                    this->unchecked_copy_from(other.m_data_pointer);
+                }
+
+                /** Creates a matrix by stealing from \p other. */
+                matrix(type&& other) noexcept
+                    : m_height(other.m_height), m_width(other.m_width), m_size(other.m_size)
+                {
+                    this->m_data_pointer = other.m_data_pointer; // Steal.
+                    other.m_data_pointer = nullptr; // Clean up.
+
+                    other.m_height = 0;
+                    other.m_width = 0;
+                    other.m_size = 0;
                 }
 
                 /** Creates a matrix with all entries set to \p value. */
@@ -129,24 +146,20 @@ namespace ropufu
                 }
 
                 /** @brief Creates a matrix as a copy.
-                 *  @remark Does not perform size-related checks.
+                 *  @warning Does not perform size-related checks.
                  */
                 matrix(std::size_t height, std::size_t width, const data_type* data_pointer)
                     : matrix(height, width)
                 {
-                    this->copy_raw(height, width, data_pointer);
+                    if (data_pointer == nullptr) throw std::invalid_argument("Invalid pointer.");
+                    this->unchecked_copy_from(data_pointer);
                 }
 
-                /** Creates a matrix as a copy. */
-                matrix(const type& other) noexcept
-                    : matrix(other.m_height, other.m_width, other.m_data_pointer)
+                /** Creates a matrix from a vector. */
+                matrix(const std::vector<data_type>& value) noexcept
+                    : matrix(value.size(), 1)
                 {
-                }
-
-                /** Creates a matrix by stealing from \p other. */
-                matrix(type&& other) noexcept
-                {
-                    *this = std::move(other);
+                    this->unchecked_copy_from(value.data());
                 }
 
                 /** Copies a matrix. */
@@ -161,10 +174,20 @@ namespace ropufu
                             this->m_width = other.m_width;
                             this->m_size = other.m_size;
 
-                            delete this->m_data_pointer; // Free up existing memory.
+                            // Free up existing memory.
+                            delete this->m_data_pointer;
                             this->m_data_pointer = nullptr;
+                            
+                            // Allocate new memory.
+                            this->m_data_pointer = new (std::nothrow) data_type[this->m_size];
+                            if (this->m_data_pointer == nullptr)
+                            {
+                                this->m_height = 0;
+                                this->m_width = 0;
+                                this->m_size = 0;
+                            }
                         }
-                        this->copy_raw(this->m_height, this->m_width, other.m_data_pointer);
+                        this->unchecked_copy_from(other.m_data_pointer);
                     }
                     return *this;
                 }
@@ -172,7 +195,18 @@ namespace ropufu
                 /** Copies a matrix by stealing from \p other. */
                 matrix& operator =(type&& other) noexcept
                 {
-                    this->steal(other);
+                    delete this->m_data_pointer; // Clean up.
+                    this->m_data_pointer = other.m_data_pointer; // Steal.
+                    other.m_data_pointer = nullptr;
+
+                    this->m_height = other.m_height;
+                    this->m_width = other.m_width;
+                    this->m_size = other.m_size;
+
+                    other.m_height = 0;
+                    other.m_width = 0;
+                    other.m_size = 0;
+                    
                     return *this;
                 }
 
@@ -184,32 +218,6 @@ namespace ropufu
                     this->m_height = 0;
                     this->m_width = 0;
                     this->m_size = 0;
-                }
-
-                /** Copies a matrix by stealing from \p other. */
-                void steal(type& other) noexcept
-                {
-                    if (this != &other)
-                    {
-                        delete this->m_data_pointer; // Clean up.
-                        this->m_data_pointer = other.m_data_pointer;
-                        other.m_data_pointer = nullptr;
-
-                        this->m_height = other.m_height;
-                        this->m_width = other.m_width;
-                        this->m_size = other.m_size;
-
-                        other.m_height = 0;
-                        other.m_width = 0;
-                        other.m_size = 0;
-                    }
-                }
-
-                /** Erases current data and changes the size of the matrix. */
-                void resize(std::size_t height, std::size_t width)
-                {
-                    type other(height, width);
-                    this->steal(other);
                 }
 
                 /** Fills matrix with zeros. */
