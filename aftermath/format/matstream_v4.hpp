@@ -185,7 +185,7 @@ namespace ropufu
                         {
                             for (std::size_t column_index = 0; column_index < width; column_index++)
                             {
-                                current_value = mat(row_index, column_index);
+                                current_value = mat.at(row_index, column_index);
                                 filestream.seekp(position + arrangement_type::flatten(row_index, column_index, height, width) * sizeof(data_type));
                                 filestream.write(reinterpret_cast<const char*>(&current_value), sizeof(data_type));
                             }
@@ -221,7 +221,7 @@ namespace ropufu
                             {
                                 filestream.seekg(position + arrangement_type::flatten(row_index,  column_index, height, width) * sizeof(data_type));
                                 filestream.read(reinterpret_cast<char*>(&current_value), sizeof(data_type));
-                                mat(row_index, column_index) = current_value;
+                                mat.at(row_index, column_index) = current_value;
                             }
                         }
                         filestream.close();
