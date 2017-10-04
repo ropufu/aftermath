@@ -49,7 +49,7 @@ namespace ropufu
                     std::size_t width_k = uniform_width(this->m_engine);
 
                     matrix_type matrix(height_k, width_k);
-                    for (std::size_t i = 0; i < height_k; i++) for (std::size_t j = 0; j < width_k; j++) matrix(i, j) = uniform_real(this->m_engine);
+                    for (std::size_t i = 0; i < height_k; i++) for (std::size_t j = 0; j < width_k; j++) matrix.at(i, j) = uniform_real(this->m_engine);
                     mat << "matrix" << k << matrix;
 
                     matrices.push_back(matrix);
@@ -81,7 +81,7 @@ namespace ropufu
             {
                 for (std::size_t i = 0; i < m; i++)
                 {
-                    std::vector<matrix_type>& matrices = this->write_mat(height, width, stack_size);
+                    std::vector<matrix_type> matrices = this->write_mat(height, width, stack_size);
                     if (!this->read_mat(matrices)) return false;
                 }
                 return true;

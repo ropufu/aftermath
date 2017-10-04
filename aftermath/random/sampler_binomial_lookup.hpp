@@ -51,8 +51,8 @@ namespace ropufu
                         auto& alias = sampler.alias();
                         auto& cutoff = sampler.cutoff();
 
-                        std::memcpy(&this->m_alias(i, 0), alias.data(), alias.size() * sizeof(result_type)); // alias.size() = (n + 1)
-                        std::memcpy(&this->m_cutoff(i, 0), cutoff.data(), cutoff.size() * sizeof(double)); // cutoff.size() = (n + 1)
+                        std::memcpy(&this->m_alias.unchecked_at(i, 0), alias.data(), alias.size() * sizeof(result_type)); // alias.size() = (n + 1)
+                        std::memcpy(&this->m_cutoff.unchecked_at(i, 0), cutoff.data(), cutoff.size() * sizeof(double)); // cutoff.size() = (n + 1)
                     }
                 }
 
@@ -79,8 +79,8 @@ namespace ropufu
                     m_alias(this->height(), this->width()), m_cutoff(this->height(), this->width())
                 {
                     if (from.probability_of_success() != to.probability_of_success()) throw std::out_of_range("<from> and <to> must have the same probability of success.");
-                    if (this->m_number_of_trials_min < 1UL) throw std::out_of_range("Number of trials in <from> must be at least one.");
-                    if (this->height() < 1UL) throw std::out_of_range("Number of trials in <to> must not be less than that in <from>.");
+                    if (this->m_number_of_trials_min < 1) throw std::out_of_range("Number of trials in <from> must be at least one.");
+                    if (this->height() < 1) throw std::out_of_range("Number of trials in <to> must not be less than that in <from>.");
 
                     // No need to initialize matrices, since they will be filled by build(...).
                     this->build(from.probability_of_success());
@@ -126,7 +126,7 @@ namespace ropufu
                     double u = (number_of_trials + 1) * uniform_random; // uniform continuous \in[0, n + 1).
                     result_type index = static_cast<result_type>(u);    // uniform discrete   \in[0, n].
                     u = (index + 1) - u;                                // 1 - overshoot: uniform continuous \in(0, 1].
-                    return (u > this->m_cutoff(current_row, index)) ? this->m_alias(current_row, index) : index;
+                    return (u > this->m_cutoff.unchecked_at(current_row, index)) ? this->m_alias.unchecked_at(current_row, index) : index;
                 }
             };
 

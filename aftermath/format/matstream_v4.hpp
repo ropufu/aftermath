@@ -155,7 +155,7 @@ namespace ropufu
 
                     std::size_t height = header.height();
                     std::size_t width = header.width();
-                    mat.resize(height, width);
+                    mat = algebra::matrix<t_data_type, t_is_row_major>(height, width);
                     
                     // Read body.
                     this->m_reader_position = this->read(mat, this->m_reader_position + header_size);
