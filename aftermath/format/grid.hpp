@@ -17,8 +17,8 @@ namespace ropufu
             template <typename t_derived_type = void>
             struct grid
             {
-                typedef t_derived_type derived_type;
-                typedef grid<t_derived_type> type;
+                using derived_type = t_derived_type;
+                using type = grid<t_derived_type>;
 
                 /** Indicates if the current machine is the master node. */
                 bool is_master() const noexcept 
@@ -32,7 +32,7 @@ namespace ropufu
                 }
 
                 /** Synchronization point for all machines in the grid. */
-                void barrier()
+                void barrier() noexcept
                 {
                     constexpr bool is_overwritten = std::is_same<
                         decltype(&derived_type::barrier), 
@@ -43,7 +43,7 @@ namespace ropufu
                 }
 
                 /** Translates local row index to global row index. */
-                std::size_t row_local_to_global(std::size_t local_row_index) const
+                std::size_t row_local_to_global(std::size_t local_row_index) const noexcept
                 {
                     constexpr bool is_overwritten = std::is_same<
                         decltype(&derived_type::row_local_to_global), 
@@ -54,7 +54,7 @@ namespace ropufu
                 }
 
                 /** Translates local column index to global column index. */
-                std::size_t column_local_to_global(std::size_t local_column_index) const
+                std::size_t column_local_to_global(std::size_t local_column_index) const noexcept
                 {
                     constexpr bool is_overwritten = std::is_same<
                         decltype(&derived_type::column_local_to_global), 
@@ -65,7 +65,7 @@ namespace ropufu
                 }
 
                 /** Translates global row index to local row index. */
-                std::size_t row_global_to_local(std::size_t global_row_index) const
+                std::size_t row_global_to_local(std::size_t global_row_index) const noexcept
                 {
                     constexpr bool is_overwritten = std::is_same<
                         decltype(&derived_type::row_global_to_local), 
@@ -76,7 +76,7 @@ namespace ropufu
                 }
 
                 /** Translates global column index to local column index. */
-                std::size_t column_global_to_local(std::size_t global_column_index) const
+                std::size_t column_global_to_local(std::size_t global_column_index) const noexcept
                 {
                     constexpr bool is_overwritten = std::is_same<
                         decltype(&derived_type::column_global_to_local), 

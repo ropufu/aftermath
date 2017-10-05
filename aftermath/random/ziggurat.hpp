@@ -21,14 +21,16 @@ namespace ropufu
                 template <std::size_t t_n_boxes, typename t_uniform_type>
                 struct ziggurat_choose_box
                 {
-                    typedef t_uniform_type uniform_type;
+                    using uniform_type = t_uniform_type;
+
                     static std::uint_fast32_t choose_box(uniform_type uniform_random) noexcept;
                 };
 
                 template <std::size_t t_n_boxes>
                 struct ziggurat_choose_box<t_n_boxes, std::uint_fast32_t>
                 {
-                    typedef std::uint_fast32_t uniform_type;
+                    using uniform_type = std::uint_fast32_t;
+
                     static std::uint_fast32_t choose_box(uniform_type uniform_random) noexcept
                     {
                         static_assert(is_power_of_two<t_n_boxes>::value, "<t_n_boxes> has to be a power of two.");
@@ -43,14 +45,14 @@ namespace ropufu
             template <typename t_derived_type, std::size_t t_n_boxes, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter, typename t_result_type>
             struct ziggurat
             {
-                typedef ziggurat<t_derived_type, t_n_boxes, t_uniform_type, t_bounds_type, t_diameter, t_result_type> type;
+                using type = ziggurat<t_derived_type, t_n_boxes, t_uniform_type, t_bounds_type, t_diameter, t_result_type>;
                 static constexpr std::size_t n_boxes = t_n_boxes;
                 static constexpr t_bounds_type diameter = t_diameter;
 
-                typedef t_derived_type derived_type;
-                typedef t_uniform_type uniform_type;
-                typedef t_result_type  result_type;
-                typedef t_bounds_type  bounds_type;
+                using derived_type = t_derived_type;
+                using uniform_type = t_uniform_type;
+                using result_type = t_result_type;
+                using bounds_type = t_bounds_type;
 
             private:
                 result_type sample_from_box_horizontal(uniform_type box_index, uniform_type uniform_random, bool& is_interior) const noexcept 
@@ -96,12 +98,12 @@ namespace ropufu
 
             public:
                 template <typename t_engine_type>
-                result_type sample(t_engine_type& uniform_generator)
+                result_type sample(t_engine_type& uniform_generator) noexcept
                 {
                     static_assert(std::is_same<typename t_engine_type::result_type, uniform_type>::value, "type mismatch");
                     static_assert(t_engine_type::max() - t_engine_type::min() == type::diameter, "<t_engine_type>::max() - <t_engine_type>::min() has to equal <diameter>.");
 
-                    for (;;) // while (true)
+                    while (true)
                     {
                         uniform_type u1 = uniform_generator() - t_engine_type::min(); // Used for box index.
                         uniform_type u2 = uniform_generator() - t_engine_type::min(); // Used to generate the horizontal component.
@@ -111,7 +113,7 @@ namespace ropufu
 
                         // ~~ Optimized rejection ~~
                         bool is_interior = false;
-                        result_type z = this->sample_from_box_horizontal(box_index, u2, std::ref(is_interior));
+                        result_type z = this->sample_from_box_horizontal(box_index, u2, is_interior);
                         if (is_interior) return z;
 
                         // ~~ Tails ~~

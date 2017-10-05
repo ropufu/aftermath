@@ -11,7 +11,7 @@ namespace ropufu
         struct math_constants
         {
             /** @todo NonononoNO!! */
-            typedef double t_numeric_type;
+            using t_numeric_type = double;
 
             /** The number e. */
             static constexpr t_numeric_type e = t_numeric_type(2.718281828459045235360287471);

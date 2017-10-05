@@ -11,7 +11,6 @@
 #include <functional>
 #include <iostream>
 #include <string>
-#include <system_error>
 #include <type_traits>
 
 namespace ropufu
@@ -28,8 +27,8 @@ namespace ropufu
                 template <typename t_derived_type, typename t_key_type, typename t_probability_type>
                 struct ordering_module
                 {
-                    typedef ordering_module<t_derived_type, t_key_type, t_probability_type> type;
-                    typedef t_derived_type derived_type;
+                    using type = ordering_module<t_derived_type, t_key_type, t_probability_type>;
+                    using derived_type = t_derived_type;
 
                 protected:
                     detail::order_statistic<t_key_type, t_probability_type> m_order_statistic = { };
@@ -61,8 +60,8 @@ namespace ropufu
                 template <typename t_derived_type, typename t_key_type, typename t_count_type, typename t_sum_type, typename t_mean_type>
                 struct linear_module
                 {
-                    typedef linear_module<t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type> type;
-                    typedef t_derived_type derived_type;
+                    using type = linear_module<t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
+                    using derived_type = t_derived_type;
 
                 protected:
                     detail::linear_statistic<t_key_type, t_count_type, t_sum_type, t_mean_type> m_linear_statistic = { };
@@ -85,11 +84,11 @@ namespace ropufu
                 template <typename t_derived_type, typename t_key_type, typename t_count_type, typename t_sum_type, typename t_mean_type>
                 struct variance_module
                 {
-                    typedef variance_module<t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type> type;
-                    typedef t_derived_type derived_type;
+                    using type = variance_module<t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
+                    using derived_type = t_derived_type;
 
                 protected:
-                    typedef detail::variance_statistic<t_key_type, t_count_type, t_sum_type, t_mean_type> variance_helper_type;
+                    using variance_helper_type = detail::variance_statistic<t_key_type, t_count_type, t_sum_type, t_mean_type>;
 
                 public:
                     double compute_variance() const noexcept
@@ -131,16 +130,16 @@ namespace ropufu
                 static constexpr bool is_linear_space = t_is_linear_space; // Indicates if the underlying key type supports linear operations (addition / subtraction / scaling).
                 static constexpr bool has_variance = t_has_variance; // Indicates if the underlying key type supports quadratic operations (multiplication).
                 
-                typedef ROPUFU_EMPIRICAL_MEASURE_TYPEDEF type;
+                using type = ROPUFU_EMPIRICAL_MEASURE_TYPEDEF;
 
-                typedef t_key_type   key_type;
-                typedef t_count_type count_type;
-                typedef t_sum_type   sum_type;
-                typedef t_mean_type  mean_type;
-                typedef t_probability_type probability_type;
+                using key_type = t_key_type;
+                using count_type = t_count_type;
+                using sum_type = t_sum_type;
+                using mean_type = t_mean_type;
+                using probability_type = t_probability_type;
                 
-                typedef typename detail::dictionary<key_type, count_type>::type dictionary_type;
-                typedef detail::variance_statistic<key_type, count_type, sum_type, mean_type> variance_helper_type;
+                using dictionary_type = typename detail::dictionary<key_type, count_type>::type;
+                using variance_helper_type = detail::variance_statistic<key_type, count_type, sum_type, mean_type>;
 
                 template <typename, typename, typename, typename, typename, bool, bool, bool>
                 friend struct empirical_measure;
@@ -229,13 +228,13 @@ namespace ropufu
                 }
 
                 /** Copies the observation data into two arrays: keys and counts. */
-                void copy_to(key_type* p_keys, count_type* p_counts) const
+                void copy_to(key_type* p_keys, count_type* p_counts) const noexcept
                 {
                     detail::dictionary<key_type, count_type>::copy(this->m_data, p_keys, p_counts);
                 }
 
                 /** Copies the observation data into two arrays: keys and probabilities. */
-                void copy_to_normalized(key_type* p_keys, probability_type* p_probabilities) const
+                void copy_to_normalized(key_type* p_keys, probability_type* p_probabilities) const noexcept
                 {
                     detail::dictionary<key_type, count_type>::copy(this->m_data, p_keys, p_probabilities, static_cast<probability_type>(this->m_count_observations));
                 }
@@ -304,7 +303,7 @@ namespace ropufu
                     return this->m_data;
                 }
 
-                friend std::ostream& operator <<(std::ostream& os, const type& that)
+                friend std::ostream& operator <<(std::ostream& os, const type& that) noexcept
                 {
                     //if (that.m_count_observations == 0) return os << "{}";
                     that.print_to(os);
@@ -344,7 +343,7 @@ namespace ropufu
                 /** @todo Figure out what this version of print does. */
                 template <typename t_stream_type>
                 typename std::enable_if<std::is_integral<key_type>::value && type_impl::has_left_shift<t_stream_type, key_type>::value>::type
-                    print_to(t_stream_type& os, std::size_t min_height = 0, std::size_t max_height = 20) const
+                    print_to(t_stream_type& os, std::size_t min_height = 0, std::size_t max_height = 20) const noexcept
                 {
                     count_type count = this->m_count_observations;
                     if (count == 0) os << "{}";
@@ -363,7 +362,7 @@ namespace ropufu
                 /** @todo Figure out what this version of print does. */
                 template <typename t_stream_type>
                 typename std::enable_if<!std::is_integral<key_type>::value && type_impl::has_left_shift<t_stream_type, key_type>::value>::type
-                    print_to(t_stream_type& os) const
+                    print_to(t_stream_type& os) const noexcept
                 {
                     count_type count = this->m_count_observations;
                     if (count == 0) os << "{}";
@@ -381,7 +380,7 @@ namespace ropufu
                 /** @todo Figure out what this version of print does. */
                 template <typename t_stream_type>
                 typename std::enable_if<!type_impl::has_left_shift<t_stream_type, key_type>::value>::type
-                    print_to(t_stream_type& os) const
+                    print_to(t_stream_type& os) const noexcept
                 {
                     count_type count = this->m_count_observations;
                     if (count == 0) os << "{}";

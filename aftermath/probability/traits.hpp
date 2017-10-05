@@ -12,7 +12,7 @@ namespace ropufu
             template <typename t_distribution_type>
             struct is_continuous
             {
-                typedef t_distribution_type distribution_type;
+                using distribution_type = t_distribution_type;
                 static constexpr bool value = false;
             };
 
@@ -20,7 +20,7 @@ namespace ropufu
             template <typename t_distribution_type>
             struct is_discrete
             {
-                typedef t_distribution_type distribution_type;
+                using distribution_type = t_distribution_type;
                 static constexpr bool value = false;
             };
         }

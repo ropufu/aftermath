@@ -3,6 +3,7 @@
 #define ROPUFU_AFTERMATH_PROBABILITY_DIST_LOGNORMAL_HPP_INCLUDED
 
 #include "../math_constants.hpp"
+#include "../not_an_error.hpp"
 #include "traits.hpp"
 
 #include <cmath>
@@ -23,15 +24,18 @@ namespace ropufu
             template <>
             struct is_continuous<dist_lognormal>
             {
-                typedef dist_lognormal distribution_type;
+                using distribution_type = dist_lognormal;
                 static constexpr bool value = true;
             };
 
-            /** Lognormal distribution. */
+            /** @brief Lognormal distribution.
+             *  @remark This is a \c noexcept struct. Exception handling is done by \c quiet_error singleton.
+             */
             struct dist_lognormal
             {
-                typedef dist_lognormal type;
-                typedef double result_type;
+                using type = dist_lognormal;
+                using result_type = double;
+                using std_type = std::lognormal_distribution<result_type>;
 
                 static const std::string name;
 
@@ -42,21 +46,15 @@ namespace ropufu
 
             public:
                 /** Default constructor with unit sigma. */
-                dist_lognormal() noexcept
-                    : m_mu(0.0), m_sigma(1.0),
-                    m_cache_expected_value(std::exp(1.0 / 2)),
-                    m_cache_variance((std::exp(1.0) - 1.0) * std::exp(1.0)),
-                    m_cache_standard_deviation(std::sqrt(std::exp(1.0) - 1.0) * std::exp(0.5)),
-                    m_cache_sigma_squared(1.0),
-                    m_cache_sigma_root_two(math_constants::root_two), // std::sqrt(2)
-                    m_cache_pdf_scale(math_constants::one_div_root_two_pi) // 1 / std::sqrt(2 pi)
-                {
-                }
+                dist_lognormal() noexcept : dist_lognormal(0, 1) { }
+
+                /** Constructor and implicit conversion from standard distribution. */
+                dist_lognormal(const std_type& distribution) noexcept : dist_lognormal(distribution.m(), distribution.s()) { }
 
                 /** @brief Constructs a lognormal distribution from mu and sigma, the mean and standard deviation of the corresponding normal distribution.
-                 *  @exception std::out_of_range \p sigma is not positive.
+                 *  @exception not_an_error::out_of_range This error is pushed to \c quiet_error if \p sigma is not positive.
                  */
-                explicit dist_lognormal(double mu, double sigma = 1.0)
+                explicit dist_lognormal(double mu, double sigma = 1) noexcept
                     : m_mu(mu), m_sigma(sigma),
                     m_cache_expected_value(std::exp(mu + sigma * sigma / 2)),
                     m_cache_variance((std::exp(sigma * sigma) - 1.0) * std::exp(2 * mu + sigma * sigma)),
@@ -65,10 +63,14 @@ namespace ropufu
                     m_cache_sigma_root_two(sigma * math_constants::root_two), // sigma * std::sqrt(2)
                     m_cache_pdf_scale(math_constants::one_div_root_two_pi / sigma) // 1 / (sigma * std::sqrt(2 pi))
                 {
-                    if (sigma <= 0.0) throw std::out_of_range("<sigma> must be positive.");
+                    if (sigma <= 0)
+                    {
+                        quiet_error::instance().push(not_an_error::out_of_range, severity_level::major, "<sigma> must be positive.", __FUNCTION__, __LINE__);
+                    }
                 }
 
-                std::lognormal_distribution<double> to_std() const noexcept
+                /** Converts the distribution to its standard built-in counterpart. */
+                std_type to_std() const noexcept
                 {
                     return std::lognormal_distribution<double>(this->m_mu, this->m_sigma);
                 }
@@ -131,10 +133,10 @@ namespace std
     template <>
     struct hash<ropufu::aftermath::probability::dist_lognormal>
     {
-        typedef ropufu::aftermath::probability::dist_lognormal argument_type;
-        typedef std::size_t result_type;
+        using argument_type = ropufu::aftermath::probability::dist_lognormal;
+        using result_type = std::size_t;
 
-        result_type operator()(argument_type const& x) const noexcept
+        result_type operator ()(argument_type const& x) const noexcept
         {
             std::hash<double> double_hash = {};
             return

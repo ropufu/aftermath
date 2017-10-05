@@ -3,6 +3,7 @@
 #define ROPUFU_AFTERMATH_PROBABILITY_DIST_NORMAL_HPP_INCLUDED
 
 #include "../math_constants.hpp"
+#include "../not_an_error.hpp"
 #include "traits.hpp"
 
 #include <cmath>
@@ -24,15 +25,18 @@ namespace ropufu
             template <>
             struct is_continuous<dist_normal>
             {
-                typedef dist_normal distribution_type;
+                using distribution_type = dist_normal;
                 static constexpr bool value = true;
             };
 
-            /** Normal (Gaussian) distribution. */
+            /** @brief Normal (Gaussian) distribution.
+             *  @remark This is a \c noexcept struct. Exception handling is done by \c quiet_error singleton.
+             */
             struct dist_normal
             {
-                typedef dist_normal type;
-                typedef double result_type;
+                using type = dist_normal;
+                using result_type = double;
+                using std_type = std::normal_distribution<result_type>;
 
                 static const std::string name;
 
@@ -45,29 +49,30 @@ namespace ropufu
 
             public:
                 /** Default constructor with zero mean and unit variance. */
-                dist_normal() noexcept
-                    : m_mu(0.0), m_sigma(1.0),
-                    m_cache_variance(1.0),
-                    m_cache_sigma_root_two(math_constants::root_two), // sqrt(2)
-                    m_cache_pdf_scale(math_constants::one_div_root_two_pi) // 1 / sqrt(2 pi)
-                {
-                }
+                dist_normal() noexcept : dist_normal(0, 1) { }
+
+                /** Constructor and implicit conversion from standard distribution. */
+                dist_normal(const std_type& distribution) noexcept : dist_normal(distribution.mean(), distribution.stddev()) { }
 
                 /** @brief Constructs a normal distribution from the mean and standard deviation.
-                 *  @exception std::out_of_range \p sigma is not positive.
+                 *  @exception not_an_error::out_of_range This error is pushed to \c quiet_error if \p sigma is not positive.
                  */
-                explicit dist_normal(double mu, double sigma = 1.0)
+                explicit dist_normal(double mu, double sigma = 1) noexcept
                     : m_mu(mu), m_sigma(sigma),
                     m_cache_variance(sigma * sigma),
                     m_cache_sigma_root_two(sigma * math_constants::root_two), // sigma * sqrt(2)
                     m_cache_pdf_scale(math_constants::one_div_root_two_pi / sigma) // 1 / (sigma * sqrt(2 pi))
                 {
-                    if (sigma <= 0.0) throw std::out_of_range("<sigma> must be positive.");
+                    if (sigma <= 0)
+                    {
+                        quiet_error::instance().push(not_an_error::out_of_range, severity_level::major, "<sigma> must be positive.", __FUNCTION__, __LINE__);
+                    }
                 }
 
-                std::normal_distribution<double> to_std() const noexcept
+                /** Converts the distribution to its standard built-in counterpart. */
+                std_type to_std() const noexcept
                 {
-                    return std::normal_distribution<double>(this->m_mu, this->m_sigma);
+                    return std_type(this->m_mu, this->m_sigma);
                 }
 
                 /** Mean of the distribution. */
@@ -112,7 +117,7 @@ namespace ropufu
             const std::string dist_normal::name = "norm";
             
             /** Standard exponential distribution. */
-            const dist_normal dist_normal::standard = dist_normal(0.0);
+            const dist_normal dist_normal::standard = dist_normal(0);
         }
     }
 }
@@ -122,10 +127,10 @@ namespace std
     template <>
     struct hash<ropufu::aftermath::probability::dist_normal>
     {
-        typedef ropufu::aftermath::probability::dist_normal argument_type;
-        typedef std::size_t result_type;
+        using argument_type = ropufu::aftermath::probability::dist_normal;
+        using result_type = std::size_t;
 
-        result_type operator()(argument_type const& x) const noexcept
+        result_type operator ()(argument_type const& x) const noexcept
         {
             std::hash<double> double_hash = {};
             return

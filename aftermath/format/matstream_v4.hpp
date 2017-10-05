@@ -3,6 +3,7 @@
 #define ROPUFU_AFTERMATH_FORMAT_MATSTREAM_V4_HPP_INCLUDED
 
 #include "../algebra/matrix.hpp"
+#include "../not_an_error.hpp"
 #include "matheader_v4.hpp"
 #include "matstream.hpp"
 
@@ -12,7 +13,6 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <type_traits>
 
@@ -47,13 +47,15 @@ namespace ropufu
              *     would be written as "adbecf".
              *  3) imag : <imagf> * <mrows> * <ncols> numbers, size depends on <mat4_data_type>.
              *     Imaginary part of the matrix, with data stored column-wise.
+             * 
+             *  @remark This is a \c noexcept struct. Exception handling is done by \c quiet_error singleton.
              */
             template <>
             struct matstream<4>
             {
-                typedef typename algebra::detail::matrix_arrangement<false> arrangement_type;
-                typedef matstream<4> type;
-                typedef matheader<4> header_type;
+                using arrangement_type = typename algebra::detail::matrix_arrangement<false>;
+                using type = matstream<4>;
+                using header_type = matheader<4>;
                 static constexpr std::int32_t mat_level = 4;
 
             private:
@@ -69,34 +71,25 @@ namespace ropufu
                 }
 
                 /** @brief Clears the .mat file, and resets reader position.
-                 *  @exception std::runtime_error Underlying file could not be created.
+                 *  @exception not_an_error::runtime_error This error is pushed to \c quiet_error if the underlying file could not be created.
                  */
-                void clear()
+                void clear() noexcept
                 {
                     std::ofstream filestream;
                     filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-                    if (filestream.fail()) throw std::runtime_error("Failed to create file.");
-                    else filestream.close();
+                    if (filestream.fail()) quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to create file.", __FUNCTION__, __LINE__);
                     this->m_reader_position = 0;
                 }
 
                 /** Appends the provided value to the name of the next matrix. */
-                type& operator <<(const std::string& name)
+                type& operator <<(const std::string& name) noexcept
                 {
                     this->m_name_stream << name;
                     return *this;
                 }
 
                 /** Appends the provided value to the name of the next matrix. */
-                type& operator <<(std::string&& name)
-                {
-                    this->m_name_stream << name;
-                    return *this;
-                }
-
-                /** Appends the provided value to the name of the next matrix. */
-                template <typename t_name_type>
-                std::enable_if_t<std::is_integral<t_name_type>::value, type>& operator <<(const t_name_type& name)
+                type& operator <<(std::string&& name) noexcept
                 {
                     this->m_name_stream << name;
                     return *this;
@@ -104,7 +97,15 @@ namespace ropufu
 
                 /** Appends the provided value to the name of the next matrix. */
                 template <typename t_name_type>
-                std::enable_if_t<std::is_integral<t_name_type>::value, type>& operator <<(t_name_type&& name)
+                std::enable_if_t<std::is_integral<t_name_type>::value, type>& operator <<(const t_name_type& name) noexcept
+                {
+                    this->m_name_stream << name;
+                    return *this;
+                }
+
+                /** Appends the provided value to the name of the next matrix. */
+                template <typename t_name_type>
+                std::enable_if_t<std::is_integral<t_name_type>::value, type>& operator <<(t_name_type&& name) noexcept
                 {
                     this->m_name_stream << name;
                     return *this;
@@ -112,10 +113,10 @@ namespace ropufu
 
                 /** @brief Writes \p matrix to the end of .mat file.
                  *  @remark Advances current reader position to the end of the written block (end of the file).
-                 *  @exception std::runtime_error Underlying file could not be opened.
+                 *  @exception not_an_error::runtime_error This error is pushed to \c quiet_error if the underlying file could not be opened.
                  */
                 template <typename t_data_type, bool t_is_row_major>
-                type& operator <<(const algebra::matrix<t_data_type, t_is_row_major>& mat)
+                type& operator <<(const algebra::matrix<t_data_type, t_is_row_major>& mat) noexcept
                 {
                     std::ofstream filestream;
 
@@ -137,21 +138,29 @@ namespace ropufu
 
                 /** @brief Loads a matrix from a file.
                  *  @remark Advances current reader position to the end of the read block.
-                 *  @exception std::runtime_error Failed to read header.
-                 *  @exception std::runtime_error Data type mismatch in file and provided \p filename.
+                 *  @exception not_an_error::runtime_error This error is pushed to \c quiet_error if the header could not be read.
+                 *  @exception not_an_error::runtime_error This error is pushed to \c quiet_error if data type in \p mat does not math that in the file.
                  */
                 template <typename t_data_type, bool t_is_row_major>
-                void load(std::string& matrix_name, algebra::matrix<t_data_type, t_is_row_major>& mat)
+                void load(std::string& matrix_name, algebra::matrix<t_data_type, t_is_row_major>& mat) noexcept
                 {
-                    typedef t_data_type data_type;
+                    using data_type = t_data_type;
 
                     // Read header.
                     header_type header;
                     std::size_t header_size = header.read(this->m_filename, this->m_reader_position);
-                    if (header_size == 0) throw std::runtime_error("Failed to read header.");
+                    if (header_size == 0)
+                    {
+                        quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to read header.", __FUNCTION__, __LINE__);
+                        return;
+                    }
                     matrix_name = header.name();
 
-                    if (mat4_data_type_id<data_type>::value != header.data_type_id()) throw std::runtime_error("Matrix data type mismatch.");
+                    if (mat4_data_type_id<data_type>::value != header.data_type_id())
+                    {
+                        quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Matrix data type mismatch.", __FUNCTION__, __LINE__);
+                        return;
+                    }
 
                     std::size_t height = header.height();
                     std::size_t width = header.width();
@@ -167,14 +176,18 @@ namespace ropufu
                  *  @exception std::runtime_error Underlying file could not be opened.
                  */
                 template <typename t_data_type, bool t_is_row_major>
-                std::size_t write(const algebra::matrix<t_data_type, t_is_row_major>& mat, std::size_t position)
+                std::size_t write(const algebra::matrix<t_data_type, t_is_row_major>& mat, std::size_t position) noexcept
                 {
-                    typedef t_data_type data_type;
+                    using data_type = t_data_type;
                     std::ofstream filestream;
                     
                     // Write body.
                     filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::out | std::ios::binary);
-                    if (filestream.fail()) throw std::runtime_error("Failed to open file.");
+                    if (filestream.fail())
+                    {
+                        quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to open file.", __FUNCTION__, __LINE__);
+                        return 0;
+                    }
                     else
                     {
                         std::size_t height = mat.height();
@@ -190,7 +203,6 @@ namespace ropufu
                                 filestream.write(reinterpret_cast<const char*>(&current_value), sizeof(data_type));
                             }
                         }
-                        filestream.close();
                         return position + (height * width * sizeof(data_type));
                     }
                     //return position;
@@ -201,14 +213,18 @@ namespace ropufu
                  *  @exception std::runtime_error Underlying file could not be opened.
                  */
                 template <typename t_data_type, bool t_is_row_major>
-                std::size_t read(algebra::matrix<t_data_type, t_is_row_major>& mat, std::size_t position)
+                std::size_t read(algebra::matrix<t_data_type, t_is_row_major>& mat, std::size_t position) noexcept
                 {
-                    typedef t_data_type data_type;
+                    using data_type = t_data_type;
                     std::ifstream filestream;
 
                     // Read body.
                     filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::binary);
-                    if (filestream.fail()) throw std::runtime_error("Failed to open file.");
+                    if (filestream.fail())
+                    {
+                        quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to open file.", __FUNCTION__, __LINE__);
+                        return 0;
+                    }
                     else
                     {
                         std::size_t height = mat.height();
@@ -224,7 +240,6 @@ namespace ropufu
                                 mat.at(row_index, column_index) = current_value;
                             }
                         }
-                        filestream.close();
                         return position + (height * width * sizeof(data_type));
                     }
                     //return position;

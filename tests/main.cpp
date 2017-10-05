@@ -1,4 +1,5 @@
 
+#include "../aftermath/not_an_error.hpp"
 #include "../aftermath/probability.hpp"
 #include "../aftermath/random.hpp"
 
@@ -16,6 +17,7 @@ template <typename t_test_type>
 void run_definitive_test(const std::string& name, t_test_type&& test)
 {
     bool result = test();
+    if (!ropufu::aftermath::quiet_error::instance().good()) result = false;
     std::cout << "Test " << (result ? "passed" : "failed") << ": " << name << "." << std::endl;
 }
 
@@ -24,6 +26,7 @@ void run_error_test(const std::string& name, t_test_type&& test)
 {
     double error = test();
     bool result = (error < 0.05);
+    if (!ropufu::aftermath::quiet_error::instance().good()) result = false;
     std::cout << "Test " << (result ? "passed" : "failed") << " at " << (error * 100) << "%: " << name << "." << std::endl;
 }
 
@@ -61,6 +64,19 @@ std::int32_t main(std::int32_t argc, char* argv[], char* envp[])
     run_benchmark("gaussian tail probability", [&](double& s1, double& s2) { normal_tester.benchmark_tail(100'000'000, 3.0, s1, s2); });
     run_benchmark("gaussian CUSUM", [&](double& s1, double& s2) { normal_tester.benchmark_cusum(100'000, std::log(159.36), s1, s2); });
     run_benchmark("compound binomial", [&](double& s1, double& s2) { binomial_bench.benchmark_compound(10'000'000, s1, s2); });
+    
+    ropufu::aftermath::quiet_error& quiet_error = ropufu::aftermath::quiet_error::instance();
+    if (!quiet_error.good()) std::cout << "~~ Oh no! Errors encoutered: ~~" << std::endl;
+    else if (!quiet_error.empty()) std::cout << "~~ Something to keep in mind: ~~" << std::endl;
+    while (!quiet_error.empty())
+    {
+        ropufu::aftermath::quiet_error_descriptor err = quiet_error.pop();
+        std::cout << '\t' <<
+            " level " << static_cast<std::size_t>(err.severity()) <<
+            " error # " << static_cast<std::size_t>(err.error_code()) <<
+            " on line " << err.caller_line_number() <<
+            " of <" << err.caller_function_name() << ">:\t" << err.description() << std::endl;
+    }
 
     return 0;
 }

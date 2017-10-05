@@ -2,11 +2,11 @@
 #ifndef ROPUFU_AFTERMATH_ALGEBRA_FRACTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_ALGEBRA_FRACTION_HPP_INCLUDED
 
+#include "../not_an_error.hpp"
 #include "factorization.hpp"
 
 #include <cstdint>
 #include <ostream>
-#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -16,12 +16,14 @@ namespace ropufu
     {
         namespace algebra
         {
-            /** @brief Rational numbers, as a fraction of two integers. */
+            /** @brief Rational numbers, as a fraction of two integers.
+             *  @remark This is a \c noexcept struct. Exception handling is done by \c quiet_error singleton.
+             */
             template <typename t_integer_type>
             struct fraction
             {
-                typedef t_integer_type integer_type;
-                typedef fraction<t_integer_type> type;
+                using integer_type = t_integer_type;
+                using type = fraction<t_integer_type>;
 
             private:
                 integer_type m_numerator = 0; // Numerator of the fraction. Could be negative.
@@ -42,12 +44,18 @@ namespace ropufu
                 }
 
                 /** @brief Constructs a \c fraction as a ratio \p numerator / \p denominator.
-           		 *  @exception std::logic_error \p denominator is zero.
+           		 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if \p denominator is zero.
                  */
-                fraction(const integer_type& numerator, const integer_type& denominator)
+                fraction(const integer_type& numerator, const integer_type& denominator) noexcept
                     : m_numerator(numerator), m_denominator(denominator)
                 {
-                    if (denominator == 0) throw new std::logic_error("<denominator> cannot be zero.");
+                    if (denominator == 0)
+                    {
+                        quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "Denominator cannot be zero.", __FUNCTION__, __LINE__);
+                        this->m_numerator = 0;
+                        this->m_denominator = 1;
+                        return;
+                    }
                     if (denominator < 0)
                     {
                         this->m_numerator = -this->m_numerator;
@@ -76,11 +84,15 @@ namespace ropufu
                 }
 
                 /** @brief Replaces the fraction with 1 / (this fraction). 
-           		 *  @exception std::logic_error This is a zero fraction.
+           		 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if this is a zero fraction.
                  */
-                void invert()
+                void invert() noexcept
                 {
-                    if (this->m_numerator == 0) throw new std::logic_error("Cannot invert a zero fraction.");
+                    if (this->m_numerator == 0)
+                    {
+                        quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "Cannot invert a zero fraction.", __FUNCTION__, __LINE__);
+                        return;
+                    }
 
                     integer_type temp = this->m_denominator;
                     this->m_denominator = this->m_numerator;
@@ -95,12 +107,12 @@ namespace ropufu
                 /** Denominator of the fraction. */
                 const integer_type& denominator() const noexcept { return this->m_denominator; }
                 /** @brief Updates the denominator of the fraction.
-           		 *  @exception std::logic_error \p value is zero.
+           		 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if \p value is zero.
                  */
-                void set_denominator(const integer_type& value) 
+                void set_denominator(const integer_type& value) noexcept
                 {
-                    if (value == 0) throw new std::logic_error("<value> cannot be zero.");
-                    if (value > 0) this->m_denominator = value;
+                    if (value == 0) quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "<value> cannot be zero.", __FUNCTION__, __LINE__);
+                    else if (value > 0) this->m_denominator = value;
                     else
                     {
                         // Make sure the denominator is always positive.
@@ -240,20 +252,20 @@ namespace ropufu
                 }
 
                 /** @brief The result of division of this fraction by \p other.
-           		 *  @exception std::logic_error \p other is zero.
+           		 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if \p other is zero.
                  */
-                type operator /(const integer_type& other) const
+                type operator /(const integer_type& other) const noexcept
                 {
                     return type(this->m_numerator, this->m_denominator * other);
                 }
 
                 /** @brief Divides this fraction by \p other.
-           		 *  @exception std::logic_error \p other is zero.
+           		 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if \p other is zero.
                  */
-                type& operator /=(const integer_type& other)
+                type& operator /=(const integer_type& other) noexcept
                 {
-                    if (other == 0) throw new std::logic_error("<other> cannot be zero.");
-                    if (other > 0) this->m_denominator *= other;
+                    if (other == 0) quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "Cannot divide by zero.", __FUNCTION__, __LINE__);
+                    else if (other > 0) this->m_denominator *= other;
                     else
                     {
                         this->m_numerator = -this->m_numerator;
@@ -263,28 +275,28 @@ namespace ropufu
                 }
 
                 /** @brief The result of division of \p left by \p right.
-           		 *  @exception std::logic_error \p right is zero.
+           		 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if \p right is zero.
                  */
-                friend type operator /(const integer_type& left, const type& right)
+                friend type operator /(const integer_type& left, const type& right) noexcept
                 {
                     return type(left * right.m_denominator, right.m_numerator);
                 }
 
                 /** @brief The result of division of this fraction by \p other.
-           		 *  @exception std::logic_error \p other is zero.
+           		 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if \p other is zero.
                  */
-                type operator /(const type& other) const
+                type operator /(const type& other) const noexcept
                 {
                     return type(this->m_numerator * other.m_denominator, this->m_denominator * other.m_numerator);
                 }
 
                 /** @brief Divides this fraction by \p other.
-           		 *  @exception std::logic_error \p other is zero.
+           		 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if \p other is zero.
                  */
-                type& operator /=(const type& other)
+                type& operator /=(const type& other) noexcept
                 {
-                    if (other.m_numerator == 0) throw new std::logic_error("<other> cannot be zero.");
-                    if (other.m_numerator > 0)
+                    if (other.m_numerator == 0) quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "Cannot divide by zero.", __FUNCTION__, __LINE__);
+                    else if (other.m_numerator > 0)
                     {
                         this->m_numerator *= other.m_denominator;
                         this->m_denominator *= other.m_numerator;
@@ -396,8 +408,8 @@ namespace std
     template <typename t_integer_type>
     struct hash<ropufu::aftermath::algebra::fraction<t_integer_type>>
     {
-        typedef ropufu::aftermath::algebra::fraction<t_integer_type> argument_type;
-        typedef std::size_t result_type;
+        using argument_type = ropufu::aftermath::algebra::fraction<t_integer_type>;
+        using result_type = std::size_t;
 
         result_type operator()(const argument_type& x) const
         {

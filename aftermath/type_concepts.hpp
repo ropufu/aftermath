@@ -42,14 +42,14 @@ namespace ropufu
             template <bool t_condition, typename t_true_type, typename t_false_type>
             struct type_switch
             {
-                typedef t_false_type type;
+                using type = t_false_type;
             };
 
             /** Type switcher when \tparam t_condition is \c true. */
             template <typename t_true_type, typename t_false_type>
             struct type_switch<true, t_true_type, t_false_type>
             {
-                typedef t_true_type type;
+                using type = t_true_type;
             };
 
             /** Shorthand notation for type switcher. */

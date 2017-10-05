@@ -2,6 +2,7 @@
 #ifndef ROPUFU_TESTS_RANDOM_TEST_HPP_INCLUDED
 #define ROPUFU_TESTS_RANDOM_TEST_HPP_INCLUDED
 
+#include "../aftermath/not_an_error.hpp"
 #include "../aftermath/probability.hpp"
 #include "../aftermath/random.hpp"
 
@@ -20,34 +21,34 @@ namespace ropufu
             template <typename t_distribution_type>
             struct sampler_switch
             {
-                typedef t_distribution_type type; // Built-in C++ distributions are also samplers.
-                typedef t_distribution_type builtin_type; // Corresponding built-in C++ distribution type.
+                using type = t_distribution_type; // Built-in C++ distributions are also samplers.
+                using builtin_type = t_distribution_type; // Corresponding built-in C++ distribution type.
             };
             
             template <>
             struct sampler_switch<aftermath::probability::dist_normal>
             {
-                typedef aftermath::random::default_sampler_normal_t<std::default_random_engine> type;
-                typedef std::normal_distribution<double> builtin_type; // Corresponding built-in C++ distribution type.
+                using type = aftermath::random::default_sampler_normal_t<std::default_random_engine>;
+                using builtin_type = std::normal_distribution<double>; // Corresponding built-in C++ distribution type.
             };
             
             template <>
             struct sampler_switch<aftermath::probability::dist_lognormal>
             {
-                typedef aftermath::random::default_sampler_lognormal_t<std::default_random_engine> type;
-                typedef std::lognormal_distribution<double> builtin_type; // Corresponding built-in C++ distribution type.
+                using type = aftermath::random::default_sampler_lognormal_t<std::default_random_engine>;
+                using builtin_type = std::lognormal_distribution<double>; // Corresponding built-in C++ distribution type.
             };
         }
 
         template <typename t_distribution_type, typename t_engine_type = std::default_random_engine>
         struct test_random
         {
-            typedef test_random<t_distribution_type, t_engine_type> type;
-            typedef t_engine_type engine_type;
-            typedef std::chrono::high_resolution_clock clock_type;
-            typedef t_distribution_type distribution_type;
-            typedef typename detail::sampler_switch<distribution_type>::type sampler_type;
-            typedef typename detail::sampler_switch<distribution_type>::builtin_type builtin_distribution_type;
+            using type = test_random<t_distribution_type, t_engine_type>;
+            using engine_type = t_engine_type;
+            using clock_type = std::chrono::high_resolution_clock;
+            using distribution_type = t_distribution_type;
+            using sampler_type = typename detail::sampler_switch<distribution_type>::type;
+            using builtin_distribution_type = typename detail::sampler_switch<distribution_type>::builtin_type;
 
         private:
             engine_type m_engine;
@@ -99,7 +100,7 @@ namespace ropufu
 
         public:
             template <typename ...t_args>
-            test_random(t_args&&... args)
+            test_random(t_args&&... args) noexcept
                 : m_engine(clock_type::now().time_since_epoch().count()),
                 m_distribution(std::forward<t_args>(args)...),
                 m_sampler(m_distribution),
@@ -107,13 +108,13 @@ namespace ropufu
             {
             }
             
-            void benchmark_tail(std::size_t n, double tail, double& elapsed_seconds_tested, double& elapsed_seconds_builtin)
+            void benchmark_tail(std::size_t n, double tail, double& elapsed_seconds_tested, double& elapsed_seconds_builtin) noexcept
             {
                 this->tail_probability(this->m_sampler, n, tail, elapsed_seconds_tested);
                 this->tail_probability(this->m_builtin_distribution, n, tail, elapsed_seconds_builtin);
             }
             
-            double error_in_tail(std::size_t n, double tail)
+            double error_in_tail(std::size_t n, double tail) noexcept
             {
                 double you_big_dummy = 0;
                 auto x_test = this->tail_probability(this->m_sampler, n, tail, you_big_dummy);
@@ -125,13 +126,13 @@ namespace ropufu
                 return diff;
             }
             
-            void benchmark_cusum(std::size_t n, double threshold, double& elapsed_seconds_tested, double& elapsed_seconds_builtin)
+            void benchmark_cusum(std::size_t n, double threshold, double& elapsed_seconds_tested, double& elapsed_seconds_builtin) noexcept
             {
                 this->cusum_run_length(this->m_sampler, n, threshold, elapsed_seconds_tested);
                 this->cusum_run_length(this->m_builtin_distribution, n, threshold, elapsed_seconds_builtin);
             }
             
-            double error_in_cusum(std::size_t n, double threshold)
+            double error_in_cusum(std::size_t n, double threshold) noexcept
             {
                 double you_big_dummy = 0;
                 auto x_test = this->cusum_run_length(this->m_sampler, n, threshold, you_big_dummy);

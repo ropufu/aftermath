@@ -3,6 +3,7 @@
 #define ROPUFU_AFTERMATH_PROBABILITY_DIST_NEGATIVE_PARETO_HPP_INCLUDED
 
 #include "../math_constants.hpp"
+#include "../not_an_error.hpp"
 #include "traits.hpp"
 
 #include <cmath>
@@ -22,15 +23,16 @@ namespace ropufu
             template <>
             struct is_continuous<dist_negative_pareto>
             {
-                typedef dist_negative_pareto distribution_type;
+                using distribution_type = dist_negative_pareto;
                 static constexpr bool value = true;
             };
 
             /** Negative Pareto distribution: special case of scaled (0; x_max) Beta distribution with parameter beta = 1. */
             struct dist_negative_pareto
             {
-                typedef dist_negative_pareto type;
-                typedef double result_type;
+                using type = dist_negative_pareto;
+                using result_type = double;
+                using std_type = void;
 
                 static const std::string name;
 
@@ -41,31 +43,38 @@ namespace ropufu
 
             public:
                 /** Default constructor with unit alpha and unit maximum. */
-                dist_negative_pareto() noexcept
-                    : m_alpha(1.0), m_x_max(1.0),
-                    m_cache_expected_value(0.5),
-                    m_cache_variance(1.0 / 12),
-                    m_cache_standard_deviation(math_constants::one_over_root_twelwe),
-                    m_cache_axa(1.0)
-                {
-                }
+                dist_negative_pareto() noexcept : dist_negative_pareto(1, 1) { }
+
+                // /** Constructor and implicit conversion from standard distribution. */
+                // dist_negative_pareto(const std_type& distribution) noexcept : dist_negative_pareto(distribution.alpha(), distribution.x_max()) { }
 
                 /** @brief Constructs a negative Pareto distribution from \p alpha and \p x_max.
-                 *  @exception std::out_of_range \p alpha is not positive.
-                 *  @exception std::out_of_range \p x_max is not positive.
+                 *  @exception not_an_error::out_of_range This error is pushed to \c quiet_error if \p alpha is not positive.
+                 *  @exception not_an_error::out_of_range This error is pushed to \c quiet_error if \p x_max is not positive.
                  */
-                explicit dist_negative_pareto(double alpha, double x_max)
+                explicit dist_negative_pareto(double alpha, double x_max) noexcept
                     : m_alpha(alpha), m_x_max(x_max),
                     m_cache_expected_value(x_max * alpha / (alpha + 1.0)),
                     m_cache_variance(x_max * x_max / ((alpha + 1.0) * (alpha + 1.0) * (1.0 + 2.0 / alpha))),
                     m_cache_standard_deviation(x_max / ((alpha + 1.0) * std::sqrt(1.0 + 2.0 / alpha))),
                     m_cache_axa(alpha / std::pow(x_max, alpha))
                 {
-                    if (alpha <= 0.0) throw std::out_of_range("<alpha> must be positive.");
-                    if (x_max <= 0.0) throw std::out_of_range("<x_max> must be positive.");
+                    if (alpha <= 0)
+                    {
+                        quiet_error::instance().push(not_an_error::out_of_range, severity_level::major, "<alpha> must be positive.", __FUNCTION__, __LINE__);
+                    }
+                    if (x_max <= 0)
+                    {
+                        quiet_error::instance().push(not_an_error::out_of_range, severity_level::major, "<x_max> must be positive.", __FUNCTION__, __LINE__);
+                    }
                 }
 
-                //... to_std() const noexcept;
+                /** Converts the distribution to its standard built-in counterpart. */
+                std_type to_std() const noexcept
+                {
+                    quiet_error::instance().push(not_an_error::all_good, severity_level::not_at_all, "Negative pareto distribution has not been implemented yet.", __FUNCTION__, __LINE__);
+                    return; // std_type(this->m_alpha, this->m_x_max);
+                }
 
                 /** Shape parameter of the distribution. */
                 double alpha() const noexcept { return this->m_alpha; }
@@ -85,18 +94,18 @@ namespace ropufu
                 double stddev() const noexcept { return this->standard_deviation(); }
 
                 /** Cumulative distribution function (c.d.f.) of the distribution. */     
-                double cdf(double x) const noexcept { return x <= 0.0 ? 0.0 : (x >= this->m_x_max ? 1.0 : std::pow(x / this->m_x_max, this->m_alpha)); }
+                double cdf(double x) const noexcept { return x <= 0 ? 0 : (x >= this->m_x_max ? 1 : std::pow(x / this->m_x_max, this->m_alpha)); }
                 
                 /** Probability density function (p.d.f.) of the distribution. */
-                double pdf(double x) const noexcept { return (x <= 0.0 || x >= this->m_x_max) ? 0.0 : (this->m_cache_axa * std::pow(x, this->m_alpha - 1.0)); }
+                double pdf(double x) const noexcept { return (x <= 0 || x >= this->m_x_max) ? 0 : (this->m_cache_axa * std::pow(x, this->m_alpha - 1)); }
 
                 /** Partial n-th moment of the distribution: expected value restricted to the interval [a, b]. */
                 template <std::size_t t_nth_moment>
                 double partial_moment(double a, double b) const noexcept
                 {
-                    if (b <= 0.0 || a >= this->m_x_max) return 0.0;
+                    if (b <= 0 || a >= this->m_x_max) return 0;
                     if (b > this->m_x_max) b = this->m_x_max;
-                    if (a < 0.0) a = 0.0;
+                    if (a < 0) a = 0;
                 
                     // this->m_cache_axa = this->m_xalpha / std::pow(this->m_x_max, this->m_alpha);
                     return this->m_cache_axa * (std::pow(b, t_nth_moment + this->m_alpha) - std::pow(a, t_nth_moment + this->m_alpha)) / (t_nth_moment + this->m_alpha);
@@ -128,10 +137,10 @@ namespace std
     template <>
     struct hash<ropufu::aftermath::probability::dist_negative_pareto>
     {
-        typedef ropufu::aftermath::probability::dist_negative_pareto argument_type;
-        typedef std::size_t result_type;
+        using argument_type = ropufu::aftermath::probability::dist_negative_pareto;
+        using result_type = std::size_t;
 
-        result_type operator()(argument_type const& x) const noexcept
+        result_type operator ()(argument_type const& x) const noexcept
         {
             std::hash<double> double_hash = {};
             return

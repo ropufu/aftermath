@@ -18,22 +18,25 @@ namespace ropufu
             struct matheader
             {
                 static constexpr std::size_t mat_level = t_mat_level;
+                using type = matheader<t_mat_level>;
             };
 
-            /** @brief MATLAB file format for storing matrices. */
+            /** @brief MATLAB file format for storing matrices.
+             *  @remark This is a \c noexcept struct. Exception handling should be done by \c quiet_error singleton.
+             */
             template <std::size_t t_mat_level>
             struct matstream
             {
                 static constexpr std::size_t mat_level = t_mat_level;
-                typedef matstream<t_mat_level> type;
-                typedef matheader<t_mat_level> header_type;
+                using type = matstream<t_mat_level>;
+                using header_type = matheader<t_mat_level>;
 
-                void clear();
+                void clear() noexcept;
 
-                type& operator <<(const std::string& name);
+                type& operator <<(const std::string& name) noexcept;
 
                 template <typename t_data_type>
-                type& operator <<(const algebra::matrix<t_data_type>& matrix);
+                type& operator <<(const algebra::matrix<t_data_type>& matrix) noexcept;
             };
         }
     }

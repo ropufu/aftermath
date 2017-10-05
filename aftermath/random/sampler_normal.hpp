@@ -19,16 +19,15 @@ namespace ropufu
             template <std::uint_fast32_t t_n_boxes, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
             struct sampler_normal
             {
-                typedef sampler_normal<t_n_boxes, t_uniform_type, t_bounds_type, t_diameter> type;
-
                 static constexpr std::uint_fast32_t n_boxes = t_n_boxes;
                 static constexpr t_bounds_type diameter = t_diameter;
 
-                typedef probability::dist_normal       distribution_type;
-                typedef distribution_type::result_type result_type;
-                typedef t_uniform_type                 uniform_type;
-                typedef t_bounds_type                  bounds_type;
-                typedef ziggurat_normal<n_boxes, uniform_type, bounds_type, diameter> ziggurat_type;
+                using type = sampler_normal<t_n_boxes, t_uniform_type, t_bounds_type, t_diameter>;
+                using distribution_type = probability::dist_normal;
+                using result_type = distribution_type::result_type;
+                using uniform_type = t_uniform_type;
+                using bounds_type = t_bounds_type;
+                using ziggurat_type = ziggurat_normal<n_boxes, uniform_type, bounds_type, diameter>;
 
             private:
                 double m_mu, m_sigma;

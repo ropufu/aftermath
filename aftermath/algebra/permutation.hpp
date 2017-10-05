@@ -2,11 +2,12 @@
 #ifndef AFTERMATH_ALGEBRA_PERMUTATION_HPP_INCLUDED
 #define AFTERMATH_ALGEBRA_PERMUTATION_HPP_INCLUDED
 
+#include "../not_an_error.hpp"
+
 #include <algorithm>  // For std::sort.
 #include <cstddef>
 #include <functional> // For std::less.
 #include <ostream>
-#include <stdexcept>
 #include <vector>
 
 namespace ropufu
@@ -37,10 +38,10 @@ namespace ropufu
                 }
 
                 /** To be defined after \c permutation body. */
-                std::size_t operator *() const;
+                std::size_t operator *() const noexcept;
 
                 /** Increment operator. */
-                permutation_iterator& operator ++()
+                permutation_iterator& operator ++() noexcept
                 {
                     ++(this->m_position);
                     // Although not strictly necessary for a range-based for loop
@@ -50,7 +51,9 @@ namespace ropufu
                 }
             };
 
-            /** Describes a permutation. */
+            /** @brief Describes a permutation.
+             *  @remark This is a \c noexcept struct. Exception handling is done by \c quiet_error singleton.
+             */
             struct permutation
             {
             private:
@@ -72,37 +75,46 @@ namespace ropufu
 
                 /** A permutation described by the elements in \p source. */
                 template <typename t_source_type>
-                explicit permutation(const std::vector<t_source_type>& source) noexcept : permutation(source.size())
+                explicit permutation(const std::vector<t_source_type>& source) noexcept
+                    : permutation(source.size())
                 {
                     this->order_by(source);
                 }
 
                 /** @brief Modify the permutation to reflect the ordering of elements in \p source.
-                 *  @exception std::length_error \p source is of different size than the permutation.
+                 *  @exception not_an_error::length_error This error is pushed to \c quiet_error if \p source is of different size than the permutation.
                  *  @remark \p source is intentionally passed as a copy.
                  */
                 template <typename t_source_type, typename t_predicate_type>
-                void order_by(std::vector<t_source_type> source, t_predicate_type comparer = std::less<t_source_type>())
+                void order_by(std::vector<t_source_type> source, t_predicate_type comparer = std::less<t_source_type>()) noexcept
                 {
-                    if (this->m_indices.size() != source.size()) throw std::length_error("<source> size mismatch.");
+                    if (this->m_indices.size() != source.size())
+                    {
+                        quiet_error::instance().push(not_an_error::length_error, severity_level::major, "Source size mismatch.", __FUNCTION__, __LINE__);
+                        return;
+                    }
 
                     std::sort(this->m_indices.begin(), this->m_indices.end(), 
-                        [&source, &comparer](std::size_t i, std::size_t j){
+                        [&source, &comparer] (std::size_t i, std::size_t j) {
                             return comparer(source[i], source[j]);
                     });
                 }
 
                 /** @brief Modify the permutation to reflect the ordering of elements in \p source.
-                 *  @exception std::length_error \p source is of different size than the permutation.
+                 *  @exception not_an_error::length_error This error is pushed to \c quiet_error if \p source is of different size than the permutation.
                  *  @remark \p source is intentionally passed as a copy.
                  */
                 template <typename t_source_type, typename t_selector_type, typename t_predicate_type>
-                void order_by(std::vector<t_source_type> source, t_selector_type selector, t_predicate_type comparer = std::less<t_source_type>())
+                void order_by(std::vector<t_source_type> source, t_selector_type selector, t_predicate_type comparer = std::less<t_source_type>()) noexcept
                 {
-                    if (this->m_indices.size() != source.size()) throw std::length_error("<source> size mismatch.");
+                    if (this->m_indices.size() != source.size())
+                    {
+                        quiet_error::instance().push(not_an_error::length_error, severity_level::major, "Source size mismatch.", __FUNCTION__, __LINE__);
+                        return;
+                    }
 
                     std::sort(this->m_indices.begin(), this->m_indices.end(), 
-                        [&source, &selector, &comparer](std::size_t i, std::size_t j){
+                        [&source, &selector, &comparer] (std::size_t i, std::size_t j) {
                             return comparer(selector(source[i]), selector(source[j]));
                     });
                 }
@@ -121,7 +133,7 @@ namespace ropufu
                 /** Size of the permutation. */
                 std::size_t size() const noexcept
                 {
-                    return this->m_indices.size(); 
+                    return this->m_indices.size();
                 }
 
                 /** @brief The destination of \p index as described by the permutation.
@@ -133,11 +145,15 @@ namespace ropufu
                 }
 
                 /** @brief The destination of \p index as described by the permutation.
-                 *  @exception std::out_of_range \p index out of range.
+                 *  @exception not_an_error::out_of_range This error is pushed to \c quiet_error if \p index out of range.
                  */
-                std::size_t at(std::size_t index) const
+                std::size_t at(std::size_t index) const noexcept
                 {
-                    if (index >= this->m_indices.size()) throw std::out_of_range("<index> out of range.");
+                    if (index >= this->m_indices.size()) 
+                    {
+                        quiet_error::instance().push(not_an_error::out_of_range, severity_level::major, "<index> out of range.", __FUNCTION__, __LINE__);
+                        return 0;
+                    }
                     return this->operator [](index);
                 }
 
@@ -154,7 +170,7 @@ namespace ropufu
                 }
 
                 /** Outputs this permutation with comma-separated values to a stream. */
-                friend std::ostream& operator <<(std::ostream& os, const permutation& that)
+                friend std::ostream& operator <<(std::ostream& os, const permutation& that) noexcept
                 {
                     bool is_first = true;
                     for (std::size_t index : that.m_indices)
@@ -168,7 +184,7 @@ namespace ropufu
             };
 
             /** Implementation of dereferencing for \c permutation_iterator. */
-            std::size_t permutation_iterator::operator *() const
+            std::size_t permutation_iterator::operator *() const noexcept
             {
                 return this->m_permutation_pointer->operator [](this->m_position);
             }

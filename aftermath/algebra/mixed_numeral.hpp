@@ -21,20 +21,20 @@ namespace ropufu
                 template <std::size_t t_denominator>
                 struct count_digits
                 {
-                    static const std::size_t value = 1 + log_base_n<(t_denominator - 1), 10>::value;
+                    static constexpr std::size_t value = 1 + log_base_n<(t_denominator - 1), 10>::value;
                 };
 
                 /** Trivial type with value <0>. */
                 template <>
                 struct count_digits<0>
                 {
-                    static const std::size_t value = 0;
+                    static constexpr std::size_t value = 0;
                 };
                 
                 /** Special case of mixed numeral when no fractional part is required. */
                 struct not_mixed_numeral
                 {
-                    typedef not_mixed_numeral type;
+                    using type = not_mixed_numeral;
                     static constexpr std::size_t denominator = 0;
                     static constexpr std::size_t decimal_width = 0;
 
@@ -50,7 +50,7 @@ namespace ropufu
                     }
 
                     /** Readable output for mixed numerals. */
-                    friend std::ostream& operator <<(std::ostream& os, const type& that)
+                    friend std::ostream& operator <<(std::ostream& os, const type& that) noexcept
                     {
                         if (that.m_is_negative) os << '-'; // Preceed with the sign, if necessary.
                         os << that.m_whole; // Output the whole part of the number.
@@ -74,7 +74,7 @@ namespace ropufu
             template <std::size_t t_denominator>
             struct mixed_numeral
             {
-                typedef mixed_numeral<t_denominator> type;
+                using type = mixed_numeral<t_denominator>;
                 static constexpr std::size_t denominator = t_denominator;
                 static constexpr std::size_t decimal_width = detail::count_digits<t_denominator>::value;
 
@@ -102,7 +102,7 @@ namespace ropufu
                 }
 
                 /** Readable output for mixed numerals. */
-                friend std::ostream& operator <<(std::ostream& os, const type& that)
+                friend std::ostream& operator <<(std::ostream& os, const type& that) noexcept
                 {
                     if (that.m_is_negative) os << '-'; // Preceed with the sign, if necessary.
                     os << that.m_whole; // Output the whole part of the number.
@@ -126,14 +126,14 @@ namespace ropufu
             template <>
             struct mixed_numeral<0> : public detail::not_mixed_numeral
             {
-                typedef mixed_numeral<0> type;
+                using type = mixed_numeral<0>;
             };
             
             /** Special case of mixed numeral when no fractional part is required. */
             template <>
             struct mixed_numeral<1> : public detail::not_mixed_numeral
             {
-                typedef mixed_numeral<1> type;
+                using type = mixed_numeral<1>;
             };
         }
     }

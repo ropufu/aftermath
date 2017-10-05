@@ -3,6 +3,7 @@
 #define ROPUFU_AFTERMATH_FORMAT_MATHEADER_V4_HPP_INCLUDED
 
 #include "../algebra/matrix.hpp"
+#include "../not_an_error.hpp"
 #include "matstream.hpp"
 
 #include <array>
@@ -11,7 +12,6 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 
 namespace ropufu
@@ -84,12 +84,14 @@ namespace ropufu
                 sparse = 2
             };
 
-            /** Header format for a .mat file. */
+            /** @brief Header format for a .mat file.
+             *  @remark This is a \c noexcept struct. Exception handling is done by \c quiet_error singleton.
+             */
             template <>
             struct matheader<4>
             {
                 static constexpr std::int32_t mat_level = 4;
-                typedef matheader<4> type;
+                using type = matheader<4>;
 
             private:
                 std::int32_t m_data_format_id;
@@ -123,15 +125,19 @@ namespace ropufu
             public:
                 /** @brief Reads header from a .mat file.
                  *  @return Number of bytes read.
-                 *  @exception std::runtime_error Specified file could not be opened.
+                 *  @exception not_an_error::runtime_error This error is pushed to \c quiet_error if the specified file could not be opened.
                  */
-                std::size_t read(const std::string& filename, std::size_t position)
+                std::size_t read(const std::string& file_path, std::size_t position) noexcept
                 {
                     std::size_t bytes_read = 0;
                     std::ifstream filestream;
 
-                    filestream.open(filename.c_str(), std::ios::in | std::ios::binary);
-                    if (filestream.fail()) throw std::runtime_error("Failed to open file.");
+                    filestream.open(file_path.c_str(), std::ios::in | std::ios::binary);
+                    if (filestream.fail())
+                    {
+                        quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to open file.", __FUNCTION__, __LINE__);
+                        return 0;
+                    }
                     else
                     {
                         std::int32_t format_type_id = 0;
@@ -161,7 +167,6 @@ namespace ropufu
                         if (!filestream.good() || filestream.gcount() != name_length - 1) return 0;
                         filestream.read(&terminator, 1);
                         if (!filestream.good() || terminator != '\0') return 0;
-                        filestream.close();
 
                         this->decompose_format_type_id(format_type_id);
                         this->m_height = height;
@@ -176,17 +181,21 @@ namespace ropufu
 
                 /** @brief Appends this header to a .mat file.
                  *  @return Position in the file after writing the header.
-                 *  @exception std::runtime_error Specified file could not be opened.
+                 *  @exception not_an_error::runtime_error This error is pushed to \c quiet_error if the specified file could not be opened.
                  *  @todo Add write checks / verification.
                  */
-                std::size_t write(const std::string& filename)
+                std::size_t write(const std::string& filename) noexcept
                 {
                     std::size_t position = 0;
                     std::size_t existing_size = 0;
                     std::ofstream filestream;
 
                     filestream.open(filename.c_str(), std::ios::in | std::ios::out | std::ios::binary);
-                    if (filestream.fail()) throw std::runtime_error("Failed to open file.");
+                    if (filestream.fail())
+                    {
+                        quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to open file.", __FUNCTION__, __LINE__);
+                        return 0;
+                    }
                     else
                     {
                         std::int32_t format_type_id = this->build_format_type_id();
@@ -208,7 +217,6 @@ namespace ropufu
                         // Name.
                         filestream.write(this->m_name.c_str(), name_length - 1);
                         filestream.write(&terminator, 1);
-                        filestream.close();
 
                         position = existing_size + this->size();
                     }
@@ -219,9 +227,10 @@ namespace ropufu
                 /** Initializes the header for a given matrix. */
                 template <typename t_data_type>
                 void initialize(const algebra::matrix<t_data_type>& mat,
-                    mat4_data_format data_format = mat4_data_format::ieee_little_endian, mat4_matrix_type_id matrix_type_id = mat4_matrix_type_id::full) noexcept
+                    mat4_data_format data_format = mat4_data_format::ieee_little_endian, 
+                    mat4_matrix_type_id matrix_type_id = mat4_matrix_type_id::full) noexcept
                 {
-                    typedef t_data_type data_type;
+                    using data_type = t_data_type;
 
                     this->m_data_format_id = static_cast<std::int32_t>(data_format);
                     this->m_data_type_id = mat4_data_type_id<data_type>::value;
@@ -271,7 +280,7 @@ namespace ropufu
                 }
 
                 /** Gets the size, in bytes, of the current header. */
-                std::size_t size() const
+                std::size_t size() const noexcept
                 {
                     return 5 * sizeof(std::int32_t) + this->m_name.size() + 1;
                 }

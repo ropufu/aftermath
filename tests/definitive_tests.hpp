@@ -4,6 +4,7 @@
 
 #include "../aftermath/algebra.hpp"
 #include "../aftermath/format.hpp"
+#include "../aftermath/not_an_error.hpp"
 #include "../aftermath/probability.hpp"
 
 #include <chrono>
@@ -19,18 +20,18 @@ namespace ropufu
     {
         struct format_test
         {
-            typedef std::default_random_engine engine_type;
-            typedef std::chrono::high_resolution_clock clock_type;
-            typedef aftermath::format::matstream<4> matstream_type;
-            //typedef aftermath::algebra::matrix_row_major<double> matrix_type;
-            typedef aftermath::algebra::matrix<double, true> matrix_type;
+            using engine_type = std::default_random_engine;
+            using clock_type = std::chrono::high_resolution_clock;
+            using matstream_type = aftermath::format::matstream<4>;
+            using matrix_type = aftermath::algebra::matrix<double, true>;
 
         private:
             engine_type m_engine;
             std::string m_filename;
 
-            std::vector<matrix_type> write_mat(std::size_t height, std::size_t width, std::size_t stack_size)
+            std::vector<matrix_type> write_mat(std::size_t height, std::size_t width, std::size_t stack_size) noexcept
             {
+                if (!aftermath::quiet_error::instance().good()) return { };
                 std::vector<matrix_type> matrices(0);
                 matrices.reserve(stack_size);
 
@@ -52,19 +53,23 @@ namespace ropufu
                     for (std::size_t i = 0; i < height_k; i++) for (std::size_t j = 0; j < width_k; j++) matrix.at(i, j) = uniform_real(this->m_engine);
                     mat << "matrix" << k << matrix;
 
+                    if (!aftermath::quiet_error::instance().good()) return { };
                     matrices.push_back(matrix);
                 }
                 return matrices;
             }
 
-            bool read_mat(const std::vector<matrix_type>& matrices)
+            bool check_read_mat(const std::vector<matrix_type>& matrices) noexcept
             {
+                if (!aftermath::quiet_error::instance().good()) return false;
                 matstream_type mat(this->m_filename);
                 for (const matrix_type& reference_matrix : matrices)
                 {
                     matrix_type matrix;
                     std::string name = "";
                     mat.load(name, matrix);
+                    
+                    if (!aftermath::quiet_error::instance().good()) return false;
                     if (matrix != reference_matrix) return false;
                 }
                 return true;
@@ -77,13 +82,15 @@ namespace ropufu
             {
             }
             
-            bool test_matstream_v4(std::size_t m, std::size_t height, std::size_t width, std::size_t stack_size)
+            bool test_matstream_v4(std::size_t m, std::size_t height, std::size_t width, std::size_t stack_size) noexcept
             {
                 for (std::size_t i = 0; i < m; i++)
                 {
                     std::vector<matrix_type> matrices = this->write_mat(height, width, stack_size);
-                    if (!this->read_mat(matrices)) return false;
+                    if (!aftermath::quiet_error::instance().good()) return false;
+                    if (!this->check_read_mat(matrices)) return false;
                 }
+                if (!aftermath::quiet_error::instance().good()) return false;
                 return true;
             }
         };

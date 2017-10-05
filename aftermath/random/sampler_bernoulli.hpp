@@ -19,23 +19,23 @@ namespace ropufu
             {
                 static const t_bounds_type diameter = t_diameter;
 
-                typedef probability::dist_binomial     distribution_type;
-                typedef distribution_type::result_type result_type;
-                typedef t_uniform_type                 uniform_type;
-                typedef t_bounds_type                  bounds_type;
-                typedef sampler_bernoulli<uniform_type, bounds_type, diameter> type;
+                using type = sampler_bernoulli<t_uniform_type, t_bounds_type, diameter>;
+                using distribution_type = probability::dist_binomial;
+                using result_type = distribution_type::result_type;
+                using uniform_type = t_uniform_type;
+                using bounds_type = t_bounds_type;
 
             private:
                 std::size_t m_number_of_trials;
                 uniform_type m_threshold;
 
             public:
-                sampler_bernoulli()
+                sampler_bernoulli() noexcept
                     : sampler_bernoulli(distribution_type())
                 {
                 }
 
-                type& operator =(const type& other)
+                type& operator =(const type& other) noexcept
                 {
                     if (this != &other)
                     {
@@ -45,14 +45,14 @@ namespace ropufu
                     return *this;
                 }
 
-                explicit sampler_bernoulli(const distribution_type& distribution)
+                explicit sampler_bernoulli(const distribution_type& distribution) noexcept
                     : m_number_of_trials(distribution.number_of_trials()),
                     m_threshold(static_cast<uniform_type>(type::diameter * distribution.probability_of_success()))
                 {
                 }
 
                 template <typename t_engine_type>
-                result_type operator ()(t_engine_type& uniform_generator) const
+                result_type operator ()(t_engine_type& uniform_generator) const noexcept
                 {
                     static_assert(std::is_same<typename t_engine_type::result_type, uniform_type>::value, "type mismatch");
                     static_assert(t_engine_type::max() - t_engine_type::min() == type::diameter, "<t_engine_type>::max() - <t_engine_type>::min() has to be equal to <diameter>.");

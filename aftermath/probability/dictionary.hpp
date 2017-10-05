@@ -32,15 +32,15 @@ namespace ropufu
                     /** Checks if \c t_key_type implements operator "less". */
                     static constexpr bool is_ordered = type_impl::has_less<t_key_type>::value;
 
-                    typedef t_key_type key_type;
-                    typedef t_count_type count_type;
-                    typedef typename type_impl::type_switch<is_ordered,
+                    using key_type = t_key_type;
+                    using count_type = t_count_type;
+                    using type = typename type_impl::type_switch<is_ordered,
                         std::map<key_type, count_type>,
-                        std::unordered_map<key_type, count_type>>::type type;
+                        std::unordered_map<key_type, count_type>>::type;
 
                     /** Merges two counting dictionaries into \p target_data. */
                     template <typename t_dictionary_type>
-                    static void merge(t_dictionary_type& target_data, const t_dictionary_type& source_data)
+                    static void merge(t_dictionary_type& target_data, const t_dictionary_type& source_data) noexcept
                     {
                         for (const auto& item : source_data)
                         {
@@ -56,7 +56,10 @@ namespace ropufu
 
                     /** Merges two counting dictionaries into \p target_data with a twist. */
                     template <typename t_target_dictionary_type, typename t_source_dictionary_type, typename t_transformer_type>
-                    static void merge(t_target_dictionary_type& target_data, const t_source_dictionary_type& source_data, const t_transformer_type& transformer)
+                    static void merge(
+                        t_target_dictionary_type& target_data,
+                        const t_source_dictionary_type& source_data,
+                        const t_transformer_type& transformer) noexcept
                     {
                         for (const auto& item : source_data)
                         {
@@ -73,7 +76,10 @@ namespace ropufu
 
                     /** Finds an element in \p data with a given \p key, or returns \p default_value if not found. */
                     template <typename t_dictionary_type>
-                    static count_type find_or_default(const t_dictionary_type& data, const typename t_dictionary_type::key_type& key, const typename t_dictionary_type::mapped_type& default_value)
+                    static count_type find_or_default(
+                        const t_dictionary_type& data,
+                        const typename t_dictionary_type::key_type& key,
+                        const typename t_dictionary_type::mapped_type& default_value) noexcept
                     {
                         auto it = data.find(key);
                         return it != data.end() ? it->second : default_value;
@@ -81,7 +87,10 @@ namespace ropufu
 
                     /** Finds an element in \p data with a given \p key, or returns \p default_value if not found. */
                     template <typename t_dictionary_type>
-                    static count_type find_or_default(const t_dictionary_type& data, const typename t_dictionary_type::key_type& key, typename t_dictionary_type::mapped_type&& default_value)
+                    static count_type find_or_default(
+                        const t_dictionary_type& data,
+                        const typename t_dictionary_type::key_type& key,
+                        typename t_dictionary_type::mapped_type&& default_value) noexcept
                     {
                         auto it = data.find(key);
                         return it != data.end() ? it->second : default_value;
@@ -89,7 +98,10 @@ namespace ropufu
 
                     /** Copies the \p data into two arrays: keys and counts. */
                     template <typename t_dictionary_type>
-                    static void copy(const t_dictionary_type& data, typename t_dictionary_type::key_type* p_keys, typename t_dictionary_type::mapped_type* p_values)
+                    static void copy(
+                        const t_dictionary_type& data,
+                        typename t_dictionary_type::key_type* p_keys,
+                        typename t_dictionary_type::mapped_type* p_values) noexcept
                     {
                         std::size_t index = 0;
                         for (const auto& item : data)
@@ -102,7 +114,11 @@ namespace ropufu
 
                     /** Copies the \p data into two arrays: keys and weights. */
                     template <typename t_dictionary_type>
-                    static void copy(const t_dictionary_type& data, typename t_dictionary_type::key_type* p_keys, double* p_values, double norm)
+                    static void copy(
+                        const t_dictionary_type& data,
+                        typename t_dictionary_type::key_type* p_keys,
+                        double* p_values,
+                        double norm) noexcept
                     {
                         std::size_t index = 0;
                         for (const auto& item : data)

@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <cstring> // For std::memcpy and std::memset.
 #include <new>
-#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -25,7 +24,7 @@ namespace ropufu
                  *      | a b c |
                  *      | d e f |
                  *    In row-major format it will be stored as (a b c d e f).
-                 *    In column-major format it will be stored as (a d b e c f). 
+                 *    In column-major format it will be stored as (a d b e c f).
                  */
                 template <bool t_is_row_major = true>
                 struct matrix_arrangement
@@ -48,7 +47,9 @@ namespace ropufu
                 };
             }
 
-            /** A rectangular array. */
+            /** @brief A rectangular array.
+             *  @remark This is a \c noexcept struct. Exception handling is done by \c quiet_error singleton.
+             */
             template <typename t_data_type, bool t_is_row_major = true>
             struct matrix;
 
@@ -60,21 +61,23 @@ namespace ropufu
             template <typename t_data_type>
             using matrix_column_major = matrix<t_data_type, false>;
 
-            /** A rectangular array. */
+            /** @brief A rectangular array.
+             *  @remark This is a \c noexcept struct. Exception handling is done by \c quiet_error singleton.
+             */
             template <typename t_data_type, bool t_is_row_major>
             struct matrix
             {
-                typedef matrix<t_data_type, t_is_row_major> type;
+                using type = matrix<t_data_type, t_is_row_major>;
                 static constexpr bool is_row_major = t_is_row_major;
                 static constexpr bool is_column_major = !t_is_row_major;
 
-                typedef t_data_type data_type;
-                typedef t_data_type value_type;
+                using data_type = t_data_type;
+                using value_type = t_data_type;
 
                 template <typename, bool> friend struct matrix;
 
             private:
-                typedef typename detail::matrix_arrangement<t_is_row_major> arrangement_type;
+                using arrangement_type = typename detail::matrix_arrangement<t_is_row_major>;
                 
                 template <typename t_other_data_type>
                 using other_t = matrix<t_other_data_type, t_is_row_major>;
@@ -93,15 +96,52 @@ namespace ropufu
                     if (this->m_size == 0) 
                     {
                         if (data_pointer == nullptr) return; // Both the matrix and data_pointer are empty.
-                        quiet_error::instance().push(not_an_error::all_good, "Trying to copy to an empty matrix.", caller_function_name, line_number);
+                        quiet_error::instance().push(not_an_error::all_good, severity_level::not_at_all, "Trying to copy to an empty matrix.", caller_function_name, line_number);
                         return;
                     }
                     if (data_pointer == nullptr)
                     {
-                        quiet_error::instance().push(not_an_error::invalid_argument, "Invalid data pointer.", caller_function_name, line_number);
+                        quiet_error::instance().push(not_an_error::invalid_argument, severity_level::major, "Invalid data pointer.", caller_function_name, line_number);
                         return;
                     }
                     std::memcpy(this->m_data_pointer, data_pointer, this->m_size * sizeof(data_type));
+                }
+
+                /** @brief Checks if the other matrix is of the same size, pushing \c quiet_error if not. */
+                template <typename t_other_data_type>
+                bool is_same_size_ensure(const other_t<t_other_data_type>& other, const std::string& caller_function_name, std::size_t line_number) noexcept
+                {
+                    bool result = true;
+                    quiet_error& err = quiet_error::instance();
+                    if (this->m_height != other.m_height)
+                    {
+                        result = false;
+                        err.push(not_an_error::logic_error, severity_level::major, "Matrices must have same height.", caller_function_name, line_number);
+                    }
+                    if (this->m_width != other.m_width)
+                    {
+                        result = false;
+                        err.push(not_an_error::logic_error, severity_level::major, "Matrices must have same width.", caller_function_name, line_number);
+                    }
+                    return result;
+                }
+
+                /** @brief Checks if the index is within this matris, pushing \c quiet_error if not. */
+                bool is_index_good_ensure(std::size_t row_index, std::size_t column_index, const std::string& caller_function_name, std::size_t line_number) const noexcept
+                {
+                    bool result = true;
+                    quiet_error& err = quiet_error::instance();
+                    if (row_index >= this->m_height)
+                    {
+                        result = false;
+                        err.push(not_an_error::out_of_range, severity_level::fatal, "<row_index> must be smaller than the height of the matrix.", caller_function_name, line_number);
+                    }
+                    if (column_index >= this->m_width)
+                    {
+                        result = false;
+                        err.push(not_an_error::out_of_range, severity_level::fatal, "<column_index> must be smaller than the width of the matrix.", caller_function_name, line_number);
+                    }
+                    return result;
                 }
 
             public:
@@ -260,7 +300,7 @@ namespace ropufu
                 {
                     if (height * width != this->m_size)
                     {
-                        quiet_error::instance().push(not_an_error::logic_error, "New size should match old size.", __FUNCTION__, __LINE__);
+                        quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "New size should match old size.", __FUNCTION__, __LINE__);
                         return;
                     }
                     this->m_height = height;
@@ -295,9 +335,7 @@ namespace ropufu
                  */
                 data_type& at(std::size_t row_index, std::size_t column_index) noexcept
                 {
-                    if (row_index >= this->m_height) quiet_error::instance().push(not_an_error::out_of_range, "<row_index> must be smaller than the height of the matrix.", __FUNCTION__, __LINE__);
-                    if (column_index >= this->m_width) quiet_error::instance().push(not_an_error::out_of_range, "<column_index> must be smaller than the width of the matrix.", __FUNCTION__, __LINE__);
-                    if (!quiet_error::instance().good()) return this->m_invalid;
+                    if (!this->is_index_good_ensure(row_index, column_index, __FUNCTION__, __LINE__)) return this->m_invalid;
                     return this->unchecked_at(row_index, column_index);
                 }
                  
@@ -307,9 +345,7 @@ namespace ropufu
                   */
                 const data_type& at(std::size_t row_index, std::size_t column_index) const noexcept
                 {
-                    if (row_index >= this->m_height) quiet_error::instance().push(not_an_error::out_of_range, "<row_index> must be smaller than the height of the matrix.", __FUNCTION__, __LINE__);
-                    if (column_index >= this->m_width) quiet_error::instance().push(not_an_error::out_of_range, "<column_index> must be smaller than the width of the matrix.", __FUNCTION__, __LINE__);
-                    if (!quiet_error::instance().good()) return this->m_invalid;
+                    if (!this->is_index_good_ensure(row_index, column_index, __FUNCTION__, __LINE__)) return this->m_invalid;
                     return this->unchecked_at(row_index, column_index);
                 }
 
@@ -338,10 +374,7 @@ namespace ropufu
                 template <typename t_other_data_type>
                 type& operator +=(const other_t<t_other_data_type>& other) noexcept
                 {
-                    if (this->m_height != other.m_height) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same height.", __FUNCTION__, __LINE__);
-                    if (this->m_width != other.m_width) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same width.", __FUNCTION__, __LINE__);
-                    if (!quiet_error::instance().good()) return *this;
-
+                    if (!this->is_same_size_ensure(other, __FUNCTION__, __LINE__)) return *this;
                     for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] += static_cast<data_type>(other.m_data_pointer[k]);
                     return *this;
                 }
@@ -360,10 +393,7 @@ namespace ropufu
                 template <typename t_other_data_type>
                 type& operator -=(const other_t<t_other_data_type>& other) noexcept
                 {
-                    if (this->m_height != other.m_height) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same height.", __FUNCTION__, __LINE__);
-                    if (this->m_width != other.m_width) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same width.", __FUNCTION__, __LINE__);
-                    if (!quiet_error::instance().good()) return *this;
-
+                    if (!this->is_same_size_ensure(other, __FUNCTION__, __LINE__)) return *this;
                     for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] -= static_cast<data_type>(other.m_data_pointer[k]);
                     return *this;
                 }
@@ -382,10 +412,7 @@ namespace ropufu
                 template <typename t_other_data_type>
                 type& operator *=(const other_t<t_other_data_type>& other) noexcept
                 {
-                    if (this->m_height != other.m_height) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same height.", __FUNCTION__, __LINE__);
-                    if (this->m_width != other.m_width) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same width.", __FUNCTION__, __LINE__);
-                    if (!quiet_error::instance().good()) return *this;
-
+                    if (!this->is_same_size_ensure(other, __FUNCTION__, __LINE__)) return *this;
                     for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] *= static_cast<data_type>(other.m_data_pointer[k]);
                     return *this;
                 }
@@ -404,10 +431,7 @@ namespace ropufu
                 template <typename t_other_data_type>
                 type& operator /=(const other_t<t_other_data_type>& other) noexcept
                 {
-                    if (this->m_height != other.m_height) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same height.", __FUNCTION__, __LINE__);
-                    if (this->m_width != other.m_width) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same width.", __FUNCTION__, __LINE__);
-                    if (!quiet_error::instance().good()) return *this;
-
+                    if (!this->is_same_size_ensure(other, __FUNCTION__, __LINE__)) return *this;
                     for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] /= static_cast<data_type>(other.m_data_pointer[k]);
                     return *this;
                 }
@@ -426,10 +450,7 @@ namespace ropufu
                 template <typename t_other_data_type>
                 type& operator &=(const other_t<t_other_data_type>& other) noexcept
                 {
-                    if (this->m_height != other.m_height) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same height.", __FUNCTION__, __LINE__);
-                    if (this->m_width != other.m_width) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same width.", __FUNCTION__, __LINE__);
-                    if (!quiet_error::instance().good()) return *this;
-
+                    if (!this->is_same_size_ensure(other, __FUNCTION__, __LINE__)) return *this;
                     for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] &= static_cast<data_type>(other.m_data_pointer[k]);
                     return *this;
                 }
@@ -440,10 +461,7 @@ namespace ropufu
                 template <typename t_other_data_type>
                 type& operator |=(const other_t<t_other_data_type>& other) noexcept
                 {
-                    if (this->m_height != other.m_height) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same height.", __FUNCTION__, __LINE__);
-                    if (this->m_width != other.m_width) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same width.", __FUNCTION__, __LINE__);
-                    if (!quiet_error::instance().good()) return *this;
-
+                    if (!this->is_same_size_ensure(other, __FUNCTION__, __LINE__)) return *this;
                     for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] |= static_cast<data_type>(other.m_data_pointer[k]);
                     return *this;
                 }
@@ -454,22 +472,19 @@ namespace ropufu
                 template <typename t_other_data_type>
                 type& operator ^=(const other_t<t_other_data_type>& other) noexcept
                 {
-                    if (this->m_height != other.m_height) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same height.", __FUNCTION__, __LINE__);
-                    if (this->m_width != other.m_width) quiet_error::instance().push(not_an_error::logic_error, "Matrices must have same width.", __FUNCTION__, __LINE__);
-                    if (!quiet_error::instance().good()) return *this;
-
+                    if (!this->is_same_size_ensure(other, __FUNCTION__, __LINE__)) return *this;
                     for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] ^= static_cast<data_type>(other.m_data_pointer[k]);
                     return *this;
                 }
                 
                 /** Something clever taken from http://en.cppreference.com/w/cpp/language/operators */
-                friend type operator +(type left, const type& right) { left += right; return left; }
-                friend type operator -(type left, const type& right) { left -= right; return left; }
-                friend type operator *(type left, const type& right) { left *= right; return left; }
-                friend type operator /(type left, const type& right) { left /= right; return left; }
-                friend type operator &(type left, const type& right) { left &= right; return left; }
-                friend type operator |(type left, const type& right) { left |= right; return left; }
-                friend type operator ^(type left, const type& right) { left ^= right; return left; }
+                friend type operator +(type left, const type& right) noexcept { left += right; return left; }
+                friend type operator -(type left, const type& right) noexcept { left -= right; return left; }
+                friend type operator *(type left, const type& right) noexcept { left *= right; return left; }
+                friend type operator /(type left, const type& right) noexcept { left /= right; return left; }
+                friend type operator &(type left, const type& right) noexcept { left &= right; return left; }
+                friend type operator |(type left, const type& right) noexcept { left |= right; return left; }
+                friend type operator ^(type left, const type& right) noexcept { left ^= right; return left; }
             };
         }
     }

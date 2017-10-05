@@ -25,11 +25,11 @@ namespace ropufu
             {
                 static const t_bounds_type diameter = t_diameter;
 
-                typedef probability::dist_binomial     distribution_type;
-                typedef distribution_type::result_type result_type;
-                typedef t_uniform_type                 uniform_type;
-                typedef t_bounds_type                  bounds_type;
-                typedef sampler_binomial_alias<uniform_type, bounds_type, diameter> type;
+                using type = sampler_binomial_alias<t_uniform_type, t_bounds_type, diameter>;
+                using distribution_type = probability::dist_binomial;
+                using result_type = distribution_type::result_type;
+                using uniform_type = t_uniform_type;
+                using bounds_type = t_bounds_type;
 
             private:
                 //distribution_type m_distribution;
@@ -38,12 +38,12 @@ namespace ropufu
                 std::vector<double> m_cutoff;
 
             public:
-                sampler_binomial_alias() 
+                sampler_binomial_alias() noexcept
                     : sampler_binomial_alias(distribution_type())
                 {
                 }
 
-                type& operator =(const type& other)
+                type& operator =(const type& other) noexcept
                 {
                     if (this != &other)
                     {
@@ -54,7 +54,7 @@ namespace ropufu
                     return *this;
                 }
 
-                explicit sampler_binomial_alias(const distribution_type& distribution)
+                explicit sampler_binomial_alias(const distribution_type& distribution) noexcept
                     : m_number_of_trials(distribution.number_of_trials()), m_alias(distribution.number_of_trials() + 1), m_cutoff(distribution.number_of_trials() + 1)
                 {
                     auto n = distribution.number_of_trials();
@@ -93,7 +93,7 @@ namespace ropufu
                 }
 
                 template <typename t_engine_type>
-                result_type operator ()(t_engine_type& uniform_generator) const
+                result_type operator ()(t_engine_type& uniform_generator) const noexcept
                 {
                     static_assert(std::is_same<typename t_engine_type::result_type, uniform_type>::value, "type mismatch");
                     static_assert(t_engine_type::max() - t_engine_type::min() == type::diameter, "<t_engine_type>::max() - <t_engine_type>::min() has to be equal to <diameter>.");
@@ -106,12 +106,12 @@ namespace ropufu
                     return (u > this->m_cutoff[index]) ? this->m_alias[index] : index;
                 }
 
-                const std::vector<result_type>& alias() const
+                const std::vector<result_type>& alias() const noexcept
                 {
                     return this->m_alias;
                 }
 
-                const std::vector<double>& cutoff() const
+                const std::vector<double>& cutoff() const noexcept
                 {
                     return this->m_cutoff;
                 }

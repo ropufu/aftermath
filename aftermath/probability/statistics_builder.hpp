@@ -72,7 +72,7 @@ namespace ropufu
                         if (key < this->m_min) return 0.0;
                         if (!(key < this->m_max)) return 1.0;
 
-                        typedef typename t_dictionary_type::mapped_type count_type;
+                        using count_type = typename t_dictionary_type::mapped_type;
 
                         count_type cumulative_count = count_type(); // zero
                         for (const auto& item : data)
@@ -94,7 +94,7 @@ namespace ropufu
                         if (probability <= 0.0) return this->m_min;
                         if (probability >= 1.0) return this->m_max;
 
-                        typedef typename t_dictionary_type::mapped_type count_type;
+                        using count_type = typename t_dictionary_type::mapped_type;
 
                         count_type p = count_type(); // zero
                         // Think in counts rather than probabilities.

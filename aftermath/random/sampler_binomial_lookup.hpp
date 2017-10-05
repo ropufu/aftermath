@@ -4,6 +4,7 @@
 
 #include "../algebra/matrix.hpp"
 #include "../math_constants.hpp"
+#include "../not_an_error.hpp"
 #include "../probability/dist_binomial.hpp"
 #include "sampler_binomial_alias.hpp"
 
@@ -13,7 +14,6 @@
 #include <cstdint>
 #include <cstring> // for std::memcpy
 #include <forward_list>
-#include <stdexcept> // for std::out_of_range
 #include <type_traits>
 
 namespace ropufu
@@ -28,11 +28,11 @@ namespace ropufu
             {
                 static const t_bounds_type diameter = t_diameter;
 
-                typedef probability::dist_binomial     distribution_type;
-                typedef distribution_type::result_type result_type;
-                typedef t_uniform_type                 uniform_type;
-                typedef t_bounds_type                  bounds_type;
-                typedef sampler_binomial_lookup<uniform_type, bounds_type, diameter> type;
+                using type = sampler_binomial_lookup<t_uniform_type, t_bounds_type, diameter>;
+                using distribution_type = probability::dist_binomial;
+                using result_type = distribution_type::result_type;
+                using uniform_type = t_uniform_type;
+                using bounds_type = t_bounds_type;
 
             private:
                 std::size_t m_number_of_trials_min;
@@ -41,9 +41,9 @@ namespace ropufu
                 algebra::matrix_column_major<result_type> m_alias; // Column-major storage; each row corresponds to the number of trials, column---position in the array.
                 algebra::matrix_column_major<double> m_cutoff; // Column-major storage; each row corresponds to the number of trials, column---position in the array.
 
-                void build(double probability_of_success)
+                void build(double probability_of_success) noexcept
                 {
-                    for (std::size_t i = 0UL; i < this->height(); i++)
+                    for (std::size_t i = 0; i < this->height(); i++)
                     {
                         std::size_t n = this->m_number_of_trials_min + i;
                         distribution_type distribution(n, probability_of_success);
@@ -51,18 +51,18 @@ namespace ropufu
                         auto& alias = sampler.alias();
                         auto& cutoff = sampler.cutoff();
 
-                        std::memcpy(&this->m_alias.unchecked_at(i, 0), alias.data(), alias.size() * sizeof(result_type)); // alias.size() = (n + 1)
-                        std::memcpy(&this->m_cutoff.unchecked_at(i, 0), cutoff.data(), cutoff.size() * sizeof(double)); // cutoff.size() = (n + 1)
+                        std::memcpy(&this->m_alias.unchecked_at(i, 0), alias.data(), alias.size() * sizeof(result_type)); // alias.size() is (n + 1)
+                        std::memcpy(&this->m_cutoff.unchecked_at(i, 0), cutoff.data(), cutoff.size() * sizeof(double)); // cutoff.size() is (n + 1)
                     }
                 }
 
             public:
-                sampler_binomial_lookup()
+                sampler_binomial_lookup() noexcept
                     : sampler_binomial_lookup(distribution_type(), distribution_type())
                 {
                 }
 
-                type& operator =(const type& other)
+                type& operator =(const type& other) noexcept
                 {
                     if (this != &other)
                     {
@@ -74,33 +74,52 @@ namespace ropufu
                     return *this;
                 }
 
-                explicit sampler_binomial_lookup(const distribution_type& from, const distribution_type& to)
+                /** @brief Constructs a lookup for a range of binomial distributions.
+                 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if \p from and \p to have different probabilities of success.
+                 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if the number of trials in \p to is not less than the number of trials in \p from.
+                 *  @exception not_an_error::out_of_range This error is pushed to \c quiet_error if the number of trials in \p from is less than one.
+                 */
+                explicit sampler_binomial_lookup(const distribution_type& from, const distribution_type& to) noexcept
                     : m_number_of_trials_min(from.number_of_trials()), m_number_of_trials_max(to.number_of_trials()),
                     m_alias(this->height(), this->width()), m_cutoff(this->height(), this->width())
                 {
-                    if (from.probability_of_success() != to.probability_of_success()) throw std::out_of_range("<from> and <to> must have the same probability of success.");
                     if (this->m_number_of_trials_min < 1) throw std::out_of_range("Number of trials in <from> must be at least one.");
                     if (this->height() < 1) throw std::out_of_range("Number of trials in <to> must not be less than that in <from>.");
+                    if (from.probability_of_success() != to.probability_of_success())
+                    {
+                        quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "<from> and <to> must have the same probability of success.", __FUNCTION__, __LINE__);
+                        return;
+                    }
+                    if (this->m_number_of_trials_min >= this->m_number_of_trials_max)
+                    {
+                        quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "Number of trials in <to> must not be less than that in <from>.", __FUNCTION__, __LINE__);
+                        return;
+                    }
+                    if (this->m_number_of_trials_min < 1)
+                    {
+                        quiet_error::instance().push(not_an_error::out_of_range, severity_level::major, "Number of trials in <from> must be at least one.", __FUNCTION__, __LINE__);
+                        return;
+                    }
 
                     // No need to initialize matrices, since they will be filled by build(...).
                     this->build(from.probability_of_success());
                 }
 
-                std::size_t number_of_trials_min() const { return this->m_number_of_trials_min; }
+                std::size_t number_of_trials_min() const noexcept { return this->m_number_of_trials_min; }
 
-                std::size_t number_of_trials_max() const { return this->m_number_of_trials_max; }
+                std::size_t number_of_trials_max() const noexcept { return this->m_number_of_trials_max; }
 
-                std::size_t height() const
+                std::size_t height() const noexcept
                 {
-                    return this->m_number_of_trials_max - this->m_number_of_trials_min + 1UL;
+                    return this->m_number_of_trials_max - this->m_number_of_trials_min + 1;
                 }
 
-                std::size_t width() const
+                std::size_t width() const noexcept
                 {
                     return this->m_number_of_trials_max + 1UL;
                 }
 
-                std::size_t size_in_bytes() const
+                std::size_t size_in_bytes() const noexcept
                 {
                     std::size_t k = this->height() * this->width();
                     return k * (sizeof(result_type) + sizeof(double));
@@ -115,7 +134,7 @@ namespace ropufu
                 //}
 
                 template <typename t_engine_type>
-                result_type operator ()(result_type number_of_trials, t_engine_type& uniform_generator) const
+                result_type operator ()(result_type number_of_trials, t_engine_type& uniform_generator) const noexcept
                 {
                     static_assert(std::is_same<typename t_engine_type::result_type, uniform_type>::value, "type mismatch");
                     static_assert(t_engine_type::max() - t_engine_type::min() == type::diameter, "<t_engine_type>::max() - <t_engine_type>::min() has to be equal to <diameter>.");
