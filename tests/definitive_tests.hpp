@@ -21,17 +21,19 @@ namespace ropufu
         struct format_test
         {
             using engine_type = std::default_random_engine;
-            using clock_type = std::chrono::high_resolution_clock;
             using matstream_type = aftermath::format::matstream<4>;
             using matrix_type = aftermath::algebra::matrix<double, true>;
 
         private:
-            engine_type m_engine;
             std::string m_filename;
 
             std::vector<matrix_type> write_mat(std::size_t height, std::size_t width, std::size_t stack_size) noexcept
             {
                 if (!aftermath::quiet_error::instance().good()) return { };
+
+                std::seed_seq ss = {1, 7, 2, 9};
+                engine_type engine(ss);
+
                 std::vector<matrix_type> matrices(0);
                 matrices.reserve(stack_size);
 
@@ -43,14 +45,14 @@ namespace ropufu
                 std::uniform_int_distribution<std::size_t> uniform_width(1, width);
                 std::uniform_int_distribution<std::size_t> uniform_stack_size(1, stack_size);
 
-                stack_size = uniform_stack_size(this->m_engine);
+                stack_size = uniform_stack_size(engine);
                 for (std::size_t k = 0; k < stack_size; k++)
                 {
-                    std::size_t height_k = uniform_height(this->m_engine);
-                    std::size_t width_k = uniform_width(this->m_engine);
+                    std::size_t height_k = uniform_height(engine);
+                    std::size_t width_k = uniform_width(engine);
 
                     matrix_type matrix(height_k, width_k);
-                    for (std::size_t i = 0; i < height_k; i++) for (std::size_t j = 0; j < width_k; j++) matrix.at(i, j) = uniform_real(this->m_engine);
+                    for (std::size_t i = 0; i < height_k; i++) for (std::size_t j = 0; j < width_k; j++) matrix.at(i, j) = uniform_real(engine);
                     mat << "matrix" << k << matrix;
 
                     if (!aftermath::quiet_error::instance().good()) return { };
@@ -72,13 +74,13 @@ namespace ropufu
                     if (!aftermath::quiet_error::instance().good()) return false;
                     if (matrix != reference_matrix) return false;
                 }
+                mat.clear();
                 return true;
             }
 
         public:
             explicit format_test(const std::string& filename) noexcept
-                : m_engine(clock_type::now().time_since_epoch().count()),
-                m_filename(filename)
+                : m_filename(filename)
             {
             }
             

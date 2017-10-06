@@ -83,8 +83,6 @@ namespace ropufu
                     : m_number_of_trials_min(from.number_of_trials()), m_number_of_trials_max(to.number_of_trials()),
                     m_alias(this->height(), this->width()), m_cutoff(this->height(), this->width())
                 {
-                    if (this->m_number_of_trials_min < 1) throw std::out_of_range("Number of trials in <from> must be at least one.");
-                    if (this->height() < 1) throw std::out_of_range("Number of trials in <to> must not be less than that in <from>.");
                     if (from.probability_of_success() != to.probability_of_success())
                     {
                         quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "<from> and <to> must have the same probability of success.", __FUNCTION__, __LINE__);

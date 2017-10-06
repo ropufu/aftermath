@@ -45,7 +45,7 @@ namespace ropufu
         {
             using type = test_random<t_distribution_type, t_engine_type>;
             using engine_type = t_engine_type;
-            using clock_type = std::chrono::high_resolution_clock;
+            using clock_type = std::chrono::steady_clock;
             using distribution_type = t_distribution_type;
             using sampler_type = typename detail::sampler_switch<distribution_type>::type;
             using builtin_distribution_type = typename detail::sampler_switch<distribution_type>::builtin_type;
@@ -57,7 +57,7 @@ namespace ropufu
             builtin_distribution_type m_builtin_distribution;
 
             template <typename t_sampler_type>
-            double tail_probability(t_sampler_type& sampler, std::size_t n, double tail, double& elapsed_time) noexcept
+            double tail_probability(t_sampler_type& sampler, std::size_t n, double tail, double& elapsed_seconds) noexcept
             {
                 auto tic = clock_type::now();
 
@@ -65,14 +65,13 @@ namespace ropufu
                 for (std::size_t i = 0; i < n; i++) if (sampler(this->m_engine) > tail) count_tail++;
 
                 auto toc = clock_type::now();
-                auto dt = toc.time_since_epoch() - tic.time_since_epoch();
-                elapsed_time = static_cast<double>(dt.count() * clock_type::period::num) / clock_type::period::den;
+                elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(toc - tic).count() / 1'000.0;
 
                 return static_cast<double>(count_tail) / n;
             }
             
             template <typename t_sampler_type>
-            double cusum_run_length(t_sampler_type& sampler, std::size_t n, double threshold, double& elapsed_time) noexcept
+            double cusum_run_length(t_sampler_type& sampler, std::size_t n, double threshold, double& elapsed_seconds) noexcept
             {
                 auto tic = clock_type::now();
 
@@ -92,8 +91,7 @@ namespace ropufu
                 }
 
                 auto toc = clock_type::now();
-                auto dt = toc.time_since_epoch() - tic.time_since_epoch();
-                elapsed_time = static_cast<double>(dt.count() * clock_type::period::num) / clock_type::period::den;
+                elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(toc - tic).count() / 1'000.0;
                 
                 return sum / n;
             };
@@ -101,11 +99,14 @@ namespace ropufu
         public:
             template <typename ...t_args>
             test_random(t_args&&... args) noexcept
-                : m_engine(clock_type::now().time_since_epoch().count()),
+                : m_engine(),
                 m_distribution(std::forward<t_args>(args)...),
                 m_sampler(m_distribution),
                 m_builtin_distribution(m_distribution.to_std())
             {
+                auto now = std::chrono::high_resolution_clock::now();
+                std::seed_seq ss = { 1, 7, 2, 9, static_cast<std::int_fast32_t>(now.time_since_epoch().count()) };
+                this->m_engine.seed(ss);
             }
             
             void benchmark_tail(std::size_t n, double tail, double& elapsed_seconds_tested, double& elapsed_seconds_builtin) noexcept

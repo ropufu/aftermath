@@ -21,7 +21,7 @@ namespace ropufu
         {
             using type = binomial_benchmark<t_engine_type>;
             using engine_type = t_engine_type;
-            using clock_type = std::chrono::high_resolution_clock;
+            using clock_type = std::chrono::steady_clock;
             using distribution_type = aftermath::probability::dist_binomial;
             using sampler_type = aftermath::random::default_sampler_binomial_t<engine_type>;
             using lookup_sampler_type = aftermath::random::default_sampler_binomial_lookup_t<engine_type>;
@@ -33,7 +33,7 @@ namespace ropufu
             double m_probability_of_success;
 
             template <typename t_sampler_constructor_type>
-            double compound_binomial(t_sampler_constructor_type& sampler_ctor, std::size_t m, double& elapsed_time) noexcept
+            double compound_binomial(t_sampler_constructor_type& sampler_ctor, std::size_t m, double& elapsed_seconds) noexcept
             {
                 auto tic = clock_type::now();
             
@@ -48,12 +48,11 @@ namespace ropufu
                 }
             
                 auto toc = clock_type::now();
-                auto dt = toc.time_since_epoch() - tic.time_since_epoch();
-                elapsed_time = static_cast<double>(dt.count() * clock_type::period::num) / clock_type::period::den;
+                elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(toc - tic).count() / 1'000.0;
                 return static_cast<double>(sum) / m;
             }
             
-            double compound_binomial_table(std::size_t m, double& elapsed_time) noexcept
+            double compound_binomial_table(std::size_t m, double& elapsed_seconds) noexcept
             {
                 auto tic = clock_type::now();
             
@@ -72,16 +71,18 @@ namespace ropufu
                 }
             
                 auto toc = clock_type::now();
-                auto dt = toc.time_since_epoch() - tic.time_since_epoch();
-                elapsed_time = static_cast<double>(dt.count() * clock_type::period::num) / clock_type::period::den;
+                elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(toc - tic).count() / 1'000.0;
                 return static_cast<double>(sum) / m;
             }
 
         public:
             binomial_benchmark(std::size_t n_min, std::size_t n_max, double p) noexcept
-                : m_engine(clock_type::now().time_since_epoch().count()),
+                : m_engine(),
                 m_n_min(n_min), m_n_max(n_max), m_probability_of_success(p)
             {
+                auto now = std::chrono::high_resolution_clock::now();
+                std::seed_seq ss = { 875, 393, 19, static_cast<std::int_fast32_t>(now.time_since_epoch().count()) };
+                this->m_engine.seed(ss);
             }
             
             void benchmark_compound(std::size_t m, double& elapsed_seconds_tested, double& elapsed_seconds_builtin) noexcept

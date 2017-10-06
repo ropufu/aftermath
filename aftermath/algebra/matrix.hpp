@@ -30,7 +30,7 @@ namespace ropufu
                 struct matrix_arrangement
                 {
                     /** Row-major format. */
-                    static std::size_t flatten(std::size_t row_index, std::size_t column_index, std::size_t height, std::size_t width) noexcept
+                    static std::size_t flatten(std::size_t row_index, std::size_t column_index, std::size_t /**height*/, std::size_t width) noexcept
                     {
                         return row_index * width + column_index;
                     }
@@ -40,7 +40,7 @@ namespace ropufu
                 struct matrix_arrangement<false>
                 {
                     /** Column-major format. */
-                    static std::size_t flatten(std::size_t row_index, std::size_t column_index, std::size_t height, std::size_t width) noexcept
+                    static std::size_t flatten(std::size_t row_index, std::size_t column_index, std::size_t height, std::size_t /**width*/) noexcept
                     {
                         return column_index * height + row_index;
                     }
