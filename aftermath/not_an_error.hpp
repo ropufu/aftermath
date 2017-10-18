@@ -2,9 +2,9 @@
 #ifndef ROPUFU_AFTERMATH_NOT_AN_ERROR_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_NOT_AN_ERROR_HPP_INCLUDED
 
-#include <cstddef>
-#include <stack>
-#include <string>
+#include <cstddef> // std::size_t
+#include <stack> // std::stack
+#include <string> // std::string, std::to_string
 
 namespace ropufu
 {
@@ -111,6 +111,7 @@ namespace ropufu
 
                 quiet_error_descriptor result = this->m_errors.top();
                 this->m_errors.pop();
+                if (this->m_errors.empty()) this->m_is_good = true;
 
                 return result;
             }
@@ -133,6 +134,40 @@ namespace ropufu
             type& operator =(type&&) = delete; // Move assign.
         };
     }
+}
+
+namespace std
+{
+    std::string to_string(ropufu::aftermath::not_an_error value)
+    {
+        switch (value)
+        {
+        case ropufu::aftermath::not_an_error::all_good: return "not an error";
+        case ropufu::aftermath::not_an_error::logic_error: return "logic error";
+        case ropufu::aftermath::not_an_error::invalid_argument: return "invalid argument";
+        case ropufu::aftermath::not_an_error::domain_error: return "domain error";
+        case ropufu::aftermath::not_an_error::length_error: return "length error";
+        case ropufu::aftermath::not_an_error::out_of_range: return "out of range";
+        case ropufu::aftermath::not_an_error::runtime_error: return "runtime error";
+        case ropufu::aftermath::not_an_error::range_error: return "range error";
+        case ropufu::aftermath::not_an_error::overflow_error: return "overflow error";
+        case ropufu::aftermath::not_an_error::underflow_error: return "underflow error";
+        default: return std::to_string(static_cast<std::size_t>(value));
+        }
+    };
+    
+    std::string to_string(ropufu::aftermath::severity_level value)
+    {
+        switch (value)
+        {
+        case ropufu::aftermath::severity_level::not_at_all: return "log";
+        case ropufu::aftermath::severity_level::negligible: return "negligible";
+        case ropufu::aftermath::severity_level::minor: return "minor";
+        case ropufu::aftermath::severity_level::major: return "major";
+        case ropufu::aftermath::severity_level::fatal: return "fatal";
+        default: return std::to_string(static_cast<std::size_t>(value));
+        }
+    };
 }
 
 #endif // ROPUFU_AFTERMATH_NOT_AN_ERROR_HPP_INCLUDED
