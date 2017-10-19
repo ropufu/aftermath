@@ -349,8 +349,8 @@ namespace ropufu
                     if (count == 0) os << "{}";
                     else
                     {
-                        probability_type scale = this->get_max_probability();
-                        for (key_type key = this->m_order_statistic.get_min(); key <= this->m_order_statistic.get_max(); ++key)
+                        probability_type scale = this->max_probability();
+                        for (key_type key = this->m_order_statistic.min(); key <= this->m_order_statistic.max(); ++key)
                         {
                             probability_type p = this->operator[](key);
                             std::size_t height = min_height + static_cast<std::size_t>((p / scale) * (max_height - min_height));
