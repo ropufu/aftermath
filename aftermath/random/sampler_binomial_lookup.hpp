@@ -76,8 +76,8 @@ namespace ropufu
 
                 /** @brief Constructs a lookup for a range of binomial distributions.
                  *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if \p from and \p to have different probabilities of success.
-                 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if the number of trials in \p to is not less than the number of trials in \p from.
-                 *  @exception not_an_error::out_of_range This error is pushed to \c quiet_error if the number of trials in \p from is less than one.
+                 *  @exception not_an_error::logic_error This error is pushed to \c quiet_error if the number of trials in \p from is greater than the number of trials in \p to.
+                 *  @exception not_an_error::out_of_range This error is pushed to \c quiet_error if the number of trials in \p from is zero.
                  */
                 explicit sampler_binomial_lookup(const distribution_type& from, const distribution_type& to) noexcept
                     : m_number_of_trials_min(from.number_of_trials()), m_number_of_trials_max(to.number_of_trials()),
@@ -88,12 +88,12 @@ namespace ropufu
                         quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "<from> and <to> must have the same probability of success.", __FUNCTION__, __LINE__);
                         return;
                     }
-                    if (this->m_number_of_trials_min >= this->m_number_of_trials_max)
+                    if (this->m_number_of_trials_min > this->m_number_of_trials_max)
                     {
                         quiet_error::instance().push(not_an_error::logic_error, severity_level::major, "Number of trials in <to> must not be less than that in <from>.", __FUNCTION__, __LINE__);
                         return;
                     }
-                    if (this->m_number_of_trials_min < 1)
+                    if (this->m_number_of_trials_min == 0)
                     {
                         quiet_error::instance().push(not_an_error::out_of_range, severity_level::major, "Number of trials in <from> must be at least one.", __FUNCTION__, __LINE__);
                         return;
