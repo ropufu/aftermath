@@ -114,7 +114,7 @@ namespace ropufu
 
                 std::size_t width() const noexcept
                 {
-                    return this->m_number_of_trials_max + 1UL;
+                    return this->m_number_of_trials_max + 1;
                 }
 
                 std::size_t size_in_bytes() const noexcept
@@ -138,7 +138,7 @@ namespace ropufu
                     static_assert(t_engine_type::max() - t_engine_type::min() == type::diameter, "<t_engine_type>::max() - <t_engine_type>::min() has to be equal to <diameter>.");
                     
                     result_type current_row = number_of_trials - this->m_number_of_trials_min;
-                    double uniform_random = (uniform_generator() - t_engine_type::min()) / static_cast<double>(type::diameter + 1);
+                    double uniform_random = (uniform_generator() - t_engine_type::min()) / (static_cast<double>(type::diameter) + 1);
 
                     double u = (number_of_trials + 1) * uniform_random; // uniform continuous \in[0, n + 1).
                     result_type index = static_cast<result_type>(u);    // uniform discrete   \in[0, n].
