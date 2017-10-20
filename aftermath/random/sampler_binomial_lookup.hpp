@@ -38,8 +38,8 @@ namespace ropufu
                 std::size_t m_number_of_trials_min;
                 std::size_t m_number_of_trials_max;
                 //std::size_t m_current_row = std::size_t();
-                algebra::matrix_column_major<result_type> m_alias; // Column-major storage; each row corresponds to the number of trials, column---position in the array.
-                algebra::matrix_column_major<double> m_cutoff; // Column-major storage; each row corresponds to the number of trials, column---position in the array.
+                algebra::matrix_row_major<result_type> m_alias; // Row-major storage; each row corresponds to the number of trials, column---position in the array.
+                algebra::matrix_row_major<double> m_cutoff; // Row-major storage; each row corresponds to the number of trials, column---position in the array.
 
                 void build(double probability_of_success) noexcept
                 {
