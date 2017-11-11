@@ -2,6 +2,7 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_EMPIRICAL_MEASURE_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_EMPIRICAL_MEASURE_HPP_INCLUDED
 
+#include "../not_an_error.hpp"
 #include "../type_concepts.hpp"
 #include "dictionary.hpp"
 #include "statistics_builder.hpp"
@@ -153,20 +154,49 @@ namespace ropufu
                 template <typename, typename, typename, typename, typename>
                 friend struct detail::variance_module;
 
-            private:
-                dictionary_type m_data = dictionary_type();
-
-                count_type m_count_observations = count_type();
-                count_type m_max_height = count_type();
-                key_type m_most_likely_value;
-
-            public:
-                /** Construct a new empirical measure. */
-                empirical_measure() noexcept
+                static void validate() noexcept
                 {
                     // key_type has to implement std::hash and equality.
                     static_assert(type_impl::has_equality<key_type>::value && type_impl::has_hash<key_type>::value,
                         "<t_key_type> has to implement binary '==' and std::hash.");
+                }
+
+            private:
+                dictionary_type m_data = { };
+
+                count_type m_count_observations = { };
+                count_type m_max_height = { };
+                key_type m_most_likely_value = { };
+
+            public:
+                /** Construct a new empirical measure. */
+                empirical_measure() noexcept { type::validate(); }
+                
+                /** Construct a new empirical measure from a dictionary. */
+                template <typename t_dictionary_type>
+                empirical_measure(const t_dictionary_type& data) noexcept
+                {
+                    type::validate();
+                    for (const auto& item : other.m_data) this->observe(transformer(item.first), item.second);
+                }
+
+                /** @brief Construct an empirical measure.
+                 *  @remark \tparam t_key_container_type has to implement operator \c [std::size_t] -> \c key_type.
+                 *  @remark \tparam t_value_container_type has to implement operator \c [std::size_t] -> \c count_type.
+                 */
+                template <typename t_key_container_type, typename t_value_container_type>
+                empirical_measure(const t_key_container_type& keys, const t_value_container_type& values) noexcept
+                {
+                    type::validate();
+                    if (keys.size() != values.size())
+                    {
+                        quiet_error::instance().push(
+                            not_an_error::length_error,
+                            severity_level::major,
+                            "Observations size mismatch.", __FUNCTION__, __LINE__);
+                        return;
+                    }
+                    for (std::size_t i = 0; i < keys.size(); i++) this->observe(keys[i], values[i]);
                 }
 
                 /** @brief Construct an empirical measure from an existing one.
@@ -177,9 +207,7 @@ namespace ropufu
                     const empirical_measure<o_key_type, count_type, o_sum_type, o_mean_type, o_probability_type, o_is_ordered, o_is_linear_space, o_has_variance>& other,
                     const t_transformer_type& transformer) noexcept
                 {
-                    // key_type has to implement std::hash and equality.
-                    static_assert(type_impl::has_equality<key_type>::value && type_impl::has_hash<key_type>::value,
-                        "<t_key_type> has to implement binary '==' and std::hash.");
+                    type::validate();
                     for (const auto& item : other.m_data) this->observe(transformer(item.first), item.second);
                 }
 
