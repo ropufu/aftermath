@@ -177,7 +177,7 @@ namespace ropufu
                 empirical_measure(const t_dictionary_type& data) noexcept
                 {
                     type::validate();
-                    for (const auto& item : other.m_data) this->observe(transformer(item.first), item.second);
+                    for (const auto& item : data) this->observe(transformer(item.first), item.second);
                 }
 
                 /** @brief Construct an empirical measure.
