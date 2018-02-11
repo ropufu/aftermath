@@ -57,30 +57,30 @@ namespace ropufu
             private:
                 result_type sample_from_box_horizontal(uniform_type box_index, uniform_type uniform_random, bool& is_interior) const noexcept 
                 {
-                    constexpr bool is_overwritten = std::is_same<
+                    constexpr bool is_overwritten = !std::is_same<
                         decltype(&derived_type::sample_from_box_horizontal), 
                         decltype(&type::sample_from_box_horizontal)>::value;
-                    static_assert(!is_overwritten, "static polymorphic function <sample_from_box_horizontal> was not overwritten.");
+                    static_assert(is_overwritten, "static polymorphic function <sample_from_box_horizontal> was not overwritten.");
                     const derived_type* that = static_cast<const derived_type*>(this);
                     return that->sample_from_box_horizontal(box_index, uniform_random, is_interior);
                 }
 
                 bool is_inside_box_vertical(uniform_type box_index, result_type horizontal, uniform_type uniform_random) const noexcept
                 {
-                    constexpr bool is_overwritten = std::is_same<
+                    constexpr bool is_overwritten = !std::is_same<
                         decltype(&derived_type::is_inside_box_vertical), 
                         decltype(&type::is_inside_box_vertical)>::value;
-                    static_assert(!is_overwritten, "static polymorphic function <is_inside_box_vertical> was not overwritten.");
+                    static_assert(is_overwritten, "static polymorphic function <is_inside_box_vertical> was not overwritten.");
                     const derived_type* that = static_cast<const derived_type*>(this);
                     return that->is_inside_box_vertical(box_index, horizontal, uniform_random);
                 }
 
                 bool is_tail_box(uniform_type box_index) const noexcept
                 {
-                    constexpr bool is_overwritten = std::is_same<
+                    constexpr bool is_overwritten = !std::is_same<
                         decltype(&derived_type::is_tail_box), 
                         decltype(&type::is_tail_box)>::value;
-                    static_assert(!is_overwritten, "static polymorphic function <is_tail_box> was not overwritten.");
+                    static_assert(is_overwritten, "static polymorphic function <is_tail_box> was not overwritten.");
                     const derived_type* that = static_cast<const derived_type*>(this);
                     return that->is_tail_box(box_index);
                 }
@@ -88,10 +88,10 @@ namespace ropufu
                 template <typename t_engine_type>
                 result_type sample_tail(uniform_type box_index, t_engine_type& uniform_generator) noexcept
                 {
-                    constexpr bool is_overwritten = std::is_same<
+                    constexpr bool is_overwritten = !std::is_same<
                         decltype(&derived_type::template sample_tail<t_engine_type>), 
                         decltype(&type::template sample_tail<t_engine_type>)>::value;
-                    static_assert(!is_overwritten, "static polymorphic function <sample_tail> was not overwritten.");
+                    static_assert(is_overwritten, "static polymorphic function <sample_tail> was not overwritten.");
                     derived_type* that = static_cast<derived_type*>(this);
                     return that->sample_tail(box_index, uniform_generator);
                 }
