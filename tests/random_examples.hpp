@@ -16,24 +16,26 @@ namespace ropufu
 {
     namespace test_aftermath
     {
-        template <typename t_engine_type = std::default_random_engine>
+        template <typename t_engine_type, typename t_param_type>
         struct binomial_benchmark
         {
-            using type = binomial_benchmark<t_engine_type>;
+            using type = binomial_benchmark<t_engine_type, t_param_type>;
             using engine_type = t_engine_type;
             using clock_type = std::chrono::steady_clock;
-            using distribution_type = aftermath::probability::dist_binomial;
-            using sampler_type = aftermath::random::default_sampler_binomial_t<engine_type>;
-            using lookup_sampler_type = aftermath::random::default_sampler_binomial_lookup_t<engine_type>;
+            using distribution_type = aftermath::probability::dist_binomial<std::size_t, t_param_type>;
+            using result_type = typename distribution_type::result_type;
+            using param_type = typename distribution_type::param_type;
+            using sampler_type = aftermath::random::default_sampler_binomial_t<t_engine_type, t_param_type>;
+            using lookup_sampler_type = aftermath::random::default_sampler_binomial_lookup_t<t_engine_type, t_param_type>;
             using builtin_distribution_type = std::binomial_distribution<std::size_t>;
 
         private:
             engine_type m_engine;
             std::size_t m_n_min, m_n_max;
-            double m_probability_of_success;
+            param_type m_probability_of_success;
 
             template <typename t_sampler_constructor_type>
-            double compound_binomial(t_sampler_constructor_type& sampler_ctor, std::size_t m, double& elapsed_seconds) noexcept
+            param_type compound_binomial(t_sampler_constructor_type& sampler_ctor, std::size_t m, param_type& elapsed_seconds) noexcept
             {
                 auto tic = clock_type::now();
             
@@ -48,11 +50,11 @@ namespace ropufu
                 }
             
                 auto toc = clock_type::now();
-                elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(toc - tic).count() / 1'000.0;
-                return static_cast<double>(sum) / m;
+                elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(toc - tic).count() / static_cast<param_type>(1'000);
+                return static_cast<param_type>(sum) / m;
             }
             
-            double compound_binomial_table(std::size_t m, double& elapsed_seconds) noexcept
+            param_type compound_binomial_table(std::size_t m, param_type& elapsed_seconds) noexcept
             {
                 auto tic = clock_type::now();
             
@@ -61,7 +63,7 @@ namespace ropufu
                 distribution_type from(this->m_n_min, this->m_probability_of_success);
                 distribution_type to(this->m_n_max, this->m_probability_of_success);
                 lookup_sampler_type binomial_matrix(from, to);
-                //double size_in_megabytes = (binomial_matrix.size_in_bytes() / static_cast<double>(1024 * 1024));
+                //param_type size_in_megabytes = (binomial_matrix.size_in_bytes() / static_cast<param_type>(1024 * 1024));
             
                 std::size_t sum = 0;
                 for (std::size_t i = 0; i < m; i++)
@@ -71,12 +73,12 @@ namespace ropufu
                 }
             
                 auto toc = clock_type::now();
-                elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(toc - tic).count() / 1'000.0;
-                return static_cast<double>(sum) / m;
+                elapsed_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(toc - tic).count() / static_cast<param_type>(1'000);
+                return static_cast<param_type>(sum) / m;
             }
 
         public:
-            binomial_benchmark(std::size_t n_min, std::size_t n_max, double p) noexcept
+            binomial_benchmark(std::size_t n_min, std::size_t n_max, param_type p) noexcept
                 : m_engine(),
                 m_n_min(n_min), m_n_max(n_max), m_probability_of_success(p)
             {
@@ -85,9 +87,9 @@ namespace ropufu
                 this->m_engine.seed(ss);
             }
             
-            void benchmark_compound(std::size_t m, double& elapsed_seconds_tested, double& elapsed_seconds_builtin) noexcept
+            void benchmark_compound(std::size_t m, param_type& elapsed_seconds_tested, param_type& elapsed_seconds_builtin) noexcept
             {
-                auto builtin_ctor = [&](std::size_t n, double q) 
+                auto builtin_ctor = [&](std::size_t n, param_type q) 
                 {
                     return builtin_distribution_type(n, q);
                 };

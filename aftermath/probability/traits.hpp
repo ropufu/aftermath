@@ -14,7 +14,7 @@ namespace ropufu
             {
                 using distribution_type = t_distribution_type;
                 static constexpr bool value = false;
-            };
+            }; // struct is_continuous
 
             /** Indicates if the distribution is discrete. */
             template <typename t_distribution_type>
@@ -22,9 +22,9 @@ namespace ropufu
             {
                 using distribution_type = t_distribution_type;
                 static constexpr bool value = false;
-            };
-        }
-    }
-}
+            }; // struct is_discrete
+        } // namespace probability
+    } // namespace aftermath
+} // namespace ropufu
 
 #endif // ROPUFU_AFTERMATH_PROBABILITY_TRAITS_HPP_INCLUDED

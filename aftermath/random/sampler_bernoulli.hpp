@@ -14,19 +14,20 @@ namespace ropufu
     {
         namespace random
         {
-            template <typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
+            template <typename t_result_type, typename t_param_type, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
             struct sampler_bernoulli
             {
-                static const t_bounds_type diameter = t_diameter;
+                static constexpr t_bounds_type diameter = t_diameter;
 
-                using type = sampler_bernoulli<t_uniform_type, t_bounds_type, diameter>;
-                using distribution_type = probability::dist_binomial;
-                using result_type = distribution_type::result_type;
+                using type = sampler_bernoulli<t_result_type, t_param_type, t_uniform_type, t_bounds_type, t_diameter>;
+                using distribution_type = probability::dist_binomial<t_result_type, t_param_type>;
+                using result_type = typename distribution_type::result_type;
+                using param_type = typename distribution_type::param_type;
                 using uniform_type = t_uniform_type;
                 using bounds_type = t_bounds_type;
 
             private:
-                std::size_t m_number_of_trials;
+                result_type m_number_of_trials;
                 uniform_type m_threshold;
 
             public:
@@ -57,14 +58,14 @@ namespace ropufu
                     static_assert(std::is_same<typename t_engine_type::result_type, uniform_type>::value, "type mismatch");
                     static_assert(t_engine_type::max() - t_engine_type::min() == type::diameter, "<t_engine_type>::max() - <t_engine_type>::min() has to be equal to <diameter>.");
                     
-                    std::size_t count_success = std::size_t();
-                    for (std::size_t i = std::size_t(); i < this->m_number_of_trials; i++) if ((uniform_generator() - t_engine_type::min()) <= this->m_threshold) count_success++;
+                    result_type count_success = 0;
+                    for (std::size_t i = 0; i < this->m_number_of_trials; ++i) if ((uniform_generator() - t_engine_type::min()) <= this->m_threshold) ++count_success;
                     return count_success;
                 }
             };
 
-            template <typename t_engine_type>
-            using default_sampler_bernoulli_t = sampler_bernoulli<typename t_engine_type::result_type, std::size_t, t_engine_type::max() - t_engine_type::min()>;
+            template <typename t_engine_type, typename t_param_type = double>
+            using default_sampler_bernoulli_t = sampler_bernoulli<std::size_t, t_param_type, typename t_engine_type::result_type, std::size_t, t_engine_type::max() - t_engine_type::min()>;
         }
     }
 }

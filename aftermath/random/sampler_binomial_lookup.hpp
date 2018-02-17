@@ -23,36 +23,38 @@ namespace ropufu
         namespace random
         {
             // Take advantage of consolidating storage when known upper and lower bounds on the number of trials exist.
-            template <typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
+            template <typename t_result_type, typename t_param_type, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
             struct sampler_binomial_lookup
             {
-                static const t_bounds_type diameter = t_diameter;
+                static constexpr t_bounds_type diameter = t_diameter;
 
-                using type = sampler_binomial_lookup<t_uniform_type, t_bounds_type, diameter>;
-                using distribution_type = probability::dist_binomial;
-                using result_type = distribution_type::result_type;
+                using type = sampler_binomial_lookup<t_result_type, t_param_type, t_uniform_type, t_bounds_type, t_diameter>;
+                using alias_type = sampler_binomial_alias<t_result_type, t_param_type, t_uniform_type, t_bounds_type, t_diameter>;
+                using distribution_type = probability::dist_binomial<t_result_type, t_param_type>;
+                using result_type = typename distribution_type::result_type;
+                using param_type = typename distribution_type::param_type;
                 using uniform_type = t_uniform_type;
                 using bounds_type = t_bounds_type;
 
             private:
-                std::size_t m_number_of_trials_min;
-                std::size_t m_number_of_trials_max;
-                //std::size_t m_current_row = std::size_t();
+                result_type m_number_of_trials_min;
+                result_type m_number_of_trials_max;
+                //std::size_t m_current_row = 0;
                 algebra::matrix_row_major<result_type> m_alias; // Row-major storage; each row corresponds to the number of trials, column---position in the array.
-                algebra::matrix_row_major<double> m_cutoff; // Row-major storage; each row corresponds to the number of trials, column---position in the array.
+                algebra::matrix_row_major<param_type> m_cutoff; // Row-major storage; each row corresponds to the number of trials, column---position in the array.
 
-                void build(double probability_of_success) noexcept
+                void build(param_type probability_of_success) noexcept
                 {
-                    for (std::size_t i = 0; i < this->height(); i++)
+                    for (result_type i = 0; i < this->height(); ++i)
                     {
-                        std::size_t n = this->m_number_of_trials_min + i;
+                        result_type n = this->m_number_of_trials_min + i;
                         distribution_type distribution(n, probability_of_success);
-                        random::sampler_binomial_alias<uniform_type, bounds_type, type::diameter> sampler(distribution);
+                        alias_type sampler(distribution);
                         auto& alias = sampler.alias();
                         auto& cutoff = sampler.cutoff();
 
                         std::memcpy(&this->m_alias.unchecked_at(i, 0), alias.data(), alias.size() * sizeof(result_type)); // alias.size() is (n + 1)
-                        std::memcpy(&this->m_cutoff.unchecked_at(i, 0), cutoff.data(), cutoff.size() * sizeof(double)); // cutoff.size() is (n + 1)
+                        std::memcpy(&this->m_cutoff.unchecked_at(i, 0), cutoff.data(), cutoff.size() * sizeof(param_type)); // cutoff.size() is (n + 1)
                     }
                 }
 
@@ -103,16 +105,16 @@ namespace ropufu
                     this->build(from.probability_of_success());
                 }
 
-                std::size_t number_of_trials_min() const noexcept { return this->m_number_of_trials_min; }
+                result_type number_of_trials_min() const noexcept { return this->m_number_of_trials_min; }
 
-                std::size_t number_of_trials_max() const noexcept { return this->m_number_of_trials_max; }
+                result_type number_of_trials_max() const noexcept { return this->m_number_of_trials_max; }
 
-                std::size_t height() const noexcept
+                result_type height() const noexcept
                 {
                     return this->m_number_of_trials_max - this->m_number_of_trials_min + 1;
                 }
 
-                std::size_t width() const noexcept
+                result_type width() const noexcept
                 {
                     return this->m_number_of_trials_max + 1;
                 }
@@ -120,7 +122,7 @@ namespace ropufu
                 std::size_t size_in_bytes() const noexcept
                 {
                     std::size_t k = this->height() * this->width();
-                    return k * (sizeof(result_type) + sizeof(double));
+                    return k * (sizeof(result_type) + sizeof(param_type));
                 }
                 
                 //// Set the number of trials used in the generator; should be between <t_number_of_trials_min> and <t_number_of_trials_max>.
@@ -138,17 +140,17 @@ namespace ropufu
                     static_assert(t_engine_type::max() - t_engine_type::min() == type::diameter, "<t_engine_type>::max() - <t_engine_type>::min() has to be equal to <diameter>.");
                     
                     result_type current_row = number_of_trials - this->m_number_of_trials_min;
-                    double uniform_random = (uniform_generator() - t_engine_type::min()) / (static_cast<double>(type::diameter) + 1);
+                    param_type uniform_random = (uniform_generator() - t_engine_type::min()) / (static_cast<param_type>(type::diameter) + 1);
 
-                    double u = (number_of_trials + 1) * uniform_random; // uniform continuous \in[0, n + 1).
+                    param_type u = (number_of_trials + 1) * uniform_random; // uniform continuous \in[0, n + 1).
                     result_type index = static_cast<result_type>(u);    // uniform discrete   \in[0, n].
                     u = (index + 1) - u;                                // 1 - overshoot: uniform continuous \in(0, 1].
                     return (u > this->m_cutoff.unchecked_at(current_row, index)) ? this->m_alias.unchecked_at(current_row, index) : index;
                 }
             };
 
-            template <typename t_engine_type>
-            using default_sampler_binomial_lookup_t = sampler_binomial_lookup<typename t_engine_type::result_type, std::size_t, t_engine_type::max() - t_engine_type::min()>;
+            template <typename t_engine_type, typename t_param_type = double>
+            using default_sampler_binomial_lookup_t = sampler_binomial_lookup<std::size_t, t_param_type, typename t_engine_type::result_type, std::size_t, t_engine_type::max() - t_engine_type::min()>;
         }
     }
 }

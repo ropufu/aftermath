@@ -1,14 +1,15 @@
+
 PNAME = tests.out
 
-CC = clang++
+CC = g++-7
 
-CFLAGS = -std=c++14 -stdlib=libc++ -Wall
+CFLAGS = -std=c++17 -Wall
 
 PATHINC = -I./../../aftermath -I./../../opensource -I./..
 
 PATHLIB =
 
-LDFLAGS =
+LDFLAGS = -lstdc++fs
 
 .VPATH: .
 

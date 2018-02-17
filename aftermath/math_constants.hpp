@@ -7,14 +7,15 @@ namespace ropufu
     namespace aftermath
     {
         /** A place for some mathematical constants. */
-        //template <typename t_numeric_type = double>
+        template <typename t_numeric_type>
         struct math_constants
         {
-            /** @todo NonononoNO!! */
-            using t_numeric_type = double;
-
             /** The number e. */
             static constexpr t_numeric_type e = t_numeric_type(2.718281828459045235360287471);
+            /** √e. */
+            static constexpr t_numeric_type root_e = t_numeric_type(1.648721270700128146848650787814);
+            /** √(e - 1). */
+            static constexpr t_numeric_type root_e_minus_one = t_numeric_type(1.3108324944320861759067703611346874340006);
             /** The number π. */
             static constexpr t_numeric_type pi = t_numeric_type(3.141592653589793238462643383);
             /** √2. */

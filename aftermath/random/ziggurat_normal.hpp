@@ -17,36 +17,46 @@ namespace ropufu
         {
             /** @brief Ziggurat for normal distribution.
              *  @remark Has to be specialized.
+             *  @todo Fix possible overflow in \tparam t_diameter + 1; e.g., when using \c std::mt19937_64 as engine.
              */
-            template <std::uint_fast32_t t_n_boxes, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
+            template <std::uint_fast32_t t_n_boxes, typename t_result_type, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
             struct ziggurat_normal
-                : public ziggurat<ziggurat_normal<t_n_boxes, t_uniform_type, t_bounds_type, t_diameter>, t_n_boxes, t_uniform_type, t_bounds_type, t_diameter, double>
+                : public ziggurat<ziggurat_normal<t_n_boxes, t_result_type, t_uniform_type, t_bounds_type, t_diameter>, t_n_boxes, t_result_type, t_uniform_type, t_bounds_type, t_diameter>
             {
+                static constexpr std::uint_fast32_t n_boxes = t_n_boxes;
+                static constexpr t_bounds_type diameter = t_diameter;
+
+                using type = ziggurat_normal<t_n_boxes, t_result_type, t_uniform_type, t_bounds_type, t_diameter>;
+                using base_type = ziggurat<type, t_n_boxes, t_result_type, t_uniform_type, t_bounds_type, t_diameter>;
+                using result_type = t_result_type;
+                using uniform_type = t_uniform_type;
+                using bounds_type = t_bounds_type;
             };
 
-            template <typename t_engine_type>
-            using default_ziggurat_normal_t = ziggurat_normal<1024, typename t_engine_type::result_type, std::size_t, t_engine_type::max() - t_engine_type::min()>;
+            template <typename t_engine_type, typename t_result_type = double>
+            using default_ziggurat_normal_t = ziggurat_normal<1024, t_result_type, typename t_engine_type::result_type, std::size_t, t_engine_type::max() - t_engine_type::min()>;
 
             /** Ziggurat for normal distribution with 1024 boxes. */
-            template <typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
-            struct ziggurat_normal<1024, t_uniform_type, t_bounds_type, t_diameter>
-                : public ziggurat<ziggurat_normal<1024, t_uniform_type, t_bounds_type, t_diameter>, 1024, t_uniform_type, t_bounds_type, t_diameter, double>
+            template <typename t_result_type, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
+            struct ziggurat_normal<1024, t_result_type, t_uniform_type, t_bounds_type, t_diameter>
+                : public ziggurat<ziggurat_normal<1024, t_result_type, t_uniform_type, t_bounds_type, t_diameter>, 1024, t_result_type, t_uniform_type, t_bounds_type, t_diameter>
             {
                 static constexpr std::uint_fast32_t n_boxes = 1024;
                 static constexpr t_bounds_type diameter = t_diameter;
 
+                using type = ziggurat_normal<n_boxes, t_result_type, t_uniform_type, t_bounds_type, t_diameter>;
+                using base_type = ziggurat<type, n_boxes, t_result_type, t_uniform_type, t_bounds_type, t_diameter>;
+                using result_type = t_result_type;
                 using uniform_type = t_uniform_type;
-                using result_type = double;
                 using bounds_type = t_bounds_type;
-                using type = ziggurat_normal<n_boxes, uniform_type, bounds_type, diameter>;
-                using base_type = ziggurat<type, n_boxes, uniform_type, bounds_type, diameter, result_type>;
+                using data_type = double; // @todo Remove completely and rewrite member arrays with typecasting to result_type.
 
-                friend struct ziggurat<type, n_boxes, uniform_type, bounds_type, diameter, result_type>;
+                friend struct base_type;
 
             private:
-                static constexpr result_type right_tail_x = 3.8520461503683912;
-                static constexpr result_type left_tail_x = -3.8520461503683912;
-                static constexpr result_type box_volume = 0.00098010797069741627;
+                static constexpr result_type right_tail_x = result_type(3.8520461503683912);
+                static constexpr result_type left_tail_x = result_type(-3.8520461503683912);
+                static constexpr result_type box_volume = result_type(0.00098010797069741627);
                 static constexpr uniform_type box_volume_diameter = static_cast<uniform_type>(box_volume * (type::diameter + 1));
 
                 // Zero-based index of the box that covers the right tail.
@@ -54,7 +64,7 @@ namespace ropufu
                 // Zero-based index of the box that covers the left tail.
                 static constexpr std::uint_fast32_t left_tail_index = n_boxes - 1;
 
-                probability::dist_normal m_distribution = probability::dist_normal::standard;
+                probability::dist_normal<result_type> m_distribution = probability::dist_normal<result_type>::standard;
 
                 result_type pdf(result_type x) const noexcept
                 {
@@ -64,7 +74,7 @@ namespace ropufu
             public:
                 result_type sample_from_box_horizontal(uniform_type box_index, uniform_type uniform_random, bool& is_interior) const noexcept
                 {
-                    result_type z = uniform_random * this->m_width_scaled[box_index];
+                    result_type z = uniform_random * static_cast<result_type>(this->m_width_scaled[box_index]);
                     is_interior = (uniform_random < this->m_coverage_scaled[box_index]);
                     return z;
                 }
@@ -72,7 +82,7 @@ namespace ropufu
                 bool is_inside_box_vertical(uniform_type box_index, result_type horizontal, uniform_type uniform_random) const noexcept
                 {
                     result_type f = this->pdf(horizontal);
-                    return (this->m_bottom[box_index] + uniform_random * this->m_height_scaled[box_index] < f);
+                    return (static_cast<result_type>(this->m_bottom[box_index]) + uniform_random * static_cast<result_type>(this->m_height_scaled[box_index]) < f);
                 }
 
                 bool is_tail_box(uniform_type box_index) const noexcept
@@ -90,20 +100,20 @@ namespace ropufu
                 {
                     const auto r = right_tail_x;
                     const auto r_squared = r * r;
-                    result_type result = 0.0;
+                    result_type result = 0;
                     result_type u1, u2;
                     for (;;) // while (true)
                     {
                         u1 = (uniform_generator() - t_engine_type::min()) / static_cast<result_type>(type::diameter + 1);
                         u2 = (uniform_generator() - t_engine_type::min()) / static_cast<result_type>(type::diameter + 1);
-                        result = std::sqrt(r_squared - 2 * std::log(1.0 - u1));
+                        result = static_cast<result_type>(std::sqrt(r_squared - 2 * std::log(1 - u1)));
                         if (u2 * result < r) return box_index == 0 ? result : -result;
                     }
                 }
 
             private:
                 // (<diameter> + 1)-downscaled right (left) x-endpoints of the boxes, modified for the tail boxes: { x_0*, x_1, x_2, ..., x_{n - 1}, x_n* }.
-                const result_type m_width_scaled[n_boxes] = {
+                const data_type m_width_scaled[n_boxes] = {
                     4.0968586097934827 / (type::diameter + 1),      3.8520461503683912 / (type::diameter + 1),      3.6591529330911164 / (type::diameter + 1),      3.5387147915535359 / (type::diameter + 1),      3.4499415844581948 / (type::diameter + 1),      3.3791208509098653 / (type::diameter + 1),      3.3199242727525520 / (type::diameter + 1),      3.2688953201247243 / (type::diameter + 1),
                     3.2239336074705574 / (type::diameter + 1),      3.1836646787008854 / (type::diameter + 1),      3.1471385926519712 / (type::diameter + 1),      3.1136706092218944 / (type::diameter + 1),      3.0827503897194092 / (type::diameter + 1),      3.0539870972903128 / (type::diameter + 1),      3.0270745842754689 / (type::diameter + 1),      3.0017684330687534 / (type::diameter + 1),
                     2.9778703072041906 / (type::diameter + 1),      2.9552169815083583 / (type::diameter + 1),      2.9336724639032943 / (type::diameter + 1),      2.9131222169485817 / (type::diameter + 1),      2.8934688401496455 / (type::diameter + 1),      2.8746287902796272 / (type::diameter + 1),      2.8565298533366061 / (type::diameter + 1),      2.8391091700186590 / (type::diameter + 1),
@@ -235,7 +245,7 @@ namespace ropufu
                 };
                 
                 // (<diameter> + 1)-downscaled heights of the boxes: { f(x_1), f(x_2) - f(x_1), ..., f(x_{n - 2}) - f(x_{n - 1}), f(x_{n - 2}) }.
-                const result_type m_height_scaled[n_boxes] = {
+                const data_type m_height_scaled[n_boxes] = {
                     2.3923402393103877e-4 / (type::diameter + 1),   2.5443827317688897e-4 / (type::diameter + 1),   2.6785105422457909e-4 / (type::diameter + 1),   2.7696721223106476e-4 / (type::diameter + 1),   2.8409407716140791e-4 / (type::diameter + 1),   2.9004821488805630e-4 / (type::diameter + 1),   2.9521997798004228e-4 / (type::diameter + 1),   2.9982849700430920e-4 / (type::diameter + 1),
                     3.0400997353862756e-4 / (type::diameter + 1),   3.0785527673641671e-4 / (type::diameter + 1),   3.1142828377047018e-4 / (type::diameter + 1),   3.1477574018092589e-4 / (type::diameter + 1),   3.1793296465583298e-4 / (type::diameter + 1),   3.2092734496718371e-4 / (type::diameter + 1),   3.2378058201430321e-4 / (type::diameter + 1),   3.2651018642881690e-4 / (type::diameter + 1),
                     3.2913050925229932e-4 / (type::diameter + 1),   3.3165347141351495e-4 / (type::diameter + 1),   3.3408909234310643e-4 / (type::diameter + 1),   3.3644588098471659e-4 / (type::diameter + 1),   3.3873113029505674e-4 / (type::diameter + 1),   3.4095114263503813e-4 / (type::diameter + 1),   3.4311140475307431e-4 / (type::diameter + 1),   3.4521672538959636e-4 / (type::diameter + 1),
@@ -367,7 +377,7 @@ namespace ropufu
                 };
                 
                 // Density at the proper x-endpoints of the boxes, tail boxes treated specially: { 0, f(x_1), f(x_2), ..., f(x_{n - 2}), 0 }.
-                const result_type m_bottom[n_boxes] = {
+                const data_type m_bottom[n_boxes] = {
                     0,                       2.3923402393103877e-4,   4.9367229710792774e-4,   7.6152335133250684e-4,   1.0384905635635716e-3,   1.3225846407249795e-3,   1.6126328556130358e-3,   1.9078528335930781e-3,
                     2.2076813305973873e-3,   2.5116913041360149e-3,   2.8195465808724316e-3,   3.1309748646429017e-3,   3.4457506048238276e-3,   3.7636835694796606e-3,   4.0846109144468443e-3,   4.4083914964611475e-3,
                     4.7349016828899644e-3,   5.0640321921422638e-3,   5.3956856635557787e-3,   5.7297747558988852e-3,   6.0662206368836017e-3,   6.4049517671786585e-3,   6.7459029098136966e-3,   7.0890143145667709e-3,

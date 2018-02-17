@@ -42,16 +42,16 @@ namespace ropufu
             /** @brief Ziggurat pseudo-random number generator, intended as CRTP for static polymorhism.
              *  @remark For more information on CRTP see https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
              */
-            template <typename t_derived_type, std::size_t t_n_boxes, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter, typename t_result_type>
+            template <typename t_derived_type, std::size_t t_n_boxes, typename t_result_type, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
             struct ziggurat
             {
-                using type = ziggurat<t_derived_type, t_n_boxes, t_uniform_type, t_bounds_type, t_diameter, t_result_type>;
+                using type = ziggurat<t_derived_type, t_n_boxes, t_result_type, t_uniform_type, t_bounds_type, t_diameter>;
                 static constexpr std::size_t n_boxes = t_n_boxes;
                 static constexpr t_bounds_type diameter = t_diameter;
 
                 using derived_type = t_derived_type;
-                using uniform_type = t_uniform_type;
                 using result_type = t_result_type;
+                using uniform_type = t_uniform_type;
                 using bounds_type = t_bounds_type;
 
             private:

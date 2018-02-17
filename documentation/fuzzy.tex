@@ -1,0 +1,190 @@
+
+\documentclass[12pt]{article}
+\usepackage[intlimits]{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts,amstext,amsthm}
+\usepackage{paralist}        % {inparaenum} environment
+\usepackage{mathtools}       % {dcases} environment
+\usepackage{MnSymbol}        % \medstar
+\usepackage[normalem]{ulem}  % \sout
+\usepackage[usenames,dvipsnames]{xcolor} % Named colors
+\usepackage{hyperref}
+
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usetikzlibrary{patterns}
+
+% ~~ Styling ~~
+\renewcommand{\geq}{\geqslant}
+\renewcommand{\leq}{\leqslant}
+
+\newcommand{\ignore}[1]{}
+\newcommand{\set}[1]{\left\{ #1 \right\}}
+\newcommand{\iid}{\overset{\text{iid}}{\sim}}
+
+\renewcommand{\Pr}{{\sf P}}           % Probability measure.
+\DeclareMathOperator{\EV}{{\sf E}}    % Expected value.
+\DeclareMathOperator{\Var}{{\sf Var}} % Variance.
+\DeclareMathOperator{\Cov}{{\sf Cov}} % Covariance.
+\DeclareMathOperator{\SE}{{\sf SE}}   % Standard error.
+\DeclareMathOperator{\Hyp}{\mathcal{H}}
+\DeclareMathOperator{\DNormal}{\mathcal{N}} % Normal distribution.
+
+% ~~ Linear Algebra ~~
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\newcommand{\One}{\mathchoice{\rm 1\mskip-4.2mu l}{\rm 1\mskip-4.2mu l}{\rm 1\mskip-4.6mu l}{\rm 1\mskip-5.2mu l}}
+\newenvironment{algorithm}[1][]{\paragraph*{Algorithm#1.}}{\vspace{1ex}}
+
+% ~~ Paper-specific ~~
+\newcommand{\tX}{Y}
+\newcommand{\tS}{R}
+%\renewcommand{\tX}{\tilde{X}}
+%\renewcommand{\tS}{\tilde{S}}
+
+% Styling.
+\hypersetup{
+    colorlinks=true,%
+    bookmarksnumbered=true,%
+    bookmarksopen=true,%
+    citecolor=blue,%
+    urlcolor=blue,%
+    unicode=true,           % enable unicode encoded PDF strings
+    breaklinks=true         % allow links to break over lines by making
+                            % links over multiple lines into PDF
+                            % links to the same target
+}
+
+\begin{document}
+
+\subsubsection*{Structure \tt{fuzzy}.}
+Let $\vec{\varepsilon} = \set{\varepsilon _x}_x$ be i.i.d.\ random variables with $\EV \varepsilon _x = 0$, and $f$ be an unobservable function.
+What one gets to observe instead is $g(x) = f(x) + \varepsilon _x$.
+
+One possible question could then be to find the zero of $f$, based on observations $g$. Since said observations are noisy, the problem can be rephrased as follows: find $\underline{z} = \underline{z}(\vec{\varepsilon})$ and $\overline{z} = \overline{z}(\vec{\varepsilon})$, such that
+\[
+    \Pr (f(\underline{z}) < 0)
+    \qquad \text{and} \qquad
+    \Pr (f(\overline{z}) > 0)
+\]
+are sufficiently large.
+
+\paragraph{Monotone function.} Suppose $f$ is strictly increasing.
+
+To get a lower bound on the zero of $f$, we want to find a sequence of points where the observed value $g$ is negative, followed by a single positive observation.
+
+
+\begin{center}
+    \newcommand{\f}[1]{0.8*exp(0.25*#1) - 2.4}
+    \newcommand{\g}[1]{\f{#1} + 0.7*sin(400*(#1)*(5-#1))}
+    \newcommand{\dott}[2][A]{\draw[line#1] (#2,{\g{#2}})--(#2,0); \draw[dot#1] (#2,{\g{#2}}) circle (0.08)}
+    \begin{tikzpicture}[
+        dotA/.style={color=black, fill=black}, lineA/.style={thick, color=BrickRed},
+        dotB/.style={color=black, fill=blue}, lineB/.style={thick, color=black}]
+        % ~~ Grid and Axes ~~
+  		\draw[very thin, color=gray, dashed] (-0.1,-2.1) grid (6.2,2.1);
+        \draw[->, >=latex] (-0.2,0) -- (6.5,0) node[right] {};
+        % ~~ Functions ~~
+    	\draw[solid,domain=0.2:6.3] plot (\x,{\f{\x}});
+        \draw[dashed,domain=0.2:6.3,samples=100] plot (\x,{\g{\x}});
+        % ~~ Observations ~~
+        \dott{0.5};
+        \dott{1.0};
+        \dott{1.5};
+        \node at (2.5, -0.5) {$\ensuremath{\cdots }$};
+        \dott{4.18};
+        \dott{4.68};
+        \node at (2.6, 0.5) {$\ensuremath{\overbrace{\hspace{24ex}}^{\text{$k$ negatives}}}$};
+        \dott[B]{5.18}; \node at (5.2, -0.3) {$\ensuremath{b}$};
+    \end{tikzpicture}
+\end{center}
+
+\begin{algorithm}[~(Estimating zero of a noisy increasing function from below)]
+    This algorithm takes in five parameters: \begin{inparaenum}[(i)]
+        \item the observed function $g$;
+        \item $x$, the initial point where to evaluate the function;
+        \item $h > 0$, the initial step size;
+        \item integer $m \geq 1$, the number of times to refine the search grid;
+        \item integer $k \geq 1$, the number of points where the observations have to be of the same sign.
+    \end{inparaenum}
+    \begin{enumerate}
+        \item \label{item:fuzzy:first_positive}
+            The aim of this step is to find a point where the observed value is positive.
+
+            To this end, start at $x$ with initial step $h > 0$.
+            Then while $g(x) < 0$, update $x \leftarrow x + h$. Once $g$ is non-negative, set $b = x$, and repeat step (\ref{item:fuzzy:stable_negative}) $m \geq 1$ times.
+
+        \item \label{item:fuzzy:stable_negative}
+            The aim of this step is to have exactly $k$ negative observations, followed by a non-negative $g(b)$.
+
+            Halve the step size: $h \leftarrow h / 2$.
+
+            Evaluate $g$ at points $\set{b - j h}$, $1 \leq j \leq k$. If at least one of the values of $g$ is non-negative, push $b$ to said point, and re-evalute the $k$ observations to the left of $b$.
+
+            Finally, we will have obtained the following:
+            \begin{align*}
+                &g(b) \geq 0, \\
+                &g(b - j h) < 0 \qquad \text{for $1 \leq j \leq k$}.
+            \end{align*}
+
+        \item Use $(b - h)$ as the lower empirical bound for the zero of $f$.
+    \end{enumerate}
+\end{algorithm}
+
+Note that if $f$ is decreasing, and we replace the step size $h > 0$ with $-h$, the algorithm above will yield a lower bound for the zero of $f$. This can be generalized in the following fasion.
+Let $h$ denote the initaial step size. If $h > 0$ it means you go right from the initial point, and the generalized algorithm will yield a lower bound; otherwise you go left, and the algorithm will yield an upper bound.
+
+
+%The generalized algorithm for monotone functions will look like this:
+\begin{algorithm}[~(Estimating zero of a noisy monotone function)]
+    This algorithm takes in six parameters: \begin{inparaenum}[(i)]
+        \item the observed function $g$;
+        \item a flag indicating whether $f$ is increasing or decreasing;
+        \item $x$, the initial point where to evaluate the function;
+        \item $h$, the initial step size;
+        \item integer $m \geq 1$, the number of times to refine the search grid;
+        \item integer $k \geq 1$, the number of points where the observations have to be of the same sign.
+    \end{inparaenum}
+    \begin{enumerate}
+        \item
+            The aim of this step is to determine the sign of the ``correct'' side of the plane (corresponding to the circled sign in the table below).
+            \[
+                s = \begin{dcases}
+                    \One \set{h > 0} - \One \set{h < 0} & \quad \text{if $f$ is increasing}, \\
+                    \One \set{h < 0} - \One \set{h > 0} & \quad \text{if $f$ is decreasing}. \\
+                \end{dcases}
+            \]
+            \begin{center}
+                \begin{tabular}{ | l | c | c | c | }
+                    \hline
+                    $f$      & increasing  & decreasing                    & \\ \hline
+                    $h > 0$  & ${-}{-}{-}\oplus $   & ${+}{+}{+}\ominus $  & Lower bound \\ \hline
+                    $h < 0$  & $\ominus {+}{+}{+}$  & $\oplus {-}{-}{-}$   & Upper bound \\ \hline
+                \end{tabular}
+            \end{center}
+
+        \item \label{item:fuzzy:first_cross}
+            The aim of this step is to find a point where the observed value is on the ``correct'' side of the plane.
+
+            To this end, start at $x$ with initial step $h$.
+            Then while $s \cdot g(x) < 0$, update $x \leftarrow x + h$. Once $s \cdot g(x) \geq 0$, set $b = x$, and repeat step (\ref{item:fuzzy:stable_sign_change}) $m \geq 1$ times.
+
+        \item \label{item:fuzzy:stable_sign_change}
+            The aim of this step is to have exactly $k$ observations of sign $(-s)$, followed (or preceeded, depending on the sign of $h$) by $g(b)$ of sign $s$ (or zero).
+
+            Halve the step size: $h \leftarrow h / 2$.
+
+            Evaluate $g$ at points $\set{b - j h}$, $1 \leq j \leq k$. If for at least one of them $s \cdot g(b - j h) \geq 0$, set $b \leftarrow (b - j h)$, and re-evalute the $k$ adjacent observations.
+
+            Finally, we will have obtained the following:
+            \begin{align*}
+                &s \cdot g(b) \geq 0, \\
+                &s \cdot g(b - j h) < 0 \qquad \text{for $1 \leq j \leq k$}.
+            \end{align*}
+
+        \item If $h > 0$, then $(b - h)$ can be used as the lower empirical bound for the zero of $f$. If $h < 0$, then $(b - h)$ can be used as the upper empirical bound for the zero of $f$.
+    \end{enumerate}
+\end{algorithm}
+
+\end{document}

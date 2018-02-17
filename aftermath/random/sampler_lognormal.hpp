@@ -17,21 +17,22 @@ namespace ropufu
     {
         namespace random
         {
-            template <std::uint_fast32_t t_n_boxes, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
+            template <std::uint_fast32_t t_n_boxes, typename t_result_type, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
             struct sampler_lognormal
             {
                 static constexpr std::uint_fast32_t n_boxes = t_n_boxes;
                 static constexpr t_bounds_type diameter = t_diameter;
 
-                using type = sampler_lognormal<t_n_boxes, t_uniform_type, t_bounds_type, diameter>;
-                using distribution_type = probability::dist_lognormal;
-                using result_type = distribution_type::result_type;
+                using type = sampler_lognormal<t_n_boxes, t_result_type, t_uniform_type, t_bounds_type, t_diameter>;
+                using distribution_type = probability::dist_lognormal<t_result_type>;
+                using result_type = typename distribution_type::result_type;
+                using param_type = typename distribution_type::param_type;
                 using uniform_type = t_uniform_type;
                 using bounds_type = t_bounds_type;
-                using ziggurat_type = ziggurat_normal<n_boxes, uniform_type, bounds_type, diameter>;
+                using ziggurat_type = ziggurat_normal<n_boxes, t_result_type, t_uniform_type, t_bounds_type, t_diameter>;
 
             private:
-                double m_mu, m_sigma;
+                t_result_type m_mu, m_sigma;
                 ziggurat_type m_ziggurat;
 
             public:
@@ -68,12 +69,13 @@ namespace ropufu
                 }
             };
 
-            template <typename t_engine_type>
+            template <typename t_engine_type, typename t_result_type = double>
             using default_sampler_lognormal_t = sampler_lognormal<
-                default_ziggurat_normal_t<t_engine_type>::n_boxes, 
-                typename default_ziggurat_normal_t<t_engine_type>::uniform_type,
-                typename default_ziggurat_normal_t<t_engine_type>::bounds_type,
-                default_ziggurat_normal_t<t_engine_type>::diameter>;
+                default_ziggurat_normal_t<t_engine_type, t_result_type>::n_boxes,
+                t_result_type,
+                typename default_ziggurat_normal_t<t_engine_type, t_result_type>::uniform_type,
+                typename default_ziggurat_normal_t<t_engine_type, t_result_type>::bounds_type,
+                default_ziggurat_normal_t<t_engine_type, t_result_type>::diameter>;
         }
     }
 }

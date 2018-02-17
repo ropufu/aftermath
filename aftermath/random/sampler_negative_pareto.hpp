@@ -17,14 +17,15 @@ namespace ropufu
     {
         namespace random
         {
-            template <typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
+            template <typename t_result_type, typename t_uniform_type, typename t_bounds_type, t_bounds_type t_diameter>
             struct sampler_negative_pareto
             {
                 static constexpr t_bounds_type diameter = t_diameter;
 
-                using type = sampler_negative_pareto<t_uniform_type, t_bounds_type, diameter>;
-                using distribution_type = probability::dist_negative_pareto;
-                using result_type = distribution_type::result_type;
+                using type = sampler_negative_pareto<t_result_type, t_uniform_type, t_bounds_type, t_diameter>;
+                using distribution_type = probability::dist_negative_pareto<t_result_type>;
+                using result_type = typename distribution_type::result_type;
+                using param_type = typename distribution_type::param_type;
                 using uniform_type = t_uniform_type;
                 using bounds_type = t_bounds_type;
 
@@ -39,22 +40,23 @@ namespace ropufu
                 result_type operator ()(t_engine_type& uniform_generator) noexcept = delete;
             };
 
-            template <typename t_engine_type>
-            using default_sampler_negative_pareto_t = sampler_negative_pareto<typename t_engine_type::result_type, std::size_t, t_engine_type::max() - t_engine_type::min()>;
+            template <typename t_engine_type, typename t_result_type = double>
+            using default_sampler_negative_pareto_t = sampler_negative_pareto<t_result_type, typename t_engine_type::result_type, std::size_t, t_engine_type::max() - t_engine_type::min()>;
 
-            template <typename t_uniform_type>
-            struct sampler_negative_pareto<t_uniform_type, std::size_t, mersenne_number<32>::value>
+            template <typename t_result_type, typename t_uniform_type>
+            struct sampler_negative_pareto<t_result_type, t_uniform_type, std::size_t, mersenne_number<32>::value>
             {
                 static constexpr std::size_t diameter = mersenne_number<32>::value;
 
-                using type = sampler_negative_pareto<t_uniform_type, std::size_t, diameter>;
-                using distribution_type = probability::dist_negative_pareto;
-                using result_type = distribution_type::result_type;
+                using type = sampler_negative_pareto<t_result_type, t_uniform_type, std::size_t, diameter>;
+                using distribution_type = probability::dist_negative_pareto<t_result_type>;
+                using result_type = typename distribution_type::result_type;
+                using param_type = typename distribution_type::param_type;
                 using uniform_type = t_uniform_type;
                 using bounds_type = std::size_t;
 
             private:
-                double m_x_max, m_alpha;
+                param_type m_x_max, m_alpha;
 
             public:
                 sampler_negative_pareto() noexcept
@@ -84,8 +86,8 @@ namespace ropufu
                     static_assert(std::is_same<typename t_engine_type::result_type, uniform_type>::value, "type mismatch");
                     static_assert(t_engine_type::max() - t_engine_type::min() == type::diameter, "<t_engine_type>::max() - <t_engine_type>::min() has to be equal to <diameter>.");
                     
-                    double uniform_random = (uniform_generator() - t_engine_type::min()) / math_constants::two_pow_32;
-                    return this->m_x_max * std::pow(1.0 - uniform_random, 1.0 / this->m_alpha);
+                    param_type uniform_random = (uniform_generator() - t_engine_type::min()) / math_constants<result_type>::two_pow_32;
+                    return this->m_x_max * std::pow(1 - uniform_random, 1 / this->m_alpha);
                 }
             };
         }
