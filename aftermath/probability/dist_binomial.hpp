@@ -87,7 +87,7 @@ namespace ropufu
                 /** Converts the distribution to its standard built-in counterpart. */
                 std_type to_std() const noexcept
                 {
-                    return std_type(this->m_number_of_trials, static_cast<std_type::param_type>(this->m_probability_of_success));
+                    return std_type(this->m_number_of_trials, static_cast<typename std_type::param_type>(this->m_probability_of_success));
                 } // to_std(...)
 
                 /** Number of trials in the experiment. */

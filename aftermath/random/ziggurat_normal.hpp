@@ -51,7 +51,7 @@ namespace ropufu
                 using bounds_type = t_bounds_type;
                 using data_type = double; // @todo Remove completely and rewrite member arrays with typecasting to result_type.
 
-                friend struct base_type;
+                friend base_type;
 
             private:
                 static constexpr result_type right_tail_x = result_type(3.8520461503683912);
