@@ -155,7 +155,7 @@ namespace ropufu
                 matrix(std::size_t height, std::size_t width) noexcept
                     : m_height(height), m_width(width), m_size(height * width)
                 {
-                    this->m_data_pointer = new (std::nothrow) data_type[this->m_size];
+                    if (this->m_size != 0) this->m_data_pointer = new (std::nothrow) data_type[this->m_size];
                     if (this->m_data_pointer == nullptr)
                     {
                         this->m_height = 0;
@@ -169,7 +169,7 @@ namespace ropufu
                 matrix(const type& other) noexcept
                     : m_height(other.m_height), m_width(other.m_width), m_size(other.m_size)
                 {
-                    this->m_data_pointer = new (std::nothrow) data_type[this->m_size];
+                    if (this->m_size != 0) this->m_data_pointer = new (std::nothrow) data_type[this->m_size];
                     if (this->m_data_pointer == nullptr)
                     {
                         this->m_height = 0;
@@ -229,7 +229,7 @@ namespace ropufu
                             this->m_data_pointer = nullptr;
                             
                             // Allocate new memory.
-                            this->m_data_pointer = new (std::nothrow) data_type[this->m_size];
+                            if (this->m_size != 0) this->m_data_pointer = new (std::nothrow) data_type[this->m_size];
                             if (this->m_data_pointer == nullptr)
                             {
                                 this->m_height = 0;
