@@ -283,6 +283,13 @@ namespace ropufu
                     for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] = value;
                 }
 
+                /** Transforms every element of the matrix by applying \p action to it. */
+                template <typename t_action_type>
+                void transform(t_action_type&& action) noexcept
+                {
+                    for (std::size_t k = 0; k < this->m_size; k++) this->m_data_pointer[k] = action(this->m_data_pointer[k]);
+                }
+
                 /** Height of the matrix. */
                 std::size_t height() const noexcept { return this->m_height; }
 
