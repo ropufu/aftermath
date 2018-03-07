@@ -94,15 +94,15 @@ namespace ropufu
                 using type = matheader<4>;
 
             private:
-                std::int32_t m_data_format_id;
-                std::int32_t m_data_type_id;
-                std::int32_t m_matrix_type_id;
+                std::int32_t m_data_format_id = 0;
+                std::int32_t m_data_type_id = 0;
+                std::int32_t m_matrix_type_id = 0;
 
-                std::int32_t m_height;
-                std::int32_t m_width;
+                std::int32_t m_height = 0;
+                std::int32_t m_width = 0;
                 std::int32_t m_is_complex = 0;
 
-                std::string m_name;
+                std::string m_name = "";
 
                 /** Constructs a format type id from member fields. */
                 std::int32_t build_format_type_id() const noexcept
@@ -130,7 +130,7 @@ namespace ropufu
                 std::size_t read(const std::string& file_path, std::size_t position) noexcept
                 {
                     std::size_t bytes_read = 0;
-                    std::ifstream filestream;
+                    std::ifstream filestream { };
 
                     filestream.open(file_path.c_str(), std::ios::in | std::ios::binary);
                     if (filestream.fail())
@@ -163,7 +163,7 @@ namespace ropufu
 
                         // Name.
                         std::vector<char> text_data(name_length - 1);
-                        filestream.read(reinterpret_cast<char*>(&text_data[0]), name_length - 1);
+                        filestream.read(text_data.data(), name_length - 1);
                         if (!filestream.good() || filestream.gcount() != name_length - 1) return 0;
                         filestream.read(&terminator, 1);
                         if (!filestream.good() || terminator != '\0') return 0;
@@ -188,9 +188,15 @@ namespace ropufu
                 {
                     std::size_t position = 0;
                     std::size_t existing_size = 0;
-                    std::ofstream filestream;
+                    std::ofstream filestream { };
 
-                    filestream.open(filename.c_str(), std::ios::in | std::ios::out | std::ios::binary);
+                    filestream.open(filename.c_str(), std::ios::in | std::ios::out | std::ios::binary); // <std::ios::in> requires the file to exist.
+                    if (filestream.fail())
+                    {
+                        filestream.clear();
+                        filestream.open(filename.c_str(), std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc); // Create file if reading failed.
+                    }
+                    
                     if (filestream.fail())
                     {
                         quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to open file.", __FUNCTION__, __LINE__);
@@ -243,7 +249,7 @@ namespace ropufu
                 /** Data format id. */
                 std::int32_t data_format_id() const noexcept { return this->m_data_format_id; }
 
-                /** Data format id. */
+                /** Data type id. */
                 std::int32_t data_type_id() const noexcept { return this->m_data_type_id; }
 
                 /** Matrix type id. */
@@ -284,9 +290,9 @@ namespace ropufu
                 {
                     return 5 * sizeof(std::int32_t) + this->m_name.size() + 1;
                 }
-            };
-        }
-    }
-}
+            }; // struct matheader<...>
+        } // namespace format
+    } // namespace aftermath
+} // namespace ropufu
 
 #endif // ROPUFU_AFTERMATH_FORMAT_MATHEADER_V4_HPP_INCLUDED

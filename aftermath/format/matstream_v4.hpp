@@ -130,6 +130,11 @@ namespace ropufu
                     
                     // Write header.
                     std::size_t position = header.write(this->m_filename);
+                    if (position == 0)
+                    {
+                        quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to write header.", __FUNCTION__, __LINE__);
+                        return *this;
+                    }
                     // Write body.
                     this->m_reader_position = this->write(mat, position);
 
@@ -182,7 +187,7 @@ namespace ropufu
                     std::ofstream filestream;
                     
                     // Write body.
-                    filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::out | std::ios::binary);
+                    filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::out | std::ios::binary); // File must already exist: the header has been written.
                     if (filestream.fail())
                     {
                         quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to open file.", __FUNCTION__, __LINE__);
@@ -244,9 +249,9 @@ namespace ropufu
                     }
                     //return position;
                 }
-            };
-        }
-    }
-}
+            }; // struct matstream<...>
+        } // namespace format
+    } // namespace aftermath
+} // namespace ropufu
 
 #endif // ROPUFU_AFTERMATH_FORMAT_MATSTREAM_V4_HPP_INCLUDED
