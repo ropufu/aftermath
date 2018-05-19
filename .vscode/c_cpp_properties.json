@@ -7,7 +7,8 @@
                 "/usr/include/c++/4.2.1",
                 "/usr/local/include",
                 "/usr/include",
-                "${workspaceRoot}"
+                "${workspaceRoot}",
+                "${workspaceRoot}/../opensource"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -17,7 +18,8 @@
                     "/usr/include/c++/4.2.1",
                     "/usr/local/include",
                     "/usr/include",
-                    "${workspaceRoot}"
+                    "${workspaceRoot}",
+                    "${workspaceRoot}/../opensource"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -32,7 +34,8 @@
             "includePath": [
                 "/usr/include",
                 "/usr/local/include",
-                "${workspaceRoot}"
+                "${workspaceRoot}",
+                "${workspaceRoot}/../opensource"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -40,7 +43,8 @@
                 "path": [
                     "/usr/include",
                     "/usr/local/include",
-                    "${workspaceRoot}"
+                    "${workspaceRoot}",
+                    "${workspaceRoot}/../opensource"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -49,9 +53,10 @@
         {
             "name": "Win32",
             "includePath": [
-                "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.13.26128/include",
-                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.16299.0/ucrt",
-                "${workspaceRoot}"
+                "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.14.26428/include",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17134.0/ucrt",
+                "${workspaceRoot}",
+                "${workspaceRoot}/../opensource"
             ],
             "defines": [
                 "_DEBUG",
@@ -60,14 +65,15 @@
             "intelliSenseMode": "msvc-x64",
             "browse": {
                 "path": [
-                    "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.13.26128/include/*",
-                    "C:/Program Files (x86)/Windows Kits/10/Include/10.0.16299.0/ucrt/*",
-                    "${workspaceRoot}"
+                    "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.14.26428/include/*",
+                    "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17134.0/ucrt/*",
+                    "${workspaceRoot}",
+                    "${workspaceRoot}/../opensource"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
             }
         }
     ],
-    "version": 3
+    "version": 4
 }

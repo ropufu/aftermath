@@ -8,5 +8,6 @@
 #include "algebra/matrix.hpp"
 #include "algebra/mixed_numeral.hpp"
 #include "algebra/permutation.hpp"
+#include "algebra/range.hpp"
 
 #endif // ROPUFU_AFTERMATH_ALGEBRA_HPP_INCLUDED

@@ -6,6 +6,7 @@
 #include "definitive_tests.hpp"
 #include "random_examples.hpp"
 #include "random_test.hpp"
+#include "enum_array_test.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -74,13 +75,19 @@ std::int32_t main(std::int32_t /**argc*/, char** /**argv*/, char** /*envp*/)
     //ropufu::test_aftermath::empirical_measure_test histogrammer;
     run_definitive_test("matstream v4", [&]() { return formatter.test_matstream_v4(10, 80, 80, 5); });
     run_definitive_test("empirical measure", [&]() { return formatter.test_matstream_v4(10, 80, 80, 5); });
+    run_definitive_test("enum array 1", [&]() { return ropufu::test_aftermath::enum_array_test::basic_test<double>(); });
+    run_definitive_test("enum array 2", [&]() { return ropufu::test_aftermath::enum_array_test::basic_test<std::size_t>(); });
+    run_definitive_test("enum array 3", [&]() { return ropufu::test_aftermath::enum_array_test::basic_test_bool(); });
+    run_definitive_test("enum array 4", [&]() { return ropufu::test_aftermath::enum_array_test::basic_test_void(); });
 
-    std::cout << "Randomized tests with std::default_random_engine: (i) float, then (ii) double." << std::endl;
-    not_main<float, std::default_random_engine>();
+    std::cout << "Randomized tests with std::default_random_engine and double." << std::endl;
+    // std::cout << "Randomized tests with std::default_random_engine: (i) float, then (ii) double." << std::endl;
+    // not_main<float, std::default_random_engine>();
     not_main<double, std::default_random_engine>();
 
-    std::cout << "Randomized tests with std::mt19937: (i) float, then (ii) double." << std::endl;
-    not_main<float, std::mt19937>();
+    std::cout << "Randomized tests with std::mt19937 and double." << std::endl;
+    //std::cout << "Randomized tests with std::mt19937: (i) float, then (ii) double." << std::endl;
+    //not_main<float, std::mt19937>();
     not_main<double, std::mt19937>();
     
     ropufu::aftermath::quiet_error& quiet_error = ropufu::aftermath::quiet_error::instance();
