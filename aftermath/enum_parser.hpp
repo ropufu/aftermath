@@ -24,7 +24,13 @@ namespace ropufu::aftermath
             } // to_string(...)
 
             static bool try_parse(const std::string& from, enum_type& to) noexcept { return false; }
-        }; // struct converter
+        }; // struct enum_parser
+
+        template <typename t_enum_type>
+        bool try_parse_enum(const std::string& from, t_enum_type& to) noexcept
+        {
+            return enum_parser<t_enum_type>::try_parse(from, to);
+        } // try_parse_enum(...)
     } // namespace detail
 } // namespace ropufu::aftermath
 

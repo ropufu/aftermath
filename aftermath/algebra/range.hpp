@@ -23,6 +23,7 @@ namespace ropufu::aftermath::algebra
         exponential = 2
     }; // enum struct spacing
 
+    /** @todo Move to ropufu::aftermath::detail::enum_parser. */
     bool try_parse(const std::string& str, spacing& value) noexcept
     {
         if (str == "linear" || str == "lin") { value = spacing::linear; return true; }
@@ -205,7 +206,7 @@ namespace ropufu::aftermath::algebra
                 aftermath::severity_level::major,
                 "Range should be a vector with two entries.", __FUNCTION__, __LINE__);
             return;
-        }
+        } // if (...)
         x = type(v.front(), v.back());
     } // from_json(...)
 } // namespace ropufu::aftermath::algebra
