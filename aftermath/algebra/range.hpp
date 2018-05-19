@@ -97,7 +97,7 @@ namespace ropufu::aftermath::algebra
         } // explode(...)
 
         template <typename t_container_type, typename t_forward_transform_type, typename t_backward_transform_type>
-        void explode(t_container_type& container, std::size_t count, const t_forward_transform_type& forward, const t_backward_transform_type& backward) const noexcept
+        bool explode(t_container_type& container, std::size_t count, const t_forward_transform_type& forward, const t_backward_transform_type& backward) const noexcept
         {
             using helper_type = detail::range_container<data_type, t_container_type>;
 
