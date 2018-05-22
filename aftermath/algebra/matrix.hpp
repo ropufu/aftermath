@@ -211,7 +211,9 @@ namespace ropufu::aftermath::algebra
         {
         } // matrix(...)
 
-        /** Creates a matrix of a given size. */
+        /** @brief Creates an un-initialized matrix of a given size.
+         *  @remark The memory allocated for data storage is zeroed out; no constructors are called for underlying data elements.
+         */
         matrix(std::size_t height, std::size_t width) noexcept
             : m_height(height), m_width(width), m_size(height * width)
         {
@@ -330,7 +332,9 @@ namespace ropufu::aftermath::algebra
             this->m_size = 0;
         } // ~matrix(...)
 
-        /** Fills matrix with zeros. */
+        /** @brief Overwrites allocated memory with zeros.
+         *  @warning No destructors will be called on existing elements.
+         */
         void erase() noexcept
         {
             if (this->m_data_pointer == nullptr) return;
@@ -565,6 +569,62 @@ namespace ropufu::aftermath::algebra
         iterator_type begin() noexcept { return iterator_type(this->m_data_pointer, this->m_size, 0); }
         iterator_type end() noexcept { return iterator_type(this->m_data_pointer, this->m_size, this->m_size); }
     }; // struct matrix
+
+    /** Specialization for \c matrix when there is no need to store any data---except for dimensions. */
+    template <bool t_is_row_major>
+    struct matrix<void, t_is_row_major>
+    {
+        using type = matrix<void, t_is_row_major>;
+        static constexpr bool is_row_major = t_is_row_major;
+        static constexpr bool is_column_major = !t_is_row_major;
+
+        using data_type = void;
+        using value_type = void;
+
+    private:
+        std::size_t m_height; // Height of the matrix.
+        std::size_t m_width; // Width of the matrix.
+        std::size_t m_size; // Number of elements in the matrix.
+
+    public:
+        /** Creates an empty matrix. */
+        matrix() noexcept
+            : m_height(0), m_width(0), m_size(0)
+        {
+        } // matrix(...)
+
+        /** Creates a matrix of a given size. */
+        matrix(std::size_t height, std::size_t width) noexcept
+            : m_height(height), m_width(width), m_size(height * width)
+        {
+        } // matrix(...)
+
+        /** Height of the matrix. */
+        std::size_t height() const noexcept { return this->m_height; }
+
+        /** Width of the matrix. */
+        std::size_t width() const noexcept { return this->m_width; }
+                
+        /** Number of elements in the matrix. */
+        std::size_t size() const noexcept { return this->m_size; }
+
+        /** Checks if the matrix is empty. */
+        bool empty() const noexcept { return this->m_size == 0; }
+
+        /** Checks two matrices for equality. */
+        bool operator ==(const type& other) const noexcept
+        {
+            return
+                this->m_height == other.m_height &&
+                this->m_width != other.m_width;
+        } // operator ==(...)
+
+        /** Checks two matrices for inequality. */
+        bool operator !=(const type& other) const noexcept
+        {
+            return !(this->operator ==(other));
+        } // operator !=(...)
+    }; // struct matrix<...>
 } // namespace ropufu::aftermath::algebra
 
 #endif // ROPUFU_AFTERMATH_ALGEBRA_MATRIX_HPP_INCLUDED
