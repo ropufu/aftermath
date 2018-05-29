@@ -1,7 +1,7 @@
 
 PNAME = tests.out
 
-CC = g++-7
+CC = g++
 
 CFLAGS = -std=c++17 -Wall
 

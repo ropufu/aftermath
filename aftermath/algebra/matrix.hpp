@@ -3,6 +3,8 @@
 #define ROPUFU_AFTERMATH_ALGEBRA_MATRIX_HPP_INCLUDED
 
 #include "../not_an_error.hpp"
+#include "matrix_arrangement.hpp"
+#include "matrix_index.hpp"
 
 #include <cstddef> // std::size_t
 #include <cstring> // std::memcpy, std::memset.
@@ -15,41 +17,6 @@ namespace ropufu::aftermath::algebra
 {
     namespace detail
     {
-        template <bool t_is_row_major = true>
-        struct matrix_arrangement;
-
-        /** @brief Describes how a matrix is stored in memory.
-          *  @example Consider the following matrix:
-          *      || a b c ||
-          *      || d e f ||
-          *    In row-major format it will be stored as (a b c d e f).
-          */
-        template <>
-        struct matrix_arrangement<true>
-        {
-            /** Row-major format. */
-            static std::size_t flatten(std::size_t row_index, std::size_t column_index, std::size_t /*height*/, std::size_t width) noexcept
-            {
-                return row_index * width + column_index;
-            } // flatten(...)
-        }; // struct matrix_arrangement<...>
-
-        /** @brief Describes how a matrix is stored in memory.
-         *  @example Consider the following matrix:
-         *      || a b c ||
-         *      || d e f ||
-         *    In column-major format it will be stored as (a d b e c f).
-         */
-        template <>
-        struct matrix_arrangement<false>
-        {
-            /** Column-major format. */
-            static std::size_t flatten(std::size_t row_index, std::size_t column_index, std::size_t height, std::size_t /*width*/) noexcept
-            {
-                return column_index * height + row_index;
-            } // flatten(...)
-        }; // struct matrix_arrangement<...>
-
         template <typename t_data_pointer_type>
         struct matrix_pointer_to_reference;
         
@@ -120,8 +87,8 @@ namespace ropufu::aftermath::algebra
     using matrix_column_major = matrix<t_data_type, false>;
 
     /** @brief A rectangular array.
-      *  @remark This is a \c noexcept struct. Exception handling is done by \c quiet_error singleton.
-      */
+     *  @remark This is a \c noexcept struct. Exception handling is done by \c quiet_error singleton.
+     */
     template <typename t_data_type, bool t_is_row_major>
     struct matrix
     {
@@ -224,7 +191,7 @@ namespace ropufu::aftermath::algebra
                 this->m_width = 0;
                 this->m_size = 0;
             }
-            this->erase();
+            this->wipe();
         } // matrix(...)
 
         /** Creates a matrix as a copy. */
@@ -275,7 +242,7 @@ namespace ropufu::aftermath::algebra
         } // matrix(...)
 
         /** Copies a matrix. */
-        matrix& operator =(const type& other) noexcept
+        type& operator =(const type& other) noexcept
         {
             if (this != &other)
             {
@@ -305,7 +272,7 @@ namespace ropufu::aftermath::algebra
         } // operator =(...)
 
         /** Copies a matrix by stealing from \p other. */
-        matrix& operator =(type&& other) noexcept
+        type& operator =(type&& other) noexcept
         {
             delete this->m_data_pointer; // Clean up.
             this->m_data_pointer = other.m_data_pointer; // Steal.
@@ -335,11 +302,11 @@ namespace ropufu::aftermath::algebra
         /** @brief Overwrites allocated memory with zeros.
          *  @warning No destructors will be called on existing elements.
          */
-        void erase() noexcept
+        void wipe() noexcept
         {
             if (this->m_data_pointer == nullptr) return;
             std::memset(this->m_data_pointer, 0, this->m_size * sizeof(data_type));
-        } // erase(...)
+        } // wipe(...)
 
         /** Fills matrix with \p value. */
         void fill(const data_type& value) noexcept
@@ -387,10 +354,16 @@ namespace ropufu::aftermath::algebra
         /** Access the last matrix element. */
         const data_type& back() const noexcept { return this->m_size == 0 ? this->m_invalid : this->m_data_pointer[this->m_size - 1]; }
 
+        /** @brief Checks if the index is within matrix bounds. */
+        bool within_bounds(std::size_t row_index, std::size_t column_index) const noexcept { return row_index < this->m_height && column_index < this->m_width; }
+        
+        /** @brief Checks if the index is within matrix bounds. */
+        bool within_bounds(const matrix_index& index) const noexcept { return index.row < this->m_height && index.column < this->m_width; }
+
         /** @brief Access matrix elements.
          *  @warning Does not perform size-related checks.
          */
-        data_type& unchecked_at(std::size_t row_index, std::size_t column_index) noexcept
+        data_type& unchecked_at(std::size_t row_index, std::size_t column_index)
         {
             return this->m_data_pointer[arrangement_type::flatten(row_index, column_index, this->m_height, this->m_width)];
         } // unchecked_at(...)
@@ -398,10 +371,30 @@ namespace ropufu::aftermath::algebra
         /** @brief Access matrix elements.
          *  @warning Does not perform size-related checks.
          */
-        const data_type& unchecked_at(std::size_t row_index, std::size_t column_index) const noexcept
+        const data_type& unchecked_at(std::size_t row_index, std::size_t column_index) const
         {
             return this->m_data_pointer[arrangement_type::flatten(row_index, column_index, this->m_height, this->m_width)];
         } // unchecked_at(...)
+
+        /** @brief Access matrix elements.
+         *  @warning Does not perform size-related checks.
+         */
+        data_type& unchecked_at(const matrix_index& index) { return this->unchecked_at(index.row, index.column); }
+        
+        /** @brief Access matrix elements.
+         *  @warning Does not perform size-related checks.
+         */
+        const data_type& unchecked_at(const matrix_index& index) const { return this->unchecked_at(index.row, index.column); }
+
+        /** @brief Access matrix elements.
+         *  @warning Does not perform size-related checks.
+         */
+        data_type& operator [](const matrix_index& index) { return this->unchecked_at(index.row, index.column); }
+        
+        /** @brief Access matrix elements.
+         *  @warning Does not perform size-related checks.
+         */
+        const data_type& operator [](const matrix_index& index) const { return this->unchecked_at(index.row, index.column); }
                 
         /** @brief Access matrix elements.
          *  @exception not_an_error::out_of_range This error is pushed to \c quiet_error if \p row_index is out of range.

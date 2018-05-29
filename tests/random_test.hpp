@@ -6,11 +6,11 @@
 #include "../aftermath/probability.hpp"
 #include "../aftermath/random.hpp"
 
-#include <chrono>
-#include <cstddef>
-#include <cstdint>
-#include <random>
-#include <utility>  // For std::forward.
+#include <chrono>  // std::chrono::high_resolution_clock
+#include <cstddef> // std::size_t
+#include <cstdint> // std::int32_t
+#include <random>  // std::seed_seq
+#include <utility> // std::forward
 
 namespace ropufu
 {
@@ -106,7 +106,7 @@ namespace ropufu
                 m_builtin_distribution(m_distribution.to_std())
             {
                 auto now = std::chrono::high_resolution_clock::now();
-                std::seed_seq ss = { 1, 7, 2, 9, static_cast<std::int_fast32_t>(now.time_since_epoch().count()) };
+                std::seed_seq ss { 1, 7, 2, 9, static_cast<std::int32_t>(now.time_since_epoch().count()) };
                 this->m_engine.seed(ss);
             }
             

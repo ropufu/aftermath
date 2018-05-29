@@ -147,10 +147,7 @@ namespace ropufu::aftermath
         enum_array_iterator(value_pointer_type collection_data_pointer, underlying_type position) noexcept
             : m_raw_data(collection_data_pointer), m_position(position)
         {
-            if constexpr (type::capacity == 0)
-            {
-                static_assert(false, "ropufu::aftermath::detail::enum_array_keys<...> has to be specialized.");
-            }
+            static_assert(type::capacity != 0, "ropufu::aftermath::detail::enum_array_keys<...> has to be specialized.");
         } // enum_array_iterator(...)
 
         /** Inequality operator, used as termination condition. */
@@ -214,10 +211,7 @@ namespace ropufu::aftermath
         enum_array_iterator(value_pointer_type collection_data_pointer, underlying_type position) noexcept
             : m_raw_data(collection_data_pointer), m_position(position)
         {
-            if constexpr (type::capacity == 0)
-            {
-                static_assert(false, "ropufu::aftermath::detail::enum_array_keys<...> has to be specialized.");
-            }
+            static_assert(type::capacity != 0, "ropufu::aftermath::detail::enum_array_keys<...> has to be specialized.");
             this->advance_to_true();
         } // enum_array_iterator(...)
 
@@ -544,8 +538,8 @@ namespace ropufu::aftermath
 
 namespace std
 {
-    template <typename t_enum_type, typename t_data_type>
-    std::string to_string(const ropufu::aftermath::enum_array<t_enum_type, t_data_type>& value) noexcept
+    template <typename t_enum_type, typename t_value_type>
+    std::string to_string(const ropufu::aftermath::enum_array<t_enum_type, t_value_type>& value) noexcept
     {
         nlohmann::json j = value;
         return j.dump();
