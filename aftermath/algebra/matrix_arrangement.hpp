@@ -39,8 +39,8 @@ namespace ropufu::aftermath::algebra
             {
                 if constexpr (!t_noexcept)
                 {
-                    if (row_index >= height) throw std::out_of_range("Row index must be less than the height of the matrix.");
-                    if (column_index >= width) throw std::out_of_range("Column index must be less than the width of the matrix.");
+                    if (index.row >= height) throw std::out_of_range("Row index must be less than the height of the matrix.");
+                    if (index.column >= width) throw std::out_of_range("Column index must be less than the width of the matrix.");
                 } // if constexpr (...)
                 return index.row * width + index.column;
             } // flatten(...)
@@ -71,8 +71,8 @@ namespace ropufu::aftermath::algebra
             {
                 if constexpr (!t_noexcept)
                 {
-                    if (row_index >= height) throw std::out_of_range("Row index must be less than the height of the matrix.");
-                    if (column_index >= width) throw std::out_of_range("Column index must be less than the width of the matrix.");
+                    if (index.row >= height) throw std::out_of_range("Row index must be less than the height of the matrix.");
+                    if (index.column >= width) throw std::out_of_range("Column index must be less than the width of the matrix.");
                 } // if constexpr (...)
                 return index.column * height + index.row;
             } // flatten(...)

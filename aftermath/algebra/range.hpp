@@ -1,6 +1,6 @@
 
 #ifndef ROPUFU_AFTERMATH_ALGEBRA_RANGE_HPP_INCLUDED
-#define ROPUFU_AFTERMATH_RANGE_HPP_INCLUDED
+#define ROPUFU_AFTERMATH_ALGEBRA_RANGE_HPP_INCLUDED
 
 #include <nlohmann/json.hpp>
 #include "../quiet_json.hpp"
@@ -227,4 +227,4 @@ namespace std
     } // to_string(...)
 } // namespace std
 
-#endif // ROPUFU_AFTERMATH_RANGE_HPP_INCLUDED
+#endif // ROPUFU_AFTERMATH_ALGEBRA_RANGE_HPP_INCLUDED
