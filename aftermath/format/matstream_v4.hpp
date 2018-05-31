@@ -237,4 +237,9 @@ namespace ropufu
     } // namespace aftermath
 } // namespace ropufu
 
+namespace ropufu::afmt
+{
+    using matstream_v4_t = ropufu::aftermath::format::matstream<4>;
+} // namespace ropufu::afmt
+
 #endif // ROPUFU_AFTERMATH_FORMAT_MATSTREAM_V4_HPP_INCLUDED

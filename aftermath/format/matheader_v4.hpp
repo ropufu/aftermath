@@ -295,4 +295,9 @@ namespace ropufu
     } // namespace aftermath
 } // namespace ropufu
 
+namespace ropufu::afmt
+{
+    using matheader_v4_t = ropufu::aftermath::format::matheader<4>;
+} // namespace ropufu::afmt
+
 #endif // ROPUFU_AFTERMATH_FORMAT_MATHEADER_V4_HPP_INCLUDED

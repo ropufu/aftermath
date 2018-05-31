@@ -61,14 +61,19 @@ namespace ropufu::aftermath::algebra
     namespace detail
     {
         template <typename, typename = void> struct has_inequality : public std::false_type { };
-        template <typename t_type> struct has_inequality<t_type, std::void_t<decltype(std::declval<const t_type&>() != std::declval<const t_type&>())>> : public std::true_type { };
+        template <typename t_type> struct has_inequality<t_type, 
+            std::void_t<decltype( std::declval<const t_type&>() != std::declval<const t_type&>() )>> : public std::true_type { };
         template <typename t_type> inline constexpr bool has_inequality_v = has_inequality<t_type>::value;
         
+        template <typename, typename, typename, typename = void> struct has_two_dimensional_indexer : public std::false_type { };
+        template <typename t_type, typename t_value_type,  typename t_size_type>
+        struct has_two_dimensional_indexer<t_type, t_value_type, t_size_type,
+            std::void_t<decltype( std::is_convertible_v<t_type, t_value_type(*)(t_size_type, t_size_type)> )>> : public std::true_type { };
+        template <typename t_type, typename t_value_type, typename t_size_type>
+        inline constexpr bool has_two_dimensional_indexer_v = has_two_dimensional_indexer<t_type, t_value_type, t_size_type>::value;
+        
         template <bool t_is_enabled, typename t_derived_type, typename t_value_type, typename t_size_type>
-        struct wipe_module
-        {
-            wipe_module() noexcept { }
-        }; // struct wipe_module
+        struct wipe_module { };
 
         template <typename t_derived_type, typename t_value_type, typename t_size_type>
         struct wipe_module<true, t_derived_type, t_value_type, t_size_type>
@@ -132,41 +137,53 @@ namespace ropufu::aftermath::algebra
     } // namespace detail
 
     /** @brief A rectangular array. */
-    template <typename t_value_type, typename t_allocator_type = std::allocator<t_value_type>, typename t_size_type = typename std::allocator_traits<t_allocator_type>::size_type, typename t_arrangement_type = detail::row_major<t_size_type>>
+    template <typename t_value_type,
+        typename t_arrangement_type = detail::row_major<typename std::allocator_traits<std::allocator<t_value_type>>::size_type>,
+        typename t_allocator_type = std::allocator<t_value_type>>
     struct matrix;
 
+    /** @brief Row major matrix alias with default allocator. */
     template <typename t_value_type>
-    using matrix_row_major = matrix<t_value_type, std::allocator<t_value_type>, typename std::allocator_traits<std::allocator<t_value_type>>::size_type, detail::row_major<typename std::allocator_traits<std::allocator<t_value_type>>::size_type>>;
+    using rmatrix_t = matrix<t_value_type,
+        detail::row_major<typename std::allocator_traits<std::allocator<t_value_type>>::size_type>,
+        std::allocator<t_value_type>>;
 
+    /** @brief Column major matrix alias with default allocator. */
     template <typename t_value_type>
-    using matrix_column_major = matrix<t_value_type, std::allocator<t_value_type>, typename std::allocator_traits<std::allocator<t_value_type>>::size_type, detail::column_major<typename std::allocator_traits<std::allocator<t_value_type>>::size_type>>;
+    using cmatrix_t = matrix<t_value_type,
+        detail::column_major<typename std::allocator_traits<std::allocator<t_value_type>>::size_type>,
+        std::allocator<t_value_type>>;
 
     /** @brief A rectangular array. */
-    template <typename t_value_type, typename t_allocator_type, typename t_size_type, typename t_arrangement_type>
+    template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
     struct matrix
-        : public detail::wipe_module<std::is_arithmetic_v<t_value_type>, matrix<t_value_type, t_allocator_type, t_size_type, t_arrangement_type>, t_value_type, t_size_type>,
-        public detail::add_assign_op_module<detail::has_add_assign_v<t_value_type>, matrix<t_value_type, t_allocator_type, t_size_type, t_arrangement_type>>,
-        public detail::subtract_assign_op_module<detail::has_subtract_assign_v<t_value_type>, matrix<t_value_type, t_allocator_type, t_size_type, t_arrangement_type>>,
-        public detail::multiply_assign_op_module<detail::has_multiply_assign_v<t_value_type>, matrix<t_value_type, t_allocator_type, t_size_type, t_arrangement_type>>,
-        public detail::divide_assign_op_module<detail::has_divide_assign_v<t_value_type>, matrix<t_value_type, t_allocator_type, t_size_type, t_arrangement_type>>,
-        public detail::binor_assign_op_module<detail::has_binor_assign_v<t_value_type>, matrix<t_value_type, t_allocator_type, t_size_type, t_arrangement_type>>,
-        public detail::binand_assign_op_module<detail::has_binand_assign_v<t_value_type>, matrix<t_value_type, t_allocator_type, t_size_type, t_arrangement_type>>,
-        public detail::binxor_assign_op_module<detail::has_binxor_assign_v<t_value_type>, matrix<t_value_type, t_allocator_type, t_size_type, t_arrangement_type>>,
-        public detail::inequality_op_module<detail::has_inequality_v<t_value_type>, matrix<t_value_type, t_allocator_type, t_size_type, t_arrangement_type>>
+        : public detail::wipe_module<std::is_arithmetic_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>, t_value_type, typename t_arrangement_type::size_type>,
+        public detail::add_assign_op_module<detail::has_add_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
+        public detail::subtract_assign_op_module<detail::has_subtract_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
+        public detail::multiply_assign_op_module<detail::has_multiply_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
+        public detail::divide_assign_op_module<detail::has_divide_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
+        public detail::binor_assign_op_module<detail::has_binor_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
+        public detail::binand_assign_op_module<detail::has_binand_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
+        public detail::binxor_assign_op_module<detail::has_binxor_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
+        public detail::inequality_op_module<detail::has_inequality_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>
     {
-        using type = matrix<t_value_type, t_allocator_type, t_size_type, t_arrangement_type>;
+        using type = matrix<t_value_type, t_arrangement_type, t_allocator_type>;
         using value_type = t_value_type;
         using arrangement_type = t_arrangement_type;
         using allocator_type = t_allocator_type;
         using allocator_traits_type = std::allocator_traits<t_allocator_type>;
-        using size_type = t_size_type;
-        using index_type = matrix_index<t_size_type>;
-        using iterator_type = t_value_type*;
-        using const_iterator_type = const t_value_type*;
+        using size_type = typename t_arrangement_type::size_type;
+
+        using signed_size_type = std::make_signed_t<size_type>;
+        using index_type = matrix_index<size_type>;
+        using slice_type = detail::matrix_slice<value_type, size_type>;
+        using const_slice_type = detail::const_matrix_slice<value_type, size_type>;
+        using iterator_type = value_type*;
+        using const_iterator_type = const value_type*;
 
         static constexpr bool is_trivial = std::is_trivially_constructible_v<t_value_type> && std::is_trivially_destructible_v<t_value_type>;
 
-        template <typename, typename, typename, typename> friend struct matrix;
+        template <typename, typename, typename> friend struct matrix;
         template <bool, typename, typename, typename> friend struct detail::wipe_module;
         template <bool, typename> friend struct detail::add_assign_op_module;
         template <bool, typename> friend struct detail::subtract_assign_op_module;
@@ -179,11 +196,12 @@ namespace ropufu::aftermath::algebra
 
     private:
         template <typename t_other_value_type>
-        using other_t = matrix<t_other_value_type, t_allocator_type, t_size_type, t_arrangement_type>;
+        using other_t = matrix<t_other_value_type, t_arrangement_type, t_allocator_type>;
 
         size_type m_height = 0; // Height of the matrix.
         size_type m_width = 0;  // Width of the matrix.
         size_type m_size = 0;   // Number of elements in the matrix.
+        size_type m_square_size = 0; // Smallest of the width and height of the matrix.
         allocator_type m_allocator = {};
         value_type* m_begin_ptr = nullptr; // Pointer to the first element of the matrix.
         value_type* m_end_ptr = nullptr;   // Pointer to the past-the-last element of the matrix.
@@ -193,7 +211,7 @@ namespace ropufu::aftermath::algebra
          *  @exception std::bad_alloc Allocation failed.
          */
         matrix(std::nullptr_t, size_type height, size_type width)
-            : m_height(height), m_width(width), m_size(height * width)
+            : m_height(height), m_width(width), m_size(height * width), m_square_size(height < width ? height : width)
         {
             static_assert(std::is_default_constructible_v<value_type>, "value_type has to be default constructible.");
             this->allocate();
@@ -233,7 +251,7 @@ namespace ropufu::aftermath::algebra
     public:
         /** @brief Creates a matrix by stealing from \p other. */
         matrix(type&& other) noexcept
-            : m_height(other.m_height), m_width(other.m_width), m_size(other.m_size), 
+            : m_height(other.m_height), m_width(other.m_width), m_size(other.m_size), m_square_size(other.m_square_size),
             m_allocator(std::forward<allocator_type>(other.m_allocator)), m_begin_ptr(other.m_begin_ptr), m_end_ptr(other.m_end_ptr), m_back_ptr(other.m_back_ptr)
         {
             other.m_allocator = {};
@@ -250,6 +268,7 @@ namespace ropufu::aftermath::algebra
             this->m_height = other.m_height;
             this->m_width = other.m_width;
             this->m_size = other.m_size;
+            this->m_square_size = other.m_square_size;
             this->m_allocator = std::forward<allocator_type>(other.m_allocator);
             this->m_begin_ptr = other.m_begin_ptr;
             this->m_end_ptr = other.m_end_ptr;
@@ -283,10 +302,11 @@ namespace ropufu::aftermath::algebra
             for (value_type* it = this->m_begin_ptr; it != this->m_end_ptr; ++it) allocator_traits_type::construct(this->m_allocator, it, value);
         } // matrix(...)
 
-        /** @brief Creates a matrix of a given size with values generatred by \c generator: (i, j) -> value_type. */
+        /** @brief Creates a matrix of a given size with values generatred by \c generator: (row_index, column_index) -> value. */
         template <typename t_generator_type>
         static type generate(size_type height, size_type width, t_generator_type&& generator)
         {
+            static_assert(detail::has_two_dimensional_indexer_v<t_generator_type&&, value_type, size_type>, "generator must allow for (size_type, size_type) -> value_type call.");
             type result(nullptr, height, width);
             for (size_type i = 0; i < height; ++i)
                 for (size_type j = 0; j < width; ++j)
@@ -372,6 +392,7 @@ namespace ropufu::aftermath::algebra
                 this->m_height = other.m_height;
                 this->m_width = other.m_width;
                 this->m_size = other.m_size;
+                this->m_square_size = other.m_square_size;
                 this->allocate(); // Allocate memory to hold new values.
             } // if (...)
 
@@ -417,6 +438,9 @@ namespace ropufu::aftermath::algebra
         /** Checks if the matrix is empty. */
         bool empty() const noexcept { return this->m_size == 0; }
 
+        /** Checks if the matrix is a square matrix. */
+        bool square() const noexcept { return this->m_height == this->m_width; }
+
         /** @brief Re-shape the matrix.
          *  @remark The behavior of this operation depends on \c arrangement_type of this matrix.
          */
@@ -444,9 +468,9 @@ namespace ropufu::aftermath::algebra
         bool within_bounds(const index_type& index) const noexcept { return index.row < this->m_height && index.column < this->m_width; }
 
         /** @brief Access matrix elements. No bound checks are performed. */
-        const value_type& operator ()(std::size_t row_index, std::size_t column_index) const { return this->m_begin_ptr[arrangement_type::flatten(row_index, column_index, this->m_height, this->m_width)]; }
+        const value_type& operator ()(size_type row_index, size_type column_index) const { return this->m_begin_ptr[arrangement_type::flatten(row_index, column_index, this->m_height, this->m_width)]; }
         /** @brief Access matrix elements. No bound checks are performed. */
-        value_type& operator ()(std::size_t row_index, std::size_t column_index) { return this->m_begin_ptr[arrangement_type::flatten(row_index, column_index, this->m_height, this->m_width)]; }
+        value_type& operator ()(size_type row_index, size_type column_index) { return this->m_begin_ptr[arrangement_type::flatten(row_index, column_index, this->m_height, this->m_width)]; }
         
         /** @brief Access matrix elements. No bound checks are performed. */
         const value_type& operator ()(const index_type& index) const { return this->operator ()(index.row, index.column); }
@@ -466,16 +490,16 @@ namespace ropufu::aftermath::algebra
             if (row_index >= this->m_height) throw std::out_of_range("Row index must be less than the height of the matrix.");
             if (column_index >= this->m_width) throw std::out_of_range("Column index must be less than the width of the matrix.");
             return this->operator ()(row_index, column_index);
-        }
+        } // at(...)
         /** @brief Access matrix elements.
          *  @exception std::out_of_range Index outside the dimensions of the matrix.
          */
-        value_type& at(std::size_t row_index, std::size_t column_index)
+        value_type& at(size_type row_index, size_type column_index)
         {
             if (row_index >= this->m_height) throw std::out_of_range("Row index must be less than the height of the matrix.");
             if (column_index >= this->m_width) throw std::out_of_range("Column index must be less than the width of the matrix.");
             return this->operator ()(row_index, column_index);
-        }
+        } // at(...)
         
         /** @brief Access matrix elements.
          *  @exception std::out_of_range Index outside the dimensions of the matrix.
@@ -497,7 +521,128 @@ namespace ropufu::aftermath::algebra
 
         iterator_type begin() noexcept { return this->m_begin_ptr; }
         iterator_type end() noexcept { return this->m_end_ptr; }
+
+        /** @brief Access the elements of a particular row.
+         *  @exception std::out_of_range Index outside the dimensions of the matrix.
+         */
+        const_slice_type row(size_type row_index) const
+        {
+            if (row_index >= this->m_height) throw std::out_of_range("Row index must be less than the height of the matrix.");
+
+            size_type first_index = arrangement_type::flatten(row_index, 0, this->m_height, this->m_width);
+            size_type past_the_last_index = arrangement_type::flatten(row_index, this->m_width, this->m_height, this->m_width);
+            return const_slice_type(this->m_begin_ptr + first_index, this->m_begin_ptr + past_the_last_index, arrangement_type::row_iterator_stride(this->m_height, this->m_width), this->m_width);
+        } // row(...)
+        /** @brief Access the elements of a particular row.
+         *  @exception std::out_of_range Index outside the dimensions of the matrix.
+         */
+        slice_type row(size_type row_index)
+        {
+            if (row_index >= this->m_height) throw std::out_of_range("Row index must be less than the height of the matrix.");
+
+            size_type first_index = arrangement_type::flatten(row_index, 0, this->m_height, this->m_width);
+            size_type past_the_last_index = arrangement_type::flatten(row_index, this->m_width, this->m_height, this->m_width);
+            return slice_type(this->m_begin_ptr + first_index, this->m_begin_ptr + past_the_last_index, arrangement_type::row_iterator_stride(this->m_height, this->m_width), this->m_width);
+        } // row(...)
+
+        /** @brief Access the elements of a particular column.
+         *  @exception std::out_of_range Index outside the dimensions of the matrix.
+         */
+        const_slice_type column(size_type column_index) const
+        {
+            if (column_index >= this->m_width) throw std::out_of_range("Column index must be less than the width of the matrix.");
+
+            size_type first_index = arrangement_type::flatten(0, column_index, this->m_height, this->m_width);
+            size_type past_the_last_index = arrangement_type::flatten(this->m_height, column_index, this->m_height, this->m_width);
+            return const_slice_type(this->m_begin_ptr + first_index, this->m_begin_ptr + past_the_last_index, arrangement_type::column_iterator_stride(this->m_height, this->m_width), this->m_height);
+        } // column(...)
+        /** @brief Access the elements of a particular column.
+         *  @exception std::out_of_range Index outside the dimensions of the matrix.
+         */
+        slice_type column(size_type column_index)
+        {
+            if (column_index >= this->m_width) throw std::out_of_range("Column index must be less than the width of the matrix.");
+
+            size_type first_index = arrangement_type::flatten(0, column_index, this->m_height, this->m_width);
+            size_type past_the_last_index = arrangement_type::flatten(this->m_height, column_index, this->m_height, this->m_width);
+            return slice_type(this->m_begin_ptr + first_index, this->m_begin_ptr + past_the_last_index, arrangement_type::column_iterator_stride(this->m_height, this->m_width), this->m_height);
+        } // column(...)
+
+        /** @brief Access the elements of the main diagonal. */
+        const_slice_type diag() const noexcept
+        {
+            size_type count = this->m_square_size;
+            size_type first_index = arrangement_type::flatten(0, 0, this->m_height, this->m_width);
+            size_type past_the_last_index = arrangement_type::flatten(count, count, this->m_height, this->m_width);
+            return const_slice_type(this->m_begin_ptr + first_index, this->m_begin_ptr + past_the_last_index, arrangement_type::diagonal_iterator_stride(this->m_height, this->m_width), count);
+        } // diag(...)
+        /** @brief Access the elements of the main diagonal. */
+        slice_type diag() noexcept
+        {
+            size_type count = this->m_square_size;
+            size_type first_index = arrangement_type::flatten(0, 0, this->m_height, this->m_width);
+            size_type past_the_last_index = arrangement_type::flatten(count, count, this->m_height, this->m_width);
+            return slice_type(this->m_begin_ptr + first_index, this->m_begin_ptr + past_the_last_index, arrangement_type::diagonal_iterator_stride(this->m_height, this->m_width), count);
+        } // diag(...)
+
+        /** @brief Access the elements of the off-diagonal.
+         *  @exception std::out_of_range Index outside the dimensions of the matrix.
+         */
+        const_slice_type diag(signed_size_type diagonal_index) const
+        {
+            size_type first_row_index = 0;
+            size_type first_column_index = 0;
+            size_type count = 0;
+            if (diagonal_index >= 0) { first_column_index = static_cast<size_type>(diagonal_index); count = this->m_width - first_column_index; } // Upper triangle.
+            else { first_row_index = static_cast<size_type>(-diagonal_index); count = this->m_height - first_row_index; } // Lower triangle.
+
+            if (first_row_index >= this->m_height) throw std::out_of_range("Diagonal index must be greater than the negative height of the matrix.");
+            if (first_column_index >= this->m_width) throw std::out_of_range("Diagonal index must be less than the width of the matrix.");
+
+            if (count > this->m_square_size) count = this->m_square_size;
+            //size_type max = this->m_height + this->m_width - min;
+            size_type first_index = arrangement_type::flatten(first_row_index, first_column_index, this->m_height, this->m_width);
+            size_type past_the_last_index = arrangement_type::flatten(first_row_index + count, first_column_index + count, this->m_height, this->m_width);
+            return const_slice_type(this->m_begin_ptr + first_index, this->m_begin_ptr + past_the_last_index, arrangement_type::diagonal_iterator_stride(this->m_height, this->m_width), count);
+        } // diag(...)
+        /** @brief Access the elements of the off-diagonal.
+         *  @exception std::out_of_range Index outside the dimensions of the matrix.
+         */
+        slice_type diag(signed_size_type diagonal_index)
+        {
+            size_type first_row_index = 0;
+            size_type first_column_index = 0;
+            size_type count = 0;
+            if (diagonal_index >= 0) { first_column_index = static_cast<size_type>(diagonal_index); count = this->m_width - first_column_index; } // Upper triangle.
+            else { first_row_index = static_cast<size_type>(-diagonal_index); count = this->m_height - first_row_index; } // Lower triangle.
+
+            if (first_row_index >= this->m_height) throw std::out_of_range("Diagonal index must be greater than the negative height of the matrix.");
+            if (first_column_index >= this->m_width) throw std::out_of_range("Diagonal index must be less than the width of the matrix.");
+
+            if (count > this->m_square_size) count = this->m_square_size;
+            //size_type max = this->m_height + this->m_width - min;
+            size_type first_index = arrangement_type::flatten(first_row_index, first_column_index, this->m_height, this->m_width);
+            size_type past_the_last_index = arrangement_type::flatten(first_row_index + count, first_column_index + count, this->m_height, this->m_width);
+            return slice_type(this->m_begin_ptr + first_index, this->m_begin_ptr + past_the_last_index, arrangement_type::diagonal_iterator_stride(this->m_height, this->m_width), count);
+        } // diag(...)
     }; // struct matrix
 } // namespace ropufu::aftermath::algebra
+
+namespace ropufu::afmt
+{
+    /** @brief A rectangular array. */
+    template <typename t_value_type,
+        typename t_arrangement_type = ropufu::aftermath::algebra::detail::row_major<typename std::allocator_traits<std::allocator<t_value_type>>::size_type>,
+        typename t_allocator_type = std::allocator<t_value_type>>
+    using matrix_t = ropufu::aftermath::algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>;
+
+    /** @brief Row major matrix alias with default allocator. */
+    template <typename t_value_type>
+    using rmatrix_t = ropufu::aftermath::algebra::rmatrix_t<t_value_type>;
+
+    /** @brief Column major matrix alias with default allocator. */
+    template <typename t_value_type>
+    using cmatrix_t = ropufu::aftermath::algebra::cmatrix_t<t_value_type>;
+} // namespace ropufu::afmt
 
 #endif // ROPUFU_AFTERMATH_ALGEBRA_MATRIX_HPP_INCLUDED

@@ -214,4 +214,9 @@ namespace ropufu::aftermath::algorithm
     }; // struct matrix_pathfinder
 } // namespace ropufu::aftermath::algorithm
 
+namespace ropufu::afmt
+{
+    using matrix_pathfinder_t = ropufu::aftermath::algorithm::matrix_pathfinder;
+} // namespace ropufu::afmt
+
 #endif // ROPUFU_AFTERMATH_ALGORITHM_MATRIX_PATHFINDER_HPP_INCLUDED

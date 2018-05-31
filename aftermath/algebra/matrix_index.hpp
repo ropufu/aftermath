@@ -52,4 +52,10 @@ namespace std
     }; // struct hash<...>
 } // namespace std
 
+namespace ropufu::afmt
+{
+    template <typename t_size_type = std::size_t>
+    using matrix_index_t = ropufu::aftermath::algebra::matrix_index<t_size_type>;
+} // namespace ropufu::afmt
+
 #endif // ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INDEX_HPP_INCLUDED

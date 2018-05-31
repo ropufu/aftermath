@@ -34,65 +34,65 @@ namespace ropufu::aftermath::algebra
 
     namespace detail
     {
-        template <typename t_data_type, typename t_container_type>
+        template <typename t_value_type, typename t_container_type>
         struct range_container
         {
-            using type = range_container<t_data_type, t_container_type>;
-            using data_type = t_data_type;
+            using type = range_container<t_value_type, t_container_type>;
+            using value_type = t_value_type;
             using container_type = t_container_type;
 
             static container_type make_empty(std::size_t count = 0) noexcept;
-            static container_type make_init(std::initializer_list<data_type>) noexcept;
+            static container_type make_init(std::initializer_list<value_type>) noexcept;
             static void shrink(container_type& container) noexcept;
         }; // struct range_container
 
-        template <typename t_data_type>
-        struct range_container<t_data_type, std::vector<t_data_type>>
+        template <typename t_value_type>
+        struct range_container<t_value_type, std::vector<t_value_type>>
         {
-            using type = range_container<t_data_type, std::vector<t_data_type>>;
-            using data_type = t_data_type;
-            using container_type = std::vector<t_data_type>;
+            using type = range_container<t_value_type, std::vector<t_value_type>>;
+            using value_type = t_value_type;
+            using container_type = std::vector<t_value_type>;
 
             static container_type make_empty(std::size_t count = 0) noexcept { return container_type(count); }
-            static container_type make_init(std::initializer_list<data_type> data) noexcept { return container_type(data); }
+            static container_type make_init(std::initializer_list<value_type> data) noexcept { return container_type(data); }
             static void shrink(container_type& container) noexcept { container.shrink_to_fit(); };
         }; // struct range_container<...>
     } // namespace detail
 
     /** @brief Inspired by MATLAB's linspace function. */
-    template <typename t_data_type>
+    template <typename t_value_type>
     struct range
     {
-        using type = range<t_data_type>;
-        using data_type = t_data_type;
+        using type = range<t_value_type>;
+        using value_type = t_value_type;
 
         // ~~ Json names ~~
         static constexpr char jstr_from[] = "from";
         static constexpr char jstr_to[] = "to";
 
     private:
-        data_type m_from = { };
-        data_type m_to = { };
+        value_type m_from = { };
+        value_type m_to = { };
 
     public:
         range() noexcept { }
         
-        range(const data_type& from, const data_type& to) noexcept
+        range(const value_type& from, const value_type& to) noexcept
             : m_from(from), m_to(to)
         {
         } // range(...)
 
-        const data_type& from() const noexcept { return this->m_from; }
-        const data_type& to() const noexcept { return this->m_to; }
+        const value_type& from() const noexcept { return this->m_from; }
+        const value_type& to() const noexcept { return this->m_to; }
 
         template <typename t_container_type>
         bool explode(t_container_type& container, std::size_t count, spacing transform = spacing::linear) const noexcept
         {
             switch (transform)
             {
-                case spacing::linear: return this->explode(container, count, [] (const data_type& x) { return x; }, [] (const data_type& x) { return x; }); // break;
-                case spacing::logarithmic: return this->explode(container, count, [] (const data_type& x) { return std::log10(x); }, [] (const data_type& x) { return std::pow(10, x); }); // break;
-                case spacing::exponential: return this->explode(container, count, [] (const data_type& x) { return std::pow(10, x); }, [] (const data_type& x) { return std::log10(x); }); // break;
+                case spacing::linear: return this->explode(container, count, [] (const value_type& x) { return x; }, [] (const value_type& x) { return x; }); // break;
+                case spacing::logarithmic: return this->explode(container, count, [] (const value_type& x) { return std::log10(x); }, [] (const value_type& x) { return std::pow(10, x); }); // break;
+                case spacing::exponential: return this->explode(container, count, [] (const value_type& x) { return std::pow(10, x); }, [] (const value_type& x) { return std::log10(x); }); // break;
             } // switch (...)
             return false; // Spacing not recognized.
         } // explode(...)
@@ -100,7 +100,7 @@ namespace ropufu::aftermath::algebra
         template <typename t_container_type, typename t_forward_transform_type, typename t_backward_transform_type>
         bool explode(t_container_type& container, std::size_t count, const t_forward_transform_type& forward, const t_backward_transform_type& backward) const noexcept
         {
-            using helper_type = detail::range_container<data_type, t_container_type>;
+            using helper_type = detail::range_container<value_type, t_container_type>;
 
             switch (count)
             {
@@ -111,14 +111,14 @@ namespace ropufu::aftermath::algebra
 
             container = helper_type::make_empty(count);
 
-            data_type f_from = forward(this->m_from);
-            data_type f_to = forward(this->m_to);
-            data_type f_range = f_to - f_from;
+            value_type f_from = forward(this->m_from);
+            value_type f_to = forward(this->m_to);
+            value_type f_range = f_to - f_from;
 
             std::size_t i = 0;
             bool is_first = true;
 
-            for (data_type& x : container)
+            for (value_type& x : container)
             {
                 bool is_last = (i == count - 1);
 
@@ -126,7 +126,7 @@ namespace ropufu::aftermath::algebra
                 else if (is_last) x = this->m_to;
                 else
                 {
-                    data_type f_step = (i * f_range) / (count - 1);
+                    value_type f_step = (i * f_range) / (count - 1);
                     x = backward(f_from + f_step);
                 }
                 ++i;
@@ -156,13 +156,13 @@ namespace ropufu::aftermath::algebra
     }; // struct range
 
     // ~~ Json name definitions ~~
-    template <typename t_data_type> constexpr char range<t_data_type>::jstr_from[];
-    template <typename t_data_type> constexpr char range<t_data_type>::jstr_to[];
+    template <typename t_value_type> constexpr char range<t_value_type>::jstr_from[];
+    template <typename t_value_type> constexpr char range<t_value_type>::jstr_to[];
     
-    template <typename t_data_type>
-    void to_json(nlohmann::json& j, const range<t_data_type>& x) noexcept
+    template <typename t_value_type>
+    void to_json(nlohmann::json& j, const range<t_value_type>& x) noexcept
     {
-        using type = range<t_data_type>;
+        using type = range<t_value_type>;
 
         j = nlohmann::json{
             {type::jstr_from, x.from()},
@@ -170,16 +170,16 @@ namespace ropufu::aftermath::algebra
         };
     } // to_json(...)
 
-    template <typename t_data_type>
-    void from_json(const nlohmann::json& j, range<t_data_type>& x) noexcept
+    template <typename t_value_type>
+    void from_json(const nlohmann::json& j, range<t_value_type>& x) noexcept
     {
         quiet_json q(j);
-        using type = range<t_data_type>;
+        using type = range<t_value_type>;
 
         // Populate default values.
-        t_data_type from = x.from();
-        t_data_type to = x.to();
-        std::vector<t_data_type> v = { from, to };
+        t_value_type from = x.from();
+        t_value_type to = x.to();
+        std::vector<t_value_type> v = { from, to };
 
         // Parse json entries.
         if (j.is_array()) q.interpret_as(v);
@@ -226,5 +226,13 @@ namespace std
         } // switch (...)
     } // to_string(...)
 } // namespace std
+
+namespace ropufu::afmt
+{
+    using spacing_t = ropufu::aftermath::algebra::spacing;
+
+    template <typename t_value_type>
+    using range_t = ropufu::aftermath::algebra::range<t_value_type>;
+} // namespace ropufu::afmt
 
 #endif // ROPUFU_AFTERMATH_ALGEBRA_RANGE_HPP_INCLUDED
