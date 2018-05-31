@@ -53,7 +53,7 @@ namespace ropufu
             template <>
             struct matstream<4>
             {
-                using arrangement_type = typename algebra::detail::matrix_arrangement<false>;
+                using arrangement_type = algebra::detail::column_major<std::size_t>;
                 using type = matstream<4>;
                 using header_type = matheader<4>;
                 static constexpr std::int32_t mat_level = 4;
@@ -82,62 +82,45 @@ namespace ropufu
                 }
 
                 /** Appends the provided value to the name of the next matrix. */
-                type& operator <<(const std::string& name) noexcept
+                template <typename t_char_type>
+                type& operator <<(const std::basic_string<t_char_type>& name) noexcept
                 {
                     this->m_name_stream << name;
                     return *this;
-                }
-
-                /** Appends the provided value to the name of the next matrix. */
-                type& operator <<(std::string&& name) noexcept
-                {
-                    this->m_name_stream << name;
-                    return *this;
-                }
-
-                /** Appends the provided value to the name of the next matrix. */
-                template <typename t_name_type>
-                std::enable_if_t<std::is_integral<t_name_type>::value, type>& operator <<(const t_name_type& name) noexcept
-                {
-                    this->m_name_stream << name;
-                    return *this;
-                }
-
-                /** Appends the provided value to the name of the next matrix. */
-                template <typename t_name_type>
-                std::enable_if_t<std::is_integral<t_name_type>::value, type>& operator <<(t_name_type&& name) noexcept
-                {
-                    this->m_name_stream << name;
-                    return *this;
-                }
+                } // operator <<(...)
 
                 /** @brief Writes \p matrix to the end of .mat file.
                  *  @remark Advances current reader position to the end of the written block (end of the file).
                  *  @exception not_an_error::runtime_error This error is pushed to \c quiet_error if the underlying file could not be opened.
                  */
-                template <typename t_data_type, bool t_is_row_major>
-                type& operator <<(const algebra::matrix<t_data_type, t_is_row_major>& mat) noexcept
+                template <typename t_value_type>
+                type& operator <<(const t_value_type& value) noexcept
                 {
-                    std::ofstream filestream;
-
-                    // Initialize header.
-                    header_type header;
-                    header.initialize(mat);
-                    header.set_name(this->m_name_stream);
-                    // Reset name stream.
-                    this->m_name_stream.clear();
-                    this->m_name_stream.str("");
-                    
-                    // Write header.
-                    std::size_t position = header.write(this->m_filename);
-                    if (position == 0)
+                    constexpr bool is_arithmetic = std::is_arithmetic_v<t_value_type>;
+                    constexpr bool is_string_convertible = std::is_convertible_v<t_value_type, std::string>;
+                    if constexpr (is_arithmetic || is_string_convertible) this->m_name_stream << value;
+                    else
                     {
-                        quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to write header.", __FUNCTION__, __LINE__);
-                        return *this;
-                    }
-                    // Write body.
-                    this->m_reader_position = this->write(mat, position);
+                        std::ofstream filestream {};
 
+                        // Initialize header.
+                        header_type header {};
+                        header.initialize(value);
+                        header.set_name(this->m_name_stream);
+                        // Reset name stream.
+                        this->m_name_stream.clear();
+                        this->m_name_stream.str("");
+                        
+                        // Write header.
+                        std::size_t position = header.write(this->m_filename);
+                        if (position == 0)
+                        {
+                            quiet_error::instance().push(not_an_error::runtime_error, severity_level::minor, "Failed to write header.", __FUNCTION__, __LINE__);
+                            return *this;
+                        }
+                        // Write body.
+                        this->m_reader_position = this->write(value, position);
+                    }
                     return *this;
                 }
 
@@ -146,10 +129,10 @@ namespace ropufu
                  *  @exception not_an_error::runtime_error This error is pushed to \c quiet_error if the header could not be read.
                  *  @exception not_an_error::runtime_error This error is pushed to \c quiet_error if data type in \p mat does not math that in the file.
                  */
-                template <typename t_data_type, bool t_is_row_major>
-                void load(std::string& matrix_name, algebra::matrix<t_data_type, t_is_row_major>& mat) noexcept
+                template <typename t_matrix_type>
+                void load(std::string& matrix_name, t_matrix_type& mat) noexcept
                 {
-                    using data_type = t_data_type;
+                    using data_type = typename t_matrix_type::value_type;
 
                     // Read header.
                     header_type header;
@@ -169,7 +152,7 @@ namespace ropufu
 
                     std::size_t height = header.height();
                     std::size_t width = header.width();
-                    mat = algebra::matrix<t_data_type, t_is_row_major>(height, width);
+                    mat = t_matrix_type(height, width);
                     
                     // Read body.
                     this->m_reader_position = this->read(mat, this->m_reader_position + header_size);
@@ -180,10 +163,10 @@ namespace ropufu
                  *  @return Position (in bytes) at the end of the written block (end of the file).
                  *  @exception std::runtime_error Underlying file could not be opened.
                  */
-                template <typename t_data_type, bool t_is_row_major>
-                std::size_t write(const algebra::matrix<t_data_type, t_is_row_major>& mat, std::size_t position) noexcept
+                template <typename t_matrix_type>
+                std::size_t write(const t_matrix_type& mat, std::size_t position) noexcept
                 {
-                    using data_type = t_data_type;
+                    using data_type = typename t_matrix_type::value_type;
                     std::ofstream filestream;
                     
                     // Write body.
@@ -217,10 +200,10 @@ namespace ropufu
                  *  @return Position (in bytes) at the end of the read block.
                  *  @exception std::runtime_error Underlying file could not be opened.
                  */
-                template <typename t_data_type, bool t_is_row_major>
-                std::size_t read(algebra::matrix<t_data_type, t_is_row_major>& mat, std::size_t position) noexcept
+                template <typename t_matrix_type>
+                std::size_t read(t_matrix_type& mat, std::size_t position) noexcept
                 {
-                    using data_type = t_data_type;
+                    using data_type = typename t_matrix_type::value_type;
                     std::ifstream filestream;
 
                     // Read body.

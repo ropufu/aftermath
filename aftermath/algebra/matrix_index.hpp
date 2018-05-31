@@ -7,15 +7,17 @@
 
 namespace ropufu::aftermath::algebra
 {
+    template <typename t_size_type = std::size_t>
     struct matrix_index
     {
-        using type = matrix_index;
+        using type = matrix_index<t_size_type>;
+        using size_type = t_size_type;
 
-        std::size_t row = 0;
-        std::size_t column = 0;
+        size_type row = 0;
+        size_type column = 0;
 
         matrix_index() noexcept { }
-        matrix_index(std::size_t row, std::size_t column) noexcept : row(row), column(column) { }
+        matrix_index(size_type row, size_type column) noexcept : row(row), column(column) { }
 
         void offset(type shift) noexcept
         {
@@ -23,7 +25,7 @@ namespace ropufu::aftermath::algebra
             this->column += shift.column;
         } // offset(...)
 
-        void offset(std::size_t row_shift, std::size_t column_shift) noexcept
+        void offset(size_type row_shift, size_type column_shift) noexcept
         {
             this->row += row_shift;
             this->column += column_shift;
@@ -36,13 +38,17 @@ namespace ropufu::aftermath::algebra
 
 namespace std
 {
-    template <>
-    struct hash<ropufu::aftermath::algebra::matrix_index>
+    template <typename t_size_type>
+    struct hash<ropufu::aftermath::algebra::matrix_index<t_size_type>>
     {
-        using argument_type = ropufu::aftermath::algebra::matrix_index;
+        using argument_type = ropufu::aftermath::algebra::matrix_index<t_size_type>;
         using result_type = std::size_t;
 
-        result_type operator()(const argument_type& x) const noexcept { return x.row ^ x.column; }
+        result_type operator ()(const argument_type& x) const noexcept
+        {
+            std::hash<t_size_type> index_hash {};
+            return index_hash(x.row ^ x.column);
+        }
     }; // struct hash<...>
 } // namespace std
 

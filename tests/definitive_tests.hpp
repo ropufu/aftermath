@@ -22,7 +22,7 @@ namespace ropufu
         {
             using engine_type = std::default_random_engine;
             using matstream_type = aftermath::format::matstream<4>;
-            using matrix_type = aftermath::algebra::matrix<double, true>;
+            using matrix_type = aftermath::algebra::matrix<double>;
 
         private:
             std::string m_filename;

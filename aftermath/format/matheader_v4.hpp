@@ -231,12 +231,12 @@ namespace ropufu
                 }
 
                 /** Initializes the header for a given matrix. */
-                template <typename t_data_type>
-                void initialize(const algebra::matrix<t_data_type>& mat,
+                template <typename t_matrix_type>
+                void initialize(const t_matrix_type& mat,
                     mat4_data_format data_format = mat4_data_format::ieee_little_endian, 
                     mat4_matrix_type_id matrix_type_id = mat4_matrix_type_id::full) noexcept
                 {
-                    using data_type = t_data_type;
+                    using data_type = typename t_matrix_type::value_type;
 
                     this->m_data_format_id = static_cast<std::int32_t>(data_format);
                     this->m_data_type_id = mat4_data_type_id<data_type>::value;

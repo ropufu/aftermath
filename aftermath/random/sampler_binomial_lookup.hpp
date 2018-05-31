@@ -53,8 +53,10 @@ namespace ropufu
                         auto& alias = sampler.alias();
                         auto& cutoff = sampler.cutoff();
 
-                        std::memcpy(&this->m_alias.unchecked_at(i, 0), alias.data(), alias.size() * sizeof(result_type)); // alias.size() is (n + 1)
-                        std::memcpy(&this->m_cutoff.unchecked_at(i, 0), cutoff.data(), cutoff.size() * sizeof(param_type)); // cutoff.size() is (n + 1)
+                        // Copy rows. 
+                        /** @todo Replace \c memcpy with a row-copying call. */
+                        std::memcpy(&this->m_alias(i, 0), alias.data(), alias.size() * sizeof(result_type)); // alias.size() is (n + 1)
+                        std::memcpy(&this->m_cutoff(i, 0), cutoff.data(), cutoff.size() * sizeof(param_type)); // cutoff.size() is (n + 1)
                     }
                 }
 
@@ -145,7 +147,7 @@ namespace ropufu
                     param_type u = (number_of_trials + 1) * uniform_random; // uniform continuous \in[0, n + 1).
                     result_type index = static_cast<result_type>(u);    // uniform discrete   \in[0, n].
                     u = (index + 1) - u;                                // 1 - overshoot: uniform continuous \in(0, 1].
-                    return (u > this->m_cutoff.unchecked_at(current_row, index)) ? this->m_alias.unchecked_at(current_row, index) : index;
+                    return (u > this->m_cutoff(current_row, index)) ? this->m_alias(current_row, index) : index;
                 }
             };
 

@@ -21,7 +21,7 @@ namespace ropufu::aftermath::algorithm
     {
         using type = matrix_pathfinder;
 
-        using index_type = ropufu::aftermath::algebra::matrix_index;
+        using index_type = ropufu::aftermath::algebra::matrix_index<std::size_t>;
         using mask_type = ropufu::aftermath::algebra::matrix<bool>;
         using cost_type = ropufu::aftermath::algebra::matrix<std::size_t>;
         using traceback_type = ropufu::aftermath::algebra::matrix<char>;
@@ -73,23 +73,6 @@ namespace ropufu::aftermath::algorithm
             m_came_from(grid.height(), grid.width())
         {
             this->initialize();
-        } // matrix_pathfinder(...)        
-
-        matrix_pathfinder(
-            const ropufu::aftermath::algebra::matrix<bool, !mask_type::is_row_major>& grid, const index_type& source) noexcept
-            : m_mask(grid.height(), grid.width()), m_source(source),
-            m_visited(grid.height(), grid.width()),
-            m_cost_from_start(grid.height(), grid.width()),
-            m_came_from(grid.height(), grid.width())
-        {
-            const std::size_t m = grid.height();
-            const std::size_t n = grid.width();
-
-            for (std::size_t i = 0; i < m; ++i)
-                for (std::size_t j = 0; j < n; ++j)
-                    this->m_mask.unchecked_at(i, j) = grid.unchecked_at(i, j);
-            
-            this->initialize();
         } // matrix_pathfinder(...)
 
         template <typename t_value_type, bool t_is_row_major, typename t_predicate_type>
@@ -105,7 +88,7 @@ namespace ropufu::aftermath::algorithm
 
             for (std::size_t i = 0; i < m; ++i)
                 for (std::size_t j = 0; j < n; ++j)
-                    this->m_mask.unchecked_at(i, j) = predicate(grid.unchecked_at(i, j));
+                    this->m_mask(i, j) = predicate(grid(i, j));
             
             this->initialize();
         } // matrix_pathfinder(...)
@@ -123,7 +106,7 @@ namespace ropufu::aftermath::algorithm
 
             for (std::size_t i = 0; i < m; ++i)
                 for (std::size_t j = 0; j < n; ++j)
-                    this->m_mask.unchecked_at(i, j) = filter(i, j);
+                    this->m_mask(i, j) = filter(i, j);
             
             this->initialize();
         } // matrix_pathfinder(...)
@@ -188,8 +171,8 @@ namespace ropufu::aftermath::algorithm
     private:
         void process_neighbor(std::size_t row_index, std::size_t column_index, char traceback_direction, std::size_t cost) noexcept
         {
-            if (this->m_visited.unchecked_at(row_index, column_index)) return; // Skip neighbors that have already been processed.
-            if (!this->m_mask.unchecked_at(row_index, column_index)) return; // This path is blocked, skip this neighbor.
+            if (this->m_visited(row_index, column_index)) return; // Skip neighbors that have already been processed.
+            if (!this->m_mask(row_index, column_index)) return; // This path is blocked, skip this neighbor.
 
             index_type index{ row_index, column_index };
             auto search = this->m_pending.find(index);
