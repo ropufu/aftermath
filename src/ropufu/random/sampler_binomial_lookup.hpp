@@ -27,15 +27,15 @@ namespace ropufu::aftermath::random
         static constexpr uniform_type diameter = engine_type::max() - engine_type::min();
 
     private:
-        result_type m_number_of_trials_min = 0;
-        result_type m_number_of_trials_max = 0;
+        result_type m_number_of_trials_min = 1;
+        result_type m_number_of_trials_max = 1;
         param_type m_probability_of_success = 0;
         //std::size_t m_current_row = 0;
         algebra::rmatrix_t<result_type> m_alias = {}; // Row-major storage; each row corresponds to the number of trials, column---position in the array.
         algebra::rmatrix_t<param_type> m_cutoff = {}; // Row-major storage; each row corresponds to the number of trials, column---position in the array.
 
     public:
-        sampler_binomial_lookup() noexcept : sampler_binomial_lookup({}, {}) { }
+        sampler_binomial_lookup() noexcept : sampler_binomial_lookup(1, 1, 0) { }
 
         /** @brief Constructs a lookup for a range of binomial distributions.
          *  @exception std::logic_error \p number_of_trials_min is greater than \number_of_trials_max.

@@ -25,7 +25,7 @@ namespace ropufu::aftermath::random
         uniform_type m_threshold = 0;
 
     public:
-        sampler_bernoulli() noexcept : sampler_bernoulli({}) { }
+        sampler_bernoulli() noexcept { }
 
         explicit sampler_bernoulli(const distribution_type& distribution) noexcept
             : m_number_of_trials(distribution.number_of_trials()),

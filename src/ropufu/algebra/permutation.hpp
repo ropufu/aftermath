@@ -44,10 +44,11 @@ namespace ropufu::aftermath::algebra
 
         /** A permutation described by the elements in \p source. */
         template <typename t_container_type>
-        explicit permutation(const t_container_type& source) noexcept
-            : permutation(static_cast<size_type>(source.size()))
+        static type from(const t_container_type& source) noexcept
         {
-            this->try_order_by(source);
+            type result(static_cast<size_type>(source.size()));
+            result.try_order_by(source);
+            return result;
         } // permutation(...)
 
         /** @brief Modify the permutation to reflect the ordering of elements in \p source.
@@ -84,7 +85,7 @@ namespace ropufu::aftermath::algebra
         } // try_order_by(...)
 
         /** Inverse of this permutation. */
-        type inverse() const noexcept { return type(nullptr, this); }
+        type inverse() const noexcept { return type(nullptr, *this); }
 
         /** Size of the permutation. */
         std::size_t size() const noexcept { return this->m_indices.size(); }

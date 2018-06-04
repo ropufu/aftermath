@@ -7,6 +7,8 @@
 #include "random_test.hpp"
 #include "enum_array_test.hpp"
 
+#include "test_algebra.hpp"
+
 #include <exception> // std::exception
 
 #include <chrono>
@@ -80,6 +82,20 @@ std::int32_t main(std::int32_t /**argc*/, char** /**argv*/, char** /*envp*/)
         run_definitive_test("enum array 2", [&]() { return ropufu::test_aftermath::enum_array_test::basic_test<std::size_t>(); });
         run_definitive_test("enum array 3", [&]() { return ropufu::test_aftermath::enum_array_test::basic_test_bool(); });
         run_definitive_test("enum array 4", [&]() { return ropufu::test_aftermath::enum_array_test::basic_test_void(); });
+
+        run_definitive_test("fraction 1a", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_1<std::size_t>(); });
+        run_definitive_test("fraction 1b", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_1<std::int_fast32_t>(); });
+        run_definitive_test("fraction 1c", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_1<char>(); });
+        run_definitive_test("fraction 2a", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_2<std::size_t>(); });
+        run_definitive_test("fraction 2b", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_2<std::int_fast32_t>(); });
+        run_definitive_test("fraction 2c", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_2<char>(); });
+        run_definitive_test("fraction 3a", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_3<std::size_t>(); });
+        run_definitive_test("fraction 3b", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_3<std::int_fast32_t>(); });
+        run_definitive_test("fraction 3c", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_3<char>(); });
+        run_definitive_test("fraction 4", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_4<std::size_t>(); });
+        run_definitive_test("fraction 5a", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_5<std::size_t>(); });
+        run_definitive_test("fraction 5b", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_5<std::int_fast32_t>(); });
+        
 
         std::cout << "Randomized tests with std::default_random_engine and double." << std::endl;
         // std::cout << "Randomized tests with std::default_random_engine: (i) float, then (ii) double." << std::endl;

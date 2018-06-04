@@ -18,20 +18,21 @@ namespace ropufu::aftermath::algebra
         template <bool t_is_enabled, typename t_derived_type>
         struct fraction_negate_module
         {
-            private:
+        protected:
             void regularize() noexcept { }
         };
 
         template <typename t_derived_type>
         struct fraction_negate_module<true, t_derived_type>
         {
-        private:
+        protected:
             void regularize() noexcept
             {
-                if (this->m_denominator < 0)
+                t_derived_type* that = static_cast<t_derived_type*>(this);
+                if (that->m_denominator < 0)
                 {
-                    this->m_numerator = -this->m_numerator;
-                    this->m_denominator = -this->m_denominator;
+                    that->m_numerator = -that->m_numerator;
+                    that->m_denominator = -that->m_denominator;
                 } // if (...)
             } // regularize(...)
 

@@ -351,7 +351,7 @@ namespace ropufu::aftermath::probability
         template <bool, typename, typename, typename, typename, typename> friend struct detail::empirical_measure_variance_module;
 
     private:
-        void on_observed(const key_type& key, count_type repeat, count_type new_height) noexcept
+        void on_observed(const key_type& key, count_type repeat, count_type /*new_height*/) noexcept
         {
             this->ordering_module::module_observe(key, repeat);
             this->linear_module::module_observe(key, repeat);
@@ -381,8 +381,8 @@ namespace ropufu::aftermath::probability
         empirical_measure(const t_key_container_type& keys, const t_value_container_type& values)
         {
             if (keys.size() != values.size()) throw std::invalid_argument("Observations size mismatch.");
-            const auto keys_it = keys.begin();
-            const auto values_it = values.begin();
+            auto keys_it = keys.begin();
+            auto values_it = values.begin();
 
             while (keys_it != keys.end() && values_it != values.end())
             {
