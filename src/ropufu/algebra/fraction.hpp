@@ -93,7 +93,6 @@ namespace ropufu::aftermath::algebra
         {
             type::validate();
             if (denominator == 0) throw std::logic_error("Denominator cannot be zero.");
-            //if constexpr (std::is_signed_v<integer_type>) { }
             this->regularize();
         } // fraction(...)
 
@@ -187,15 +186,15 @@ namespace ropufu::aftermath::algebra
         } // operator *=(...)
         
         // ~~ Division ~~
-        type& operator /=(const integer_type& other) noexcept
+        type& operator /=(const integer_type& other)
         {
             if (other == 0) throw std::logic_error("Cannot divide by zero.");
             this->m_denominator *= other;
             this->regularize();
             return *this;
         } // operator /=(...)
-        friend type operator /(const integer_type& left, type right) noexcept { right.m_denominator *= left; right.invert(); return right; }
-        type& operator /=(const type& other) noexcept
+        friend type operator /(const integer_type& left, type right) { right.m_denominator *= left; right.invert(); return right; }
+        type& operator /=(const type& other)
         {
             if (other.m_numerator == 0) throw std::logic_error("Cannot divide by zero.");
             this->m_numerator *= other.m_denominator;
@@ -216,8 +215,8 @@ namespace ropufu::aftermath::algebra
         friend type operator *(const integer_type& left, type right) noexcept { right *= left; return right; }
         friend type operator *(type left, const type& right) noexcept { left *= right; return left; }
 
-        friend type operator /(type left, const integer_type& right) noexcept { left /= right; return left; }
-        friend type operator /(type left, const type& right) noexcept { left /= right; return left; }
+        friend type operator /(type left, const integer_type& right) { left /= right; return left; }
+        friend type operator /(type left, const type& right) { left /= right; return left; }
 
 
         bool operator >(const integer_type& other) const noexcept { return (this->m_numerator > this->m_denominator * other); }

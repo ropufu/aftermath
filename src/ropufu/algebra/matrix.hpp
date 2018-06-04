@@ -41,7 +41,7 @@ struct matrix_##OPNAME##_assign_op_module<true, t_derived_type>                 
         return self;                                                                                    \
     }                                                                                                   \
                                                                                                         \
-    friend t_derived_type operator BINOP(t_derived_type left, const t_derived_type& right) noexcept     \
+    friend t_derived_type operator BINOP(t_derived_type left, const t_derived_type& right)              \
     {                                                                                                   \
         left BINOP##= right; return left;                                                               \
     }                                                                                                   \

@@ -36,6 +36,7 @@ namespace ropufu::aftermath::random
         local_coordinate_type m_local_step = 0;
 
         bool m_is_bad = false; // Indicates if the fuzzy descriptor has encountered a problem.
+        std::string m_error_message = "";
         global_coordinate_type m_lower_bound = std::nan(""); // Empirical lower bound on the zero of the function.
         global_coordinate_type m_upper_bound = std::nan(""); // Empirical upper bound on the zero of the function.
 
@@ -94,14 +95,16 @@ namespace ropufu::aftermath::random
         global_coordinate_type on_error(const std::string& message) noexcept
         {
             this->m_is_bad = true;
-            throw std::runtime_error(message);
+            this->m_error_message = message;
+            //throw std::runtime_error(message);
             return std::nan("");
         } // on_error(...)
 
         global_coordinate_type on_error(std::string&& message) noexcept
         {
             this->m_is_bad = true;
-            throw std::runtime_error(message);
+            this->m_error_message = message;
+            //throw std::runtime_error(message);
             return std::nan("");
         } // on_error(...)
 
