@@ -2,16 +2,19 @@
 #ifndef ROPUFU_AFTERMATH_FORMAT_MATSTREAM_V4_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_FORMAT_MATSTREAM_V4_HPP_INCLUDED
 
+#include "../on_error.hpp"
 #include "matheader_v4.hpp"
 #include "matstream.hpp"
 
 #include <cstddef>   // std::size_t
 #include <cstdint>   // std::int32_t
 #include <fstream>   // std::ifstream, std::ofstream
+#include <ios>       // std::ios_base::failure
 #include <iostream>  // ??
 #include <sstream>   // std::ostringstream
 #include <stdexcept> // std::runtime_error
 #include <string>    // std::string
+#include <system_error> // std::error_code, std::errc
 #include <type_traits> // ...
 
 namespace ropufu::aftermath::format
@@ -64,14 +67,21 @@ namespace ropufu::aftermath::format
         } // matstream(...)
 
         /** @brief Clears the .mat file, and resets reader position.
-         *  @exception std::runtime_error Underlying file could not be created.
+         *  @param ec Set to \c std::errc::io_error if the underlying file could not be created.
          */
-        void clear()
+        void clear(std::error_code& ec) noexcept
         {
-            std::ofstream filestream;
-            filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
-            if (filestream.fail()) throw std::runtime_error("Failed to create file.");
-            this->m_reader_position = 0;
+            try
+            {
+                std::ofstream filestream;
+                filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc);
+                if (filestream.fail()) return aftermath::detail::on_error(ec, std::errc::io_error, "Failed to create file.");
+                this->m_reader_position = 0;
+            } // try 
+            catch (const std::ios_base::failure& e)
+            {
+                return aftermath::detail::on_error(ec, std::errc::io_error, e.what());
+            } // catch(...)
         } // clear(...)
 
         /** @brief If \p value is a string or a number, appends the provided value to the name of the next matrix.
@@ -87,115 +97,140 @@ namespace ropufu::aftermath::format
             if constexpr (is_arithmetic || is_string_convertible) this->m_name_stream << value;
             else
             {
-                std::ofstream filestream {};
+                try
+                {
+                    std::ofstream filestream {};
 
-                // Initialize header.
-                header_type header {};
-                header.initialize(value);
-                header.set_name(this->m_name_stream);
-                // Reset name stream.
-                this->m_name_stream.clear();
-                this->m_name_stream.str("");
-                
-                // Write header.
-                std::size_t position = header.write(this->m_filename);
-                if (position == 0) throw std::runtime_error("Failed to write header.");
+                    // Initialize header.
+                    header_type header {};
+                    header.initialize(value);
+                    header.set_name(this->m_name_stream);
+                    // Reset name stream.
+                    this->m_name_stream.clear();
+                    this->m_name_stream.str("");
+                    
+                    // Write header.
+                    std::error_code ec {};
+                    std::size_t position = header.write(this->m_filename, ec);
+                    if (position == 0 || ec) throw std::runtime_error("Failed to write header.");
 
-                // Write body.
-                this->m_reader_position = this->write(value, position);
+                    // Write body.
+                    ec.clear();
+                    this->m_reader_position = this->write(value, position, ec);
+                    if (ec) throw std::runtime_error("Failed to write matrix.");
+                } // try 
+                catch (const std::ios_base::failure& e)
+                {
+                    throw std::runtime_error(e.what());
+                } // catch(...)
             } // if constexpr (...)
             return *this;
         } // operator <<(...)
 
         /** @brief Loads a matrix from a file.
          *  @remark Advances current reader position to the end of the read block.
-         *  @exception std::runtime_error Header could not be read.
-         *  @exception std::runtime_error Data type in \p mat does not match that in the file.
+         *  @param ec Set to std::errc::io_error if the header could not be read.
+         *  @param ec Set to std::errc::bad_file_descriptor if data type in \p mat does not match that in the file.
          */
         template <typename t_matrix_type>
-        void load(std::string& matrix_name, t_matrix_type& mat)
+        void load(std::string& matrix_name, t_matrix_type& mat, std::error_code& ec) noexcept
         {
             using data_type = typename t_matrix_type::value_type;
 
             // Read header.
             header_type header {};
-            std::size_t header_size = header.read(this->m_filename, this->m_reader_position);
-            if (header_size == 0) throw std::runtime_error("Failed to read header.");
+            std::size_t header_size = header.read(this->m_filename, this->m_reader_position, ec);
+            if (header_size == 0 || ec) return aftermath::detail::on_error(ec, std::errc::io_error, "Failed to read header.");
             matrix_name = header.name();
 
-            if (mat4_data_type_id<data_type>::value != header.data_type_id()) throw std::runtime_error("Matrix data type mismatch.");
+            if (mat4_data_type_id<data_type>::value != header.data_type_id()) return aftermath::detail::on_error(ec, std::errc::bad_file_descriptor, "Matrix data type mismatch.");
 
             std::size_t height = header.height();
             std::size_t width = header.width();
             mat = t_matrix_type(height, width);
             
             // Read body.
-            this->m_reader_position = this->read(mat, this->m_reader_position + header_size);
+            ec.clear();
+            this->m_reader_position = this->read(mat, this->m_reader_position + header_size, ec);
         } // load(...)
 
     private:
         /** @brief Writes \p matrix to the .mat file at position \p position.
          *  @return Position (in bytes) at the end of the written block (end of the file).
-         *  @exception std::runtime_error Underlying file could not be opened.
+         *  @param ec Set to std::errc::io_error if the underlying file could not be opened.
          */
         template <typename t_matrix_type>
-        std::size_t write(const t_matrix_type& mat, std::size_t position) const
+        std::size_t write(const t_matrix_type& mat, std::size_t position, std::error_code& ec) const noexcept
         {
             using data_type = typename t_matrix_type::value_type;
-            std::ofstream filestream {};
-            
-            // Write body.
-            filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::out | std::ios::binary); // File must already exist: the header has been written.
-            if (filestream.fail()) throw std::runtime_error("Failed to open file.");
-            else
+            try
             {
-                std::size_t height = mat.height();
-                std::size_t width = mat.width();
-
-                data_type current_value = 0;
-                for (std::size_t row_index = 0; row_index < height; ++row_index)
+                std::ofstream filestream {};
+                
+                // Write body.
+                filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::out | std::ios::binary); // File must already exist: the header has been written.
+                if (filestream.fail()) return aftermath::detail::on_error(ec, std::errc::io_error, "Failed to open file.", position);
+                else
                 {
-                    for (std::size_t column_index = 0; column_index < width; ++column_index)
+                    std::size_t height = mat.height();
+                    std::size_t width = mat.width();
+
+                    data_type current_value = 0;
+                    for (std::size_t row_index = 0; row_index < height; ++row_index)
                     {
-                        current_value = mat(row_index, column_index);
-                        filestream.seekp(position + arrangement_type::flatten(row_index, column_index, height, width) * sizeof(data_type));
-                        filestream.write(reinterpret_cast<const char*>(&current_value), sizeof(data_type));
+                        for (std::size_t column_index = 0; column_index < width; ++column_index)
+                        {
+                            current_value = mat(row_index, column_index);
+                            filestream.seekp(position + arrangement_type::flatten(row_index, column_index, height, width) * sizeof(data_type));
+                            filestream.write(reinterpret_cast<const char*>(&current_value), sizeof(data_type));
+                        } // for (...)
                     } // for (...)
-                } // for (...)
-                return position + (height * width * sizeof(data_type));
-            } // if (...)
+                    return position + (height * width * sizeof(data_type));
+                } // if (...)
+            } // try 
+            catch (const std::ios_base::failure& e)
+            {
+                return aftermath::detail::on_error(ec, std::errc::io_error, e.what(), position);
+            } // catch(...)
         } // write(...)
 
         /** @brief Reads the .mat file at position \p position, stores the result in \p matrix.
          *  @return Position (in bytes) at the end of the read block.
-         *  @exception std::runtime_error Underlying file could not be opened.
+         *  @param ec Set to std::errc::io_error if the underlying file could not be opened.
          */
         template <typename t_matrix_type>
-        std::size_t read(t_matrix_type& mat, std::size_t position)
+        std::size_t read(t_matrix_type& mat, std::size_t position, std::error_code& ec) noexcept
         {
             using data_type = typename t_matrix_type::value_type;
-            std::ifstream filestream {};
-
-            // Read body.
-            filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::binary);
-            if (filestream.fail()) throw std::runtime_error("Failed to open file.");
-            else
+            try
             {
-                std::size_t height = mat.height();
-                std::size_t width = mat.width();
+                std::ifstream filestream {};
 
-                data_type current_value = 0;
-                for (std::size_t row_index = 0; row_index < height; ++row_index)
+                // Read body.
+                filestream.open(this->m_filename.c_str(), std::ios::in | std::ios::binary);
+                if (filestream.fail()) return aftermath::detail::on_error(ec, std::errc::io_error, "Failed to open file.", position);
+                else
                 {
-                    for (std::size_t column_index = 0; column_index < width; ++column_index)
+                    std::size_t height = mat.height();
+                    std::size_t width = mat.width();
+
+                    data_type current_value = 0;
+                    for (std::size_t row_index = 0; row_index < height; ++row_index)
                     {
-                        filestream.seekg(position + arrangement_type::flatten(row_index,  column_index, height, width) * sizeof(data_type));
-                        filestream.read(reinterpret_cast<char*>(&current_value), sizeof(data_type));
-                        mat(row_index, column_index) = current_value;
+                        for (std::size_t column_index = 0; column_index < width; ++column_index)
+                        {
+                            filestream.seekg(position + arrangement_type::flatten(row_index,  column_index, height, width) * sizeof(data_type));
+                            filestream.read(reinterpret_cast<char*>(&current_value), sizeof(data_type));
+                            mat(row_index, column_index) = current_value;
+                        } // for (...)
                     } // for (...)
-                } // for (...)
-                return position + (height * width * sizeof(data_type));
-            } // if (...)
+                    return position + (height * width * sizeof(data_type));
+                } // if (...)
+            } // try 
+            catch (const std::ios_base::failure& e)
+            {
+                return aftermath::detail::on_error(ec, std::errc::io_error, e.what(), position);
+            } // catch(...)
         } // read(...)
     }; // struct matstream<...>
 } // namespace ropufu::aftermath::format

@@ -13,8 +13,8 @@ namespace ropufu::aftermath::random
         {
             using type = boxes_normal<t_engine_type, t_result_type, t_n_boxes>;
             using engine_type = t_engine_type;
-            using uniform_type = typename t_engine_type::result_type;
             using result_type = t_result_type;
+            using uniform_type = typename t_engine_type::result_type;
 
             static constexpr std::size_t n_boxes = t_n_boxes;
             static constexpr uniform_type diameter = engine_type::max() - engine_type::min();

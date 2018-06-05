@@ -12,19 +12,19 @@
 namespace ropufu::aftermath::random
 {
     /** @brief Ziggurat for normal distribution. */
-    template <typename t_engine_type, typename t_result_type, std::size_t t_n_boxes>
+    template <typename t_engine_type, typename t_result_type, typename t_probability_type, std::size_t t_n_boxes>
     struct ziggurat_normal
-        : public ziggurat<ziggurat_normal<t_engine_type, t_result_type, t_n_boxes>, t_engine_type, t_result_type, t_n_boxes>,
+        : public ziggurat<ziggurat_normal<t_engine_type, t_result_type, t_probability_type, t_n_boxes>, t_engine_type, t_result_type, t_probability_type, t_n_boxes>,
         public detail::boxes_normal<t_engine_type, t_result_type, t_n_boxes>
     {
-        using type = ziggurat_normal<t_engine_type, t_result_type, t_n_boxes>;
-        using ziggurat_type = ziggurat<type, t_engine_type, t_result_type, t_n_boxes>;
+        using type = ziggurat_normal<t_engine_type, t_result_type, t_probability_type, t_n_boxes>;
+        using ziggurat_type = ziggurat<type, t_engine_type, t_result_type, t_probability_type, t_n_boxes>;
         using box_type = detail::boxes_normal<t_engine_type, t_result_type, t_n_boxes>;
 
         using engine_type = t_engine_type;
-        using distribution_type = probability::normal_distribution<t_result_type>;
-        using result_type = typename distribution_type::result_type;
-        using param_type = typename distribution_type::param_type;
+        using result_type = t_result_type;
+        using probability_type = t_probability_type;
+        using distribution_type = aftermath::probability::normal_distribution<t_result_type, t_probability_type>;
         using uniform_type = typename t_engine_type::result_type;
 
         static constexpr std::size_t n_boxes = t_n_boxes;
@@ -37,20 +37,19 @@ namespace ropufu::aftermath::random
         friend ziggurat_type;
 
     private:
-        probability::normal_distribution<result_type> m_distribution = probability::normal_distribution<result_type>::standard;
-        result_type pdf(result_type x) const noexcept { return this->m_distribution.pdf(x); }
+        distribution_type m_distribution = distribution_type::standard;
         
         result_type sample_from_box_horizontal(uniform_type box_index, uniform_type uniform_random, bool& is_interior) const noexcept
         {
-            result_type z = uniform_random * static_cast<result_type>(this->m_width_scaled[box_index]);
-            is_interior = (uniform_random < this->m_coverage_scaled[box_index]);
+            result_type z = static_cast<result_type>(uniform_random * this->m_width_scaled[static_cast<std::size_t>(box_index)]);
+            is_interior = (uniform_random < this->m_coverage_scaled[static_cast<std::size_t>(box_index)]);
             return z;
         } // sample_from_box_horizontal(...)
 
         bool is_inside_box_vertical(uniform_type box_index, result_type horizontal, uniform_type uniform_random) const noexcept
         {
-            result_type f = this->pdf(horizontal);
-            return (static_cast<result_type>(this->m_bottom[box_index]) + uniform_random * static_cast<result_type>(this->m_height_scaled[box_index]) < f);
+            auto f = this->m_distribution.pdf(horizontal);
+            return (this->m_bottom[static_cast<std::size_t>(box_index)] + static_cast<result_type>(uniform_random * this->m_height_scaled[static_cast<std::size_t>(box_index)])) < f;
         } // is_inside_box_vertical(...)
 
         bool is_tail_box(uniform_type box_index) const noexcept
@@ -60,7 +59,7 @@ namespace ropufu::aftermath::random
             case 0: return true;
             case n_boxes - 1: return true;
             default: return false;
-            }
+            } // switch (...)
         } // is_tail_box(...)
 
         result_type sample_tail(uniform_type box_index, engine_type& uniform_generator) noexcept
@@ -71,11 +70,11 @@ namespace ropufu::aftermath::random
             result_type u1, u2;
             while (true)
             {
-                u1 = (uniform_generator() - engine_type::min()) / box_type::modulus;
-                u2 = (uniform_generator() - engine_type::min()) / box_type::modulus;
+                u1 = static_cast<result_type>((uniform_generator() - engine_type::min()) / box_type::modulus);
+                u2 = static_cast<result_type>((uniform_generator() - engine_type::min()) / box_type::modulus);
                 result = static_cast<result_type>(std::sqrt(r_squared - 2 * std::log(1 - u1)));
                 if (u2 * result < r) return box_index == 0 ? result : -result;
-            }
+            } // while(...)
         } // sample_tail(...)
     }; // struct ziggurat_normal
 } // namespace ropufu::aftermath::random

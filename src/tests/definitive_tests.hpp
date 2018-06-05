@@ -12,6 +12,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <system_error> // std::error_code, std::errc
 
 namespace ropufu
 {
@@ -26,7 +27,7 @@ namespace ropufu
         private:
             std::string m_filename;
 
-            std::vector<matrix_type> write_mat(std::size_t height, std::size_t width, std::size_t stack_size) noexcept
+            std::vector<matrix_type> write_mat(std::size_t height, std::size_t width, std::size_t stack_size, std::error_code& ec) noexcept
             {
                 std::seed_seq ss = {1, 7, 2, 9};
                 engine_type engine(ss);
@@ -35,7 +36,8 @@ namespace ropufu
                 matrices.reserve(stack_size);
 
                 matstream_type mat(this->m_filename);
-                mat.clear();
+                mat.clear(ec);
+                if (ec) return matrices;
                 
                 std::uniform_real_distribution<double> uniform_real(0, 1);
                 std::uniform_int_distribution<std::size_t> uniform_height(1, height);
@@ -57,18 +59,20 @@ namespace ropufu
                 return matrices;
             }
 
-            bool check_read_mat(const std::vector<matrix_type>& matrices) noexcept
+            bool check_read_mat(const std::vector<matrix_type>& matrices, std::error_code& ec) noexcept
             {
                 matstream_type mat(this->m_filename);
                 for (const matrix_type& reference_matrix : matrices)
                 {
-                    matrix_type matrix;
+                    matrix_type matrix {};
                     std::string name = "";
-                    mat.load(name, matrix);
+                    mat.load(name, matrix, ec);
+                    if (ec) return false;
                     
                     if (matrix != reference_matrix) return false;
                 }
-                mat.clear();
+                mat.clear(ec);
+                if (ec) return false;
                 return true;
             }
 
@@ -80,10 +84,13 @@ namespace ropufu
             
             bool test_matstream_v4(std::size_t m, std::size_t height, std::size_t width, std::size_t stack_size) noexcept
             {
+                std::error_code ec {};
                 for (std::size_t i = 0; i < m; i++)
                 {
-                    std::vector<matrix_type> matrices = this->write_mat(height, width, stack_size);
-                    if (!this->check_read_mat(matrices)) return false;
+                    std::vector<matrix_type> matrices = this->write_mat(height, width, stack_size, ec);
+                    if (ec) return false;
+                    if (!this->check_read_mat(matrices, ec)) return false;
+                    if (ec) return false;
                 }
                 return true;
             }

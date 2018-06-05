@@ -9,6 +9,7 @@
 #include <cstddef> // std::size_t
 #include <cstdint> // std::int32_t
 #include <random>  // std::seed_seq
+#include <system_error> // std::error_code, std::errc
 #include <utility> // std::forward
 
 namespace ropufu
@@ -22,8 +23,8 @@ namespace ropufu
             using engine_type = t_engine_type;
             using clock_type = std::chrono::steady_clock;
             using distribution_type = aftermath::probability::binomial_distribution<std::size_t, t_param_type>;
-            using result_type = typename distribution_type::result_type;
-            using param_type = typename distribution_type::param_type;
+            using result_type = typename distribution_type::value_type;
+            using param_type = typename distribution_type::expectation_type;
             using sampler_type = aftermath::random::sampler_binomial_alias<t_engine_type, std::size_t, t_param_type>;
             using lookup_sampler_type = aftermath::random::sampler_binomial_lookup<t_engine_type, std::size_t, t_param_type>;
             using builtin_distribution_type = std::binomial_distribution<std::size_t>;
@@ -53,13 +54,14 @@ namespace ropufu
                 return static_cast<param_type>(sum) / m;
             }
             
-            param_type compound_binomial_table(std::size_t m, param_type& elapsed_seconds) noexcept
+            param_type compound_binomial_table(std::size_t m, param_type& elapsed_seconds, std::error_code& ec) noexcept
             {
                 auto tic = clock_type::now();
             
                 std::uniform_int_distribution<std::size_t> uniform_n(this->m_n_min, this->m_n_max);
                 
-                lookup_sampler_type binomial_matrix(this->m_n_min, this->m_n_max, this->m_probability_of_success);
+                lookup_sampler_type binomial_matrix(this->m_n_min, this->m_n_max, this->m_probability_of_success, ec);
+                if (ec) return 0;
                 //param_type size_in_megabytes = (binomial_matrix.size_in_bytes() / static_cast<param_type>(1024 * 1024));
             
                 std::size_t sum = 0;
@@ -86,12 +88,14 @@ namespace ropufu
             
             void benchmark_compound(std::size_t m, param_type& elapsed_seconds_tested, param_type& elapsed_seconds_builtin) noexcept
             {
+                std::error_code ec {};
                 auto builtin_ctor = [&](std::size_t n, param_type q) 
                 {
                     return builtin_distribution_type(n, q);
                 };
                 
-                this->compound_binomial_table(m, elapsed_seconds_tested);
+                this->compound_binomial_table(m, elapsed_seconds_tested, ec);
+                if (ec) return;
                 this->compound_binomial(builtin_ctor, m, elapsed_seconds_builtin);
             }
         };

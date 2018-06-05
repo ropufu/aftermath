@@ -2,21 +2,20 @@
 #ifndef ROPUFU_AFTERMATH_RANDOM_ZIGGURAT_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_RANDOM_ZIGGURAT_HPP_INCLUDED
 
-#include "../math_constants.hpp"
-
 #include <cstddef> // std:size_t
 #include <type_traits> // std::is_same_v
 
 namespace ropufu::aftermath::random
 {
     /** @brief Base class for ziggurat pseudo-random number generators. */
-    template <typename t_derived_type, typename t_engine_type, typename t_result_type, std::size_t t_n_boxes>
+    template <typename t_derived_type, typename t_engine_type, typename t_result_type, typename t_probability_type, std::size_t t_n_boxes>
     struct ziggurat
     {
-        using type = ziggurat<t_derived_type, t_engine_type, t_result_type, t_n_boxes>;
+        using type = ziggurat<t_derived_type, t_engine_type, t_result_type, t_probability_type, t_n_boxes>;
         using derived_type = t_derived_type;
         using engine_type = t_engine_type;
         using result_type = t_result_type;
+        using probability_type = t_probability_type;
         using uniform_type = typename t_engine_type::result_type;
 
         static constexpr std::size_t n_boxes = t_n_boxes;

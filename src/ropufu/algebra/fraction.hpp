@@ -2,14 +2,18 @@
 #ifndef ROPUFU_AFTERMATH_ALGEBRA_FRACTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_ALGEBRA_FRACTION_HPP_INCLUDED
 
-#include <cstddef>     // std::size_t
-#include <functional>  // std::hash
-#include <limits>      // std::numeric_limits::is_integer
-#include <numeric>     // std::gcd
-#include <ostream>     // std::ostream
-#include <stdexcept>   // std::out_of_range, std::logic_error
-#include <type_traits> // ...
-#include <utility>     // std::swap
+#include "../on_error.hpp"
+
+#include <cstddef>      // std::size_t
+#include <functional>   // std::hash
+#include <limits>       // std::numeric_limits::is_integer
+#include <numeric>      // std::gcd
+#include <ostream>      // std::ostream
+#include <stdexcept>    // std::logic_error
+#include <string>       // std::string
+#include <system_error> // std::error_code, std::errc
+#include <type_traits>  // ...
+#include <utility>      // std::swap
 
 namespace ropufu::aftermath::algebra
 {
@@ -20,7 +24,7 @@ namespace ropufu::aftermath::algebra
         {
         protected:
             void regularize() noexcept { }
-        };
+        }; // struct fraction_negate_module
 
         template <typename t_derived_type>
         struct fraction_negate_module<true, t_derived_type>
@@ -51,7 +55,7 @@ namespace ropufu::aftermath::algebra
                 this->negate();
                 return *that;
             } // operator -(...)
-        }; // struct fraction_negate_module
+        }; // struct fraction_negate_module<...>
     } // namespace detail
 
     /** @brief Rational numbers, as a fraction of two integers. */
@@ -67,14 +71,14 @@ namespace ropufu::aftermath::algebra
         integer_type m_numerator = 0; // Numerator of the fraction. Could be negative.
         integer_type m_denominator = 1; // Denominator of the fraction. Always positive.
 
-        static constexpr void validate()
+        static constexpr void traits_check()
         {
-            static_assert(std::numeric_limits<t_integer_type>::is_integer, "Underlying type has to be an integer type.");
-        } // validate(...)
+            static_assert(std::numeric_limits<integer_type>::is_integer, "Underlying type has to be an integer type.");
+        } // traits_check(...)
 
     public:
         /** Constructs a defult \c fraction with value 0. */
-        fraction() noexcept { type::validate(); }
+        fraction() noexcept { type::traits_check(); }
         
         /** @brief Constructs a \c fraction from an integer \p value. 
          *  @remark Also defines implicit conversion.
@@ -82,17 +86,17 @@ namespace ropufu::aftermath::algebra
         /*implicit*/ fraction(const integer_type& value) noexcept
             : m_numerator(value), m_denominator(1)
         {
-            type::validate();
+            type::traits_check();
         } // fraction(...)
 
         /** @brief Constructs a \c fraction as a ratio \p numerator / \p denominator.
-         *  @exception std::logic_error \p denominator is zero.
+         *  @param ec Set to \c std::errc::invalid_argument if \p denominator is zero.
          */
-        fraction(const integer_type& numerator, const integer_type& denominator)
+        fraction(const integer_type& numerator, const integer_type& denominator, std::error_code& ec) noexcept
             : m_numerator(numerator), m_denominator(denominator)
         {
-            type::validate();
-            if (denominator == 0) throw std::logic_error("Denominator cannot be zero.");
+            type::traits_check();
+            if (denominator == 0) { aftermath::detail::on_error(ec, std::errc::invalid_argument, "Denominator cannot be zero."); return; }
             this->regularize();
         } // fraction(...)
 
@@ -111,11 +115,11 @@ namespace ropufu::aftermath::algebra
         } // subtract_from_one(...)
 
         /** @brief Replaces the fraction with 1 / (this fraction). 
-         *  @exception std::logic_error Cannot invert zero.
+         *  @param ec Set to \c std::function_not_supported if this is a zero fraction.
          */
-        void invert()
+        void invert(std::error_code& ec) noexcept
         {
-            if (this->m_numerator == 0) throw std::logic_error("Cannot invert a zero fraction.");
+            if (this->m_numerator == 0) return aftermath::detail::on_error(ec, std::errc::function_not_supported, "Cannot invert a zero fraction.");
             std::swap(this->m_numerator, this->m_denominator);
             this->regularize();
         } // invert(...)
@@ -128,11 +132,11 @@ namespace ropufu::aftermath::algebra
         /** Denominator of the fraction. */
         const integer_type& denominator() const noexcept { return this->m_denominator; }
         /** @brief Sets the denominator of the fraction.
-         *  @exception std::logic_error Cannot divide by zero.
+         *  @param ec Set to \c std::function_not_supported if \p value is zero.
          */
-        void set_denominator(const integer_type& value)
+        void set_denominator(const integer_type& value, std::error_code& ec) noexcept
         {
-            if (value == 0) throw std::logic_error("Denominator cannot be zero.");
+            if (value == 0) return aftermath::detail::on_error(ec, std::errc::function_not_supported, "Denominator cannot be zero.");
             this->m_denominator = value;
             this->regularize();
         } // set_denominator(...)

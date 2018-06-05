@@ -15,6 +15,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream> // For std::cout etc.
+#include <system_error> // std::error_code, std::errc
 #include <utility>  // For std::forward.
 
 template <typename t_test_type>
@@ -50,8 +51,11 @@ void not_main()
     const t_result_type zero = static_cast<t_result_type>(0);
     const t_result_type one = static_cast<t_result_type>(1);
 
-    ropufu::test_aftermath::test_random<lognormal_distribution, t_engine_type> lognormal_tester(zero, one);
-    ropufu::test_aftermath::test_random<normal_distribution, t_engine_type> normal_tester(zero, one);
+    std::error_code ec {};
+    ropufu::test_aftermath::test_random<lognormal_distribution, t_engine_type> lognormal_tester(zero, one, ec);
+    if (ec) std::cout << "Test initialization failed." << std::endl;
+    ropufu::test_aftermath::test_random<normal_distribution, t_engine_type> normal_tester(zero, one, ec);
+    if (ec) std::cout << "Test initialization failed." << std::endl;
     ropufu::test_aftermath::binomial_benchmark<t_engine_type, t_result_type> binomial_bench(10, 11, static_cast<t_result_type>(0.8));
 
 
@@ -102,10 +106,15 @@ std::int32_t main(std::int32_t /**argc*/, char** /**argv*/, char** /*envp*/)
         // not_main<float, std::default_random_engine>();
         not_main<double, std::default_random_engine>();
 
-        std::cout << "Randomized tests with std::mt19937 and double." << std::endl;
+        std::cout << "Randomized tests with std::mt19937 and float." << std::endl;
         //std::cout << "Randomized tests with std::mt19937: (i) float, then (ii) double." << std::endl;
-        //not_main<float, std::mt19937>();
-        not_main<double, std::mt19937>();
+        not_main<float, std::mt19937>();
+        //not_main<double, std::mt19937>();
+
+        std::cout << "Randomized tests with std::mt19937_64 and float." << std::endl;
+        //std::cout << "Randomized tests with std::mt19937_64: (i) float, then (ii) double." << std::endl;
+        not_main<float, std::mt19937_64>();
+        //not_main<double, std::mt19937_64>();
     } // try
     catch (const std::exception& ex)
     {

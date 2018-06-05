@@ -149,7 +149,7 @@ namespace ropufu::aftermath::algebra
             size_type m_count = 0;
 
             template <typename t_other_type>
-            type& overwrite_with(const t_other_type& other)
+            type& overwrite_with(const t_other_type& other) noexcept
             {
                 iterator_type left_it = this->begin();
                 const_iterator_type right_it = other.cbegin();
@@ -167,7 +167,7 @@ namespace ropufu::aftermath::algebra
             matrix_slice(const type& other) = default;
             matrix_slice(type&& other) = default;
 
-            /** Overwrites the matrix with values from \p other. */
+            /** Overwrites the matrix slice with values from \p other. */
             type& operator =(const type& other)
             {
                 if (this == &other) return *this; // Do nothing if this is self-assignment.
@@ -175,6 +175,7 @@ namespace ropufu::aftermath::algebra
                 return this->overwrite_with(other);
             } // operator =(...)
 
+            /** Overwrites the matrix slice with values from \p other. */
             type& operator =(const const_type& other)
             {
                 if (this->m_count != other.m_count) throw std::logic_error("Matrix slices incompatible.");

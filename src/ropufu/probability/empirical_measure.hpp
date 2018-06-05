@@ -2,6 +2,7 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_EMPIRICAL_MEASURE_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_EMPIRICAL_MEASURE_HPP_INCLUDED
 
+#include "../on_error.hpp"
 #include "../type_traits.hpp"
 
 #include <cmath>     // std::sqrt
@@ -9,8 +10,8 @@
 #include <iostream>  // std::ostream, std::endl
 #include <limits>    // std::numeric_limits, std::numeric_limits::is_integer
 #include <map>       // std::map
-#include <stdexcept> // std::invalid_argument
 #include <string>    // std::string
+#include <system_error>  // std::error_code, std::errc
 #include <type_traits>   // ...
 #include <unordered_map> // std::unordered_map
 
@@ -159,9 +160,9 @@ namespace ropufu::aftermath::probability
 
         public:
             /** Smallest observed key. */
-            const key_type& min() const { return this->m_min; }
+            const key_type& min() const noexcept { return this->m_min; }
             /** Largest observed key. */
-            const key_type& max() const { return this->m_max; }
+            const key_type& max() const noexcept { return this->m_max; }
 
             /** Compute empirical cumulative distribution function (c.d.f.). */
             probability_type cdf(const key_type& key) const noexcept
@@ -371,16 +372,18 @@ namespace ropufu::aftermath::probability
         
         /** Construct a new empirical measure from a dictionary. */
         template <typename t_dictionary_type>
-        empirical_measure(const t_dictionary_type& data)
+        /*implicit*/ empirical_measure(const t_dictionary_type& data) noexcept
         {
             for (const auto& item : data) this->observe(item.first, item.second);
         } // empirical_measure(...)
 
-        /** @brief Construct an empirical measure. */
+        /** @brief Construct an empirical measure.
+         *  @param ec Set to \c std::errc::invalid_argument if \p keys and \p values have different size.
+         */
         template <typename t_key_container_type, typename t_value_container_type>
-        empirical_measure(const t_key_container_type& keys, const t_value_container_type& values)
+        empirical_measure(const t_key_container_type& keys, const t_value_container_type& values, std::error_code& ec) noexcept
         {
-            if (keys.size() != values.size()) throw std::invalid_argument("Observations size mismatch.");
+            if (keys.size() != values.size()) { aftermath::detail::on_error(ec, std::errc::invalid_argument, "Observations size mismatch."); return; }
             auto keys_it = keys.begin();
             auto values_it = values.begin();
 
@@ -392,14 +395,11 @@ namespace ropufu::aftermath::probability
             } // while(...)
         } // empirical_measure(..)
 
-        // /** @brief Include observations from another empirical measure into this one.
-        //  *  @remark \tparam t_transformer_type has to implement operator (\tparam o_key_type) -> \tparam t_key_type.
-        //  */
-        // void merge(const type& other, const t_transformer_type& transformer) noexcept
-        // {
-        //     detail::dictionary<key_type, count_type>::merge(this->m_data, other.m_data, transformer);
-        //     this->rebuild_statistic();
-        // } // merge(...)
+        /** @brief Include observations from another empirical measure into this one. */
+        void merge(const type& other) noexcept
+        {
+            for (const auto& item : other.m_data) this->m_data[item.first] += item.second;
+        } // merge(...)
 
         friend std::ostream& operator <<(std::ostream& os, const type& self) noexcept
         {
@@ -407,7 +407,7 @@ namespace ropufu::aftermath::probability
 
             if constexpr (type_traits::has_left_shift_binary_v<decltype(os), key_type>)
             {
-                if constexpr (type_traits::has_less_binary_v<t_key_type, t_key_type>)
+                if constexpr (type_traits::is_one_by_one_iterable_v<t_key_type>)
                 {
                     constexpr std::size_t min_height = 5;
                     constexpr std::size_t max_height = 5;
@@ -435,36 +435,6 @@ namespace ropufu::aftermath::probability
 
             return os << "{...}";
         } // operator <<(...)
-
-    // private:
-    //     /** Updates the statistics based on the newest observation. */
-    //     void update_statistic(const key_type& key, count_type repeat, count_type new_height, bool& is_new_min, bool& is_new_max) noexcept
-    //     {
-    //         this->m_order_statistic.observe(key, std::ref(is_new_min), std::ref(is_new_max));
-    //         this->m_linear_statistic.observe(key, repeat);
-    //         //this->m_variance_statistic.observe(key, repeat);
-
-    //         if (this->m_max_height < new_height)
-    //         {
-    //             this->m_max_height = new_height;
-    //             this->m_most_likely_value = key;
-    //         }
-    //         this->m_count_observations += repeat;
-    //     }
-
-    //     /** Re-calculates statistics based on the stored data. */
-    //     void rebuild_statistic() noexcept
-    //     {
-    //         this->m_order_statistic.clear();
-    //         this->m_linear_statistic.clear();
-    //         //this->m_variance_statistic.clear();
-
-    //         bool is_new_min = false;
-    //         bool is_new_max = false;
-    //         this->m_count_observations = count_type();
-    //         this->m_max_height = count_type();
-    //         for (const auto& item : this->m_data) this->update_statistic(item.first, item.second, item.second, is_new_min, is_new_max);
-    //     }
     }; // struct empirical_measure
 } // namespace ropufu::aftermath::probability
 

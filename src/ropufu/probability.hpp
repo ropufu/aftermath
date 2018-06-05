@@ -23,26 +23,29 @@ namespace ropufu::aftm
     template <typename t_distribution_type>
     inline constexpr bool is_discrete_v = ropufu::aftermath::probability::is_discrete_v<t_distribution_type>;
 
-    template <typename t_size_type = std::size_t, typename t_probability_type = double>
-    using binomial_distribution_t = ropufu::aftermath::probability::binomial_distribution<t_size_type, t_probability_type>;
+    template <typename t_value_type = std::size_t, typename t_probability_type = double, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    using binomial_distribution_t = ropufu::aftermath::probability::binomial_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
-    template <typename t_result_type = double>
-    using exponential_distribution_t = ropufu::aftermath::probability::exponential_distribution<t_result_type>;
+    template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    using exponential_distribution_t = ropufu::aftermath::probability::exponential_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
-    template <typename t_result_type = double>
-    using lognormal_distribution_t = ropufu::aftermath::probability::lognormal_distribution<t_result_type>;
+    template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    using lognormal_distribution_t = ropufu::aftermath::probability::lognormal_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
-    template <typename t_result_type = double>
-    using negative_pareto_distribution_t = ropufu::aftermath::probability::negative_pareto_distribution<t_result_type>;
+    template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    using negative_pareto_distribution_t = ropufu::aftermath::probability::negative_pareto_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
-    template <typename t_result_type = double>
-    using normal_distribution_t = ropufu::aftermath::probability::normal_distribution<t_result_type>;
+    template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    using normal_distribution_t = ropufu::aftermath::probability::normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
+
+    template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    using gaussian_distribution_t = ropufu::aftermath::probability::gaussian_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
-    template <typename t_result_type = double>
-    using pareto_distribution_t = ropufu::aftermath::probability::pareto_distribution<t_result_type>;
+    template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    using pareto_distribution_t = ropufu::aftermath::probability::pareto_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
-    template <typename t_result_type = double>
-    using uniform_real_distribution_t = ropufu::aftermath::probability::uniform_real_distribution<t_result_type>;
+    template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    using uniform_real_distribution_t = ropufu::aftermath::probability::uniform_real_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
     /** @breif A structure to record observations and build statistics.
      *  @remark The general struct implements the basic functionality meant to be shared amond specializations.

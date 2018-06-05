@@ -2,15 +2,17 @@
 #ifndef ROPUFU_AFTERMATH_FORMAT_MATHEADER_V4_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_FORMAT_MATHEADER_V4_HPP_INCLUDED
 
+#include "../on_error.hpp"
 #include "matstream.hpp"
 
 #include <cstddef>   // std::size_t
 #include <cstdint>   // std::int32_t
 #include <fstream>   // std::ifstream, std::ofstream
+#include <ios>       // std::ios_base::failure
 #include <iostream>  // ??
 #include <sstream>   // std::ostringstream
-#include <stdexcept> // std::runtime_error
 #include <string>    // std::string
+#include <system_error> // std::error_code, std::errc
 #include <vector>    // std::vector
 
 namespace ropufu::aftermath::format
@@ -86,101 +88,114 @@ namespace ropufu::aftermath::format
     public:
         /** @brief Reads header from a .mat file.
          *  @return Number of bytes read.
-         *  @exception std::runtime_error Specified file could not be opened.
+         *  @param ec Set to \c std::errc::io_error if the specified file could not be opened.
          */
-        std::size_t read(const std::string& file_path, std::size_t position)
+        std::size_t read(const std::string& file_path, std::size_t position, std::error_code& ec) noexcept
         {
-            std::size_t bytes_read = 0;
-            std::ifstream filestream { };
-
-            filestream.open(file_path.c_str(), std::ios::in | std::ios::binary);
-            if (filestream.fail()) throw std::runtime_error("Failed to open file.");
-            else
+            try
             {
-                std::int32_t format_type_id = 0;
-                std::int32_t height = 0;
-                std::int32_t width = 0;
-                std::int32_t complex_flag = 0;
-                std::int32_t name_length = 0;
-                char terminator = '\0';
+                std::size_t bytes_read = 0;
+                std::ifstream filestream { };
 
-                filestream.seekg(position);
-                if (!filestream.good()) return 0;
-                // Fixed-size header.
-                filestream.read(reinterpret_cast<char*>(&format_type_id), sizeof(decltype(format_type_id))); // type
-                if (!filestream.good()) return 0;
-                filestream.read(reinterpret_cast<char*>(&height), sizeof(decltype(height))); // mrows
-                if (!filestream.good() || height < 0) return 0;
-                filestream.read(reinterpret_cast<char*>(&width), sizeof(decltype(width))); // ncols
-                if (!filestream.good() || width < 0) return 0;
-                filestream.read(reinterpret_cast<char*>(&complex_flag), sizeof(decltype(complex_flag))); // imagf
-                if (!filestream.good()) return 0;
-                filestream.read(reinterpret_cast<char*>(&name_length), sizeof(decltype(name_length))); // namlen
-                if (!filestream.good() || name_length < 1) return 0;
+                filestream.open(file_path.c_str(), std::ios::in | std::ios::binary);
+                if (filestream.fail()) return aftermath::detail::on_error(ec, std::errc::io_error, "Failed to open file.", 0);
+                else
+                {
+                    std::int32_t format_type_id = 0;
+                    std::int32_t height = 0;
+                    std::int32_t width = 0;
+                    std::int32_t complex_flag = 0;
+                    std::int32_t name_length = 0;
+                    char terminator = '\0';
 
-                // Name.
-                std::vector<char> text_data(name_length - 1);
-                filestream.read(text_data.data(), name_length - 1);
-                if (!filestream.good() || filestream.gcount() != name_length - 1) return 0;
-                filestream.read(&terminator, 1);
-                if (!filestream.good() || terminator != '\0') return 0;
+                    filestream.seekg(position);
+                    if (!filestream.good()) return 0;
+                    // Fixed-size header.
+                    filestream.read(reinterpret_cast<char*>(&format_type_id), sizeof(decltype(format_type_id))); // type
+                    if (!filestream.good()) return 0;
+                    filestream.read(reinterpret_cast<char*>(&height), sizeof(decltype(height))); // mrows
+                    if (!filestream.good() || height < 0) return 0;
+                    filestream.read(reinterpret_cast<char*>(&width), sizeof(decltype(width))); // ncols
+                    if (!filestream.good() || width < 0) return 0;
+                    filestream.read(reinterpret_cast<char*>(&complex_flag), sizeof(decltype(complex_flag))); // imagf
+                    if (!filestream.good()) return 0;
+                    filestream.read(reinterpret_cast<char*>(&name_length), sizeof(decltype(name_length))); // namlen
+                    if (!filestream.good() || name_length < 1) return 0;
 
-                this->decompose_format_type_id(format_type_id);
-                this->m_height = height;
-                this->m_width = width;
-                this->m_is_complex = (complex_flag == 0 ? false : true);
-                this->m_name = std::string(text_data.begin(), text_data.end());
-                bytes_read = this->size();
-            } // if (...)
+                    // Name.
+                    std::vector<char> text_data(name_length - 1);
+                    filestream.read(text_data.data(), name_length - 1);
+                    if (!filestream.good() || filestream.gcount() != name_length - 1) return 0;
+                    filestream.read(&terminator, 1);
+                    if (!filestream.good() || terminator != '\0') return 0;
 
-            return bytes_read;
+                    this->decompose_format_type_id(format_type_id);
+                    this->m_height = height;
+                    this->m_width = width;
+                    this->m_is_complex = (complex_flag == 0 ? false : true);
+                    this->m_name = std::string(text_data.begin(), text_data.end());
+                    bytes_read = this->size();
+                } // if (...)
+                return bytes_read;
+            } // try 
+            catch (const std::ios_base::failure& e)
+            {
+                return aftermath::detail::on_error(ec, std::errc::io_error, e.what(), 0);
+            } // catch(...)
         } // read(...)
 
         /** @brief Appends this header to a .mat file.
          *  @return Position in the file after writing the header.
-         *  @exception std::runtime_error Specified file could not be opened.
+         *  @param ec Set to \c std::errc::io_error if the specified file could not be opened.
          *  @todo Add write checks / verification.
          */
-        std::size_t write(const std::string& filename) const
+        std::size_t write(const std::string& filename, std::error_code& ec) const noexcept
         {
-            std::size_t position = 0;
-            std::size_t existing_size = 0;
-            std::ofstream filestream { };
-
-            filestream.open(filename.c_str(), std::ios::in | std::ios::out | std::ios::binary); // <std::ios::in> requires the file to exist.
-            if (filestream.fail())
+            try
             {
-                filestream.clear();
-                filestream.open(filename.c_str(), std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc); // Create file if reading failed.
-            } // if (...)
-            
-            if (filestream.fail()) throw std::runtime_error("Failed to open file.");
-            else
+                std::size_t position = 0;
+                std::size_t existing_size = 0;
+                std::ofstream filestream { };
+
+                filestream.open(filename.c_str(), std::ios::in | std::ios::out | std::ios::binary); // <std::ios::in> requires the file to exist.
+                if (filestream.fail())
+                {
+                    filestream.clear();
+                    filestream.open(filename.c_str(), std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc); // Create file if reading failed.
+                } // if (...)
+                
+                if (filestream.fail()) return aftermath::detail::on_error(ec, std::errc::io_error, "Failed to open file.", 0);
+                else
+                {
+                    std::int32_t format_type_id = this->build_format_type_id();
+                    std::int32_t height = static_cast<std::int32_t>(this->m_height);
+                    std::int32_t width = static_cast<std::int32_t>(this->m_width);
+                    std::int32_t complex_flag = this->m_is_complex ? 1 : 0;
+                    std::int32_t name_length = static_cast<std::int32_t>(this->m_name.size() + 1);
+                    char terminator = '\0';
+
+                    filestream.seekp(0, std::ios::end);
+                    existing_size = filestream.tellp();
+                    // Fixed-size header.
+                    filestream.write(reinterpret_cast<char*>(&format_type_id), sizeof(decltype(format_type_id))); // type
+                    filestream.write(reinterpret_cast<char*>(&height), sizeof(decltype(height))); // mrows
+                    filestream.write(reinterpret_cast<char*>(&width), sizeof(decltype(width))); // ncols
+                    filestream.write(reinterpret_cast<char*>(&complex_flag), sizeof(decltype(complex_flag))); // imagf
+                    filestream.write(reinterpret_cast<char*>(&name_length), sizeof(decltype(name_length))); // namlen
+
+                    // Name.
+                    filestream.write(this->m_name.c_str(), name_length - 1);
+                    filestream.write(&terminator, 1);
+
+                    position = existing_size + this->size();
+                } // if (...)
+
+                return position;
+            } // try 
+            catch (const std::ios_base::failure& e)
             {
-                std::int32_t format_type_id = this->build_format_type_id();
-                std::int32_t height = static_cast<std::int32_t>(this->m_height);
-                std::int32_t width = static_cast<std::int32_t>(this->m_width);
-                std::int32_t complex_flag = this->m_is_complex ? 1 : 0;
-                std::int32_t name_length = static_cast<std::int32_t>(this->m_name.size() + 1);
-                char terminator = '\0';
-
-                filestream.seekp(0, std::ios::end);
-                existing_size = filestream.tellp();
-                // Fixed-size header.
-                filestream.write(reinterpret_cast<char*>(&format_type_id), sizeof(decltype(format_type_id))); // type
-                filestream.write(reinterpret_cast<char*>(&height), sizeof(decltype(height))); // mrows
-                filestream.write(reinterpret_cast<char*>(&width), sizeof(decltype(width))); // ncols
-                filestream.write(reinterpret_cast<char*>(&complex_flag), sizeof(decltype(complex_flag))); // imagf
-                filestream.write(reinterpret_cast<char*>(&name_length), sizeof(decltype(name_length))); // namlen
-
-                // Name.
-                filestream.write(this->m_name.c_str(), name_length - 1);
-                filestream.write(&terminator, 1);
-
-                position = existing_size + this->size();
-            } // if (...)
-
-            return position;
+                return aftermath::detail::on_error(ec, std::errc::io_error, e.what(), 0);
+            } // catch(...)
         } // write(...)
 
         /** Initializes the header for a given matrix. */

@@ -72,7 +72,7 @@ namespace ropufu::aftermath::algebra
             using size_type = t_size_type;
 
             /** Creates an uninitialized matrix. */
-            static derived_type uninitialized(size_type height, size_type width) { return derived_type(nullptr, height, width); }
+            static derived_type uninitialized(size_type height, size_type width) noexcept { return derived_type(nullptr, height, width); }
 
             /** @brief Overwrites allocated memory with zeros.
              *  @warning No destructors are called.
@@ -273,7 +273,7 @@ namespace ropufu::aftermath::algebra
         ~matrix() noexcept { this->deallocate(); }
 
         /** @brief Creates an empty matrix. */
-        matrix() : matrix(nullptr, 0, 0) { }
+        matrix() noexcept : matrix(nullptr, 0, 0) { }
 
         /** @brief Creates an empty (default-constructed) matrix of a given size. */
         matrix(size_type height, size_type width) : matrix(nullptr, height, width)
@@ -304,7 +304,7 @@ namespace ropufu::aftermath::algebra
         } // matrix(...)
 
         /** @brief Creates a matrix from a vector. */
-        matrix(const std::vector<value_type>& values, bool is_column_vector = true)
+        /*implicit*/ matrix(const std::vector<value_type>& values, bool is_column_vector = true)
             : matrix(nullptr, (is_column_vector ? values.size() : 1), (is_column_vector ? 1 : values.size()))
         {
             if constexpr (type::is_trivial) std::memcpy(this->m_begin_ptr, values.data(), values.size() * sizeof(value_type));
@@ -321,7 +321,7 @@ namespace ropufu::aftermath::algebra
 
         /** @brief Creates a matrix from an array. */
         template <std::size_t t_vector_size>
-        matrix(const std::array<value_type, t_vector_size>& values, bool is_column_vector = true)
+        /*implicit*/ matrix(const std::array<value_type, t_vector_size>& values, bool is_column_vector = true)
             : matrix(nullptr, static_cast<size_type>(is_column_vector ? values.size() : 1), static_cast<size_type>(is_column_vector ? 1 : values.size()))
         {
             if constexpr (type::is_trivial) std::memcpy(this->m_begin_ptr, values.data(), values.size() * sizeof(value_type));
@@ -337,7 +337,7 @@ namespace ropufu::aftermath::algebra
         } // matrix(...)
 
         /** @brief Creates a matrix from an initializer list. */
-        matrix(std::initializer_list<value_type>& values, bool is_column_vector = true)
+        /*implicit*/ matrix(std::initializer_list<value_type>& values, bool is_column_vector = true)
             : matrix(nullptr, static_cast<size_type>(is_column_vector ? values.size() : 1), static_cast<size_type>(is_column_vector ? 1 : values.size()))
         {
             if constexpr (type::is_trivial) std::memcpy(this->m_begin_ptr, values.begin(), values.size() * sizeof(value_type));
@@ -353,7 +353,7 @@ namespace ropufu::aftermath::algebra
         } // matrix(...)
 
         /** @brief Creates a matrix as a copy of another matrix. */
-        matrix(const type& other) : matrix(nullptr, other.m_height, other.m_width)
+        /*implicit*/ matrix(const type& other) : matrix(nullptr, other.m_height, other.m_width)
         {
             if constexpr (type::is_trivial) std::memcpy(this->m_begin_ptr, other.m_begin_ptr, static_cast<std::size_t>(this->m_size) * sizeof(value_type));
             else

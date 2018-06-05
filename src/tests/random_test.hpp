@@ -9,6 +9,7 @@
 #include <cstddef> // std::size_t
 #include <cstdint> // std::int32_t
 #include <random>  // std::seed_seq
+#include <system_error> // std::error_code, std::errc
 #include <utility> // std::forward
 
 namespace ropufu
@@ -24,18 +25,18 @@ namespace ropufu
                 using builtin_type = t_distribution_type; // Corresponding built-in C++ distribution type.
             };
             
-            template <typename t_result_type, typename t_engine_type>
-            struct sampler_switch<aftermath::probability::normal_distribution<t_result_type>, t_engine_type>
+            template <typename t_value_type, typename t_probability_type, typename t_expectation_type, typename t_engine_type>
+            struct sampler_switch<aftermath::probability::normal_distribution<t_value_type, t_probability_type, t_expectation_type>, t_engine_type>
             {
-                using type = aftermath::random::sampler_normal<t_engine_type, t_result_type>;
-                using builtin_type = std::normal_distribution<t_result_type>; // Corresponding built-in C++ distribution type.
+                using type = aftermath::random::sampler_normal<t_engine_type, t_value_type, t_probability_type>;
+                using builtin_type = std::normal_distribution<t_value_type>; // Corresponding built-in C++ distribution type.
             };
             
-            template <typename t_result_type, typename t_engine_type>
-            struct sampler_switch<aftermath::probability::lognormal_distribution<t_result_type>, t_engine_type>
+            template <typename t_value_type, typename t_probability_type, typename t_expectation_type, typename t_engine_type>
+            struct sampler_switch<aftermath::probability::lognormal_distribution<t_value_type, t_probability_type, t_expectation_type>, t_engine_type>
             {
-                using type = aftermath::random::sampler_lognormal<t_engine_type, t_result_type>;
-                using builtin_type = std::lognormal_distribution<t_result_type>; // Corresponding built-in C++ distribution type.
+                using type = aftermath::random::sampler_lognormal<t_engine_type, t_value_type, t_probability_type>;
+                using builtin_type = std::lognormal_distribution<t_value_type>; // Corresponding built-in C++ distribution type.
             };
         }
 
@@ -46,7 +47,7 @@ namespace ropufu
             using engine_type = t_engine_type;
             using clock_type = std::chrono::steady_clock;
             using distribution_type = t_distribution_type;
-            using param_type = typename t_distribution_type::param_type;
+            using param_type = typename t_distribution_type::expectation_type;
             using sampler_type = typename detail::sampler_switch<t_distribution_type, t_engine_type>::type;
             using builtin_distribution_type = typename detail::sampler_switch<t_distribution_type, t_engine_type>::builtin_type;
 

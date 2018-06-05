@@ -4,6 +4,7 @@
 
 #include "../ropufu/algebra.hpp"
 
+#include <system_error> // std::error_code, std::errc
 #include <type_traits>
 
 namespace ropufu::test_aftermath::algebra
@@ -39,18 +40,26 @@ namespace ropufu::test_aftermath::algebra
         template <typename t_integer_type>
         bool static test_4() noexcept
         {
-            tested_t<t_integer_type> f{1, 3};
-            tested_t<t_integer_type> g{2, 3};
+            std::error_code ec {};
+            tested_t<t_integer_type> f{1, 3, ec};
+            if (ec) return false;
+            tested_t<t_integer_type> g{2, 3, ec};
+            if (ec) return false;
             return f + g == 1;
         } // test_4(...)
 
         template <typename t_integer_type>
         bool static test_5() noexcept
         {
-            tested_t<t_integer_type> f{4, 3};
-            tested_t<t_integer_type> g{2, 3};
-            tested_t<t_integer_type> h{5, 3};
-            tested_t<t_integer_type> t{2, 6};
+            std::error_code ec {};
+            tested_t<t_integer_type> f{4, 3, ec};
+            if (ec) return false;
+            tested_t<t_integer_type> g{2, 3, ec};
+            if (ec) return false;
+            tested_t<t_integer_type> h{5, 3, ec};
+            if (ec) return false;
+            tested_t<t_integer_type> t{2, 6, ec};
+            if (ec) return false;
             if constexpr (std::is_signed_v<t_integer_type>) return f + (g - h) == t;
             else
             {

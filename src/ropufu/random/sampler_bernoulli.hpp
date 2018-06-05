@@ -8,14 +8,17 @@
 
 namespace ropufu::aftermath::random
 {
-    template <typename t_engine_type, typename t_result_type = std::size_t, typename t_param_type = double>
+    template <typename t_engine_type, typename t_result_type = std::size_t, typename t_probability_type = double>
     struct sampler_bernoulli
     {
-        using type = sampler_bernoulli<t_engine_type, t_param_type, t_result_type>;
+        using type = sampler_bernoulli<t_engine_type, t_result_type, t_probability_type>;
+
         using engine_type = t_engine_type;
-        using distribution_type = probability::binomial_distribution<t_result_type, t_param_type>;
-        using result_type = typename distribution_type::result_type;
-        using param_type = typename distribution_type::param_type;
+        using result_type = t_result_type;
+        using probability_type = t_probability_type;
+        
+        using distribution_type = probability::binomial_distribution<t_result_type, t_probability_type>;
+        using expectation_type = typename distribution_type::expectation_type;
         using uniform_type = typename t_engine_type::result_type;
 
         static constexpr uniform_type diameter = engine_type::max() - engine_type::min();
