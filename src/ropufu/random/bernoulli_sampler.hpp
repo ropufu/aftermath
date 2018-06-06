@@ -1,6 +1,6 @@
 
-#ifndef ROPUFU_AFTERMATH_RANDOM_SAMPLER_BERNOULLI_HPP_INCLUDED
-#define ROPUFU_AFTERMATH_RANDOM_SAMPLER_BERNOULLI_HPP_INCLUDED
+#ifndef ROPUFU_AFTERMATH_RANDOM_BERNOULLI_SAMPLER_HPP_INCLUDED
+#define ROPUFU_AFTERMATH_RANDOM_BERNOULLI_SAMPLER_HPP_INCLUDED
 
 #include "../probability/binomial_distribution.hpp"
 
@@ -9,9 +9,9 @@
 namespace ropufu::aftermath::random
 {
     template <typename t_engine_type, typename t_result_type = std::size_t, typename t_probability_type = double>
-    struct sampler_bernoulli
+    struct bernoulli_sampler
     {
-        using type = sampler_bernoulli<t_engine_type, t_result_type, t_probability_type>;
+        using type = bernoulli_sampler<t_engine_type, t_result_type, t_probability_type>;
 
         using engine_type = t_engine_type;
         using result_type = t_result_type;
@@ -22,27 +22,28 @@ namespace ropufu::aftermath::random
         using uniform_type = typename t_engine_type::result_type;
 
         static constexpr uniform_type diameter = engine_type::max() - engine_type::min();
+        static constexpr expectation_type norm = static_cast<expectation_type>(type::diameter) + 1;
 
     private:
         result_type m_number_of_trials = 0;
         uniform_type m_threshold = 0;
 
     public:
-        sampler_bernoulli() noexcept { }
+        bernoulli_sampler() noexcept { }
 
-        explicit sampler_bernoulli(const distribution_type& distribution) noexcept
+        explicit bernoulli_sampler(const distribution_type& distribution) noexcept
             : m_number_of_trials(distribution.number_of_trials()),
             m_threshold(static_cast<uniform_type>(type::diameter * distribution.probability_of_success()))
         {
-        } // sampler_bernoulli(...)
+        } // bernoulli_sampler(...)
 
         result_type operator ()(engine_type& uniform_generator) const noexcept
         {
             result_type count_success = 0;
-            for (result_type i = 0; i < this->m_number_of_trials; ++i) if ((uniform_generator() - t_engine_type::min()) <= this->m_threshold) ++count_success;
+            for (result_type i = 0; i < this->m_number_of_trials; ++i) if ((uniform_generator() - engine_type::min()) <= this->m_threshold) ++count_success;
             return count_success;
         } // operator ()(...)
-    }; // struct sampler_bernoulli
+    }; // struct bernoulli_sampler
 } // namespace ropufu::aftermath::random
 
-#endif // ROPUFU_AFTERMATH_RANDOM_SAMPLER_BERNOULLI_HPP_INCLUDED
+#endif // ROPUFU_AFTERMATH_RANDOM_BERNOULLI_SAMPLER_HPP_INCLUDED

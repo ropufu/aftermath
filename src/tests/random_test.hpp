@@ -28,14 +28,14 @@ namespace ropufu
             template <typename t_value_type, typename t_probability_type, typename t_expectation_type, typename t_engine_type>
             struct sampler_switch<aftermath::probability::normal_distribution<t_value_type, t_probability_type, t_expectation_type>, t_engine_type>
             {
-                using type = aftermath::random::sampler_normal<t_engine_type, t_value_type, t_probability_type>;
+                using type = aftermath::random::normal_sampler<t_engine_type, t_value_type, t_probability_type>;
                 using builtin_type = std::normal_distribution<t_value_type>; // Corresponding built-in C++ distribution type.
             };
             
             template <typename t_value_type, typename t_probability_type, typename t_expectation_type, typename t_engine_type>
             struct sampler_switch<aftermath::probability::lognormal_distribution<t_value_type, t_probability_type, t_expectation_type>, t_engine_type>
             {
-                using type = aftermath::random::sampler_lognormal<t_engine_type, t_value_type, t_probability_type>;
+                using type = aftermath::random::lognormal_sampler<t_engine_type, t_value_type, t_probability_type>;
                 using builtin_type = std::lognormal_distribution<t_value_type>; // Corresponding built-in C++ distribution type.
             };
         }

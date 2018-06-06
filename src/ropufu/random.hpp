@@ -2,37 +2,40 @@
 #ifndef ROPUFU_AFTERMATH_RANDOM_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_RANDOM_HPP_INCLUDED
 
-#include "random/sampler_bernoulli.hpp"
-#include "random/sampler_binomial_alias.hpp"
-#include "random/sampler_binomial_lookup.hpp"
-#include "random/sampler_pareto.hpp"
-#include "random/sampler_negative_pareto.hpp"
-#include "random/sampler_normal.hpp"
-#include "random/sampler_lognormal.hpp"
+#include "random/bernoulli_sampler.hpp"
+#include "random/binomial_alias_sampler.hpp"
+#include "random/binomial_lookup.hpp"
+#include "random/pareto_sampler.hpp"
+#include "random/negative_pareto_sampler.hpp"
+#include "random/normal_sampler.hpp"
+#include "random/lognormal_sampler.hpp"
 
 /** Shorthand notation. */
 namespace ropufu::aftm
 {
     template <typename t_engine_type, typename t_result_type = std::size_t, typename t_probability_type = double>
-    using sampler_bernoulli_t = ropufu::aftermath::random::sampler_bernoulli<t_engine_type, t_result_type, t_probability_type>;
+    using bernoulli_sampler_t = ropufu::aftermath::random::bernoulli_sampler<t_engine_type, t_result_type, t_probability_type>;
 
     template <typename t_engine_type, typename t_result_type = std::size_t, typename t_probability_type = double>
-    using sampler_binomial_alias_t = ropufu::aftermath::random::sampler_binomial_alias<t_engine_type, t_result_type, t_probability_type>;
+    using binomial_alias_sampler_t = ropufu::aftermath::random::binomial_alias_sampler<t_engine_type, t_result_type, t_probability_type>;
 
     template <typename t_engine_type, typename t_result_type = std::size_t, typename t_probability_type = double>
-    using sampler_binomial_lookup_t = ropufu::aftermath::random::sampler_binomial_lookup<t_engine_type, t_result_type, t_probability_type>;
+    using binomial_lookup_t = ropufu::aftermath::random::binomial_lookup<t_engine_type, t_result_type, t_probability_type>;
 
     template <typename t_engine_type, typename t_result_type = double, typename t_probability_type = double>
-    using sampler_pareto_t = ropufu::aftermath::random::sampler_pareto<t_engine_type, t_result_type, t_probability_type>;
+    using pareto_sampler_t = ropufu::aftermath::random::pareto_sampler<t_engine_type, t_result_type, t_probability_type>;
 
     template <typename t_engine_type, typename t_result_type = double, typename t_probability_type = double>
-    using sampler_negative_pareto_t = ropufu::aftermath::random::sampler_negative_pareto<t_engine_type, t_result_type, t_probability_type>;
+    using negative_pareto_sampler_t = ropufu::aftermath::random::negative_pareto_sampler<t_engine_type, t_result_type, t_probability_type>;
 
     template <typename t_engine_type, typename t_result_type = double, typename t_probability_type = double, std::size_t t_n_boxes = 1024>
-    using sampler_normal_t = ropufu::aftermath::random::sampler_normal<t_engine_type, t_result_type, t_probability_type, t_n_boxes>;
+    using normal_sampler_t = ropufu::aftermath::random::normal_sampler<t_engine_type, t_result_type, t_probability_type, t_n_boxes>;
 
     template <typename t_engine_type, typename t_result_type = double, typename t_probability_type = double, std::size_t t_n_boxes = 1024>
-    using sampler_lognormal_t = ropufu::aftermath::random::sampler_lognormal<t_engine_type, t_result_type, t_probability_type, t_n_boxes>;
+    using gaussian_sampler_t = ropufu::aftermath::random::normal_sampler<t_engine_type, t_result_type, t_probability_type, t_n_boxes>;
+
+    template <typename t_engine_type, typename t_result_type = double, typename t_probability_type = double, std::size_t t_n_boxes = 1024>
+    using lognormal_sampler_t = ropufu::aftermath::random::lognormal_sampler<t_engine_type, t_result_type, t_probability_type, t_n_boxes>;
 } // namespace ropufu::aftm
 
 #endif // ROPUFU_AFTERMATH_RANDOM_HPP_INCLUDED

@@ -18,12 +18,12 @@ namespace ropufu::aftermath::random
 
             static constexpr std::size_t n_boxes = t_n_boxes;
             static constexpr uniform_type diameter = engine_type::max() - engine_type::min();
-            static constexpr result_type modulus = static_cast<result_type>(diameter) + 1;
+            static constexpr result_type norm = static_cast<result_type>(diameter) + 1;
 
             static constexpr result_type right_tail_x = 0;
             static constexpr result_type left_tail_x = 0;
             static constexpr result_type box_volume = 0;
-            static constexpr uniform_type box_volume_diameter = static_cast<uniform_type>(box_volume * modulus);
+            static constexpr uniform_type box_volume_diameter = static_cast<uniform_type>(box_volume * norm);
 
         protected:
             const result_type m_width_scaled[n_boxes]; // (<diameter> + 1)-downscaled right (left) x-endpoints of the boxes, modified for the tail boxes: { x_0*, x_1, x_2, ..., x_{n - 1}, x_n* }.

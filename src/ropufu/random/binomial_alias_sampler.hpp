@@ -1,6 +1,6 @@
 
-#ifndef ROPUFU_AFTERMATH_RANDOM_SAMPLER_BINOMIAL_ALIAS_HPP_INCLUDED
-#define ROPUFU_AFTERMATH_RANDOM_SAMPLER_BINOMIAL_ALIAS_HPP_INCLUDED
+#ifndef ROPUFU_AFTERMATH_RANDOM_BINOMIAL_ALIAS_SAMPLER_HPP_INCLUDED
+#define ROPUFU_AFTERMATH_RANDOM_BINOMIAL_ALIAS_SAMPLER_HPP_INCLUDED
 
 #include "../probability/binomial_distribution.hpp"
 
@@ -12,9 +12,9 @@
 namespace ropufu::aftermath::random
 {
     template <typename t_engine_type, typename t_result_type = std::size_t, typename t_probability_type = double>
-    struct sampler_binomial_alias
+    struct binomial_alias_sampler
     {
-        using type = sampler_binomial_alias<t_engine_type, t_result_type, t_probability_type>;
+        using type = binomial_alias_sampler<t_engine_type, t_result_type, t_probability_type>;
 
         using engine_type = t_engine_type;
         using result_type = t_result_type;
@@ -25,31 +25,32 @@ namespace ropufu::aftermath::random
         using uniform_type = typename t_engine_type::result_type;
 
         static constexpr uniform_type diameter = engine_type::max() - engine_type::min();
+        static constexpr expectation_type norm = static_cast<expectation_type>(type::diameter) + 1;
 
     private:
         result_type m_number_of_trials = 0;
-        std::vector<result_type> m_alias = {};
-        std::vector<expectation_type> m_cutoff = {};
+        std::vector<result_type> m_alias = std::vector<result_type>(1);
+        std::vector<expectation_type> m_cutoff = std::vector<expectation_type>(1);
 
     public:
-        sampler_binomial_alias() noexcept : sampler_binomial_alias(distribution_type{}) { }
+        binomial_alias_sampler() noexcept { }
 
-        explicit sampler_binomial_alias(const distribution_type& distribution) noexcept
-            : m_number_of_trials(distribution.number_of_trials()), m_alias(distribution.number_of_trials() + 1), m_cutoff(distribution.number_of_trials() + 1)
+        explicit binomial_alias_sampler(const distribution_type& distribution) noexcept
+            : m_number_of_trials(distribution.number_of_trials()),
+            m_alias(distribution.number_of_trials() + 1),
+            m_cutoff(distribution.number_of_trials() + 1)
         {
             result_type n = distribution.number_of_trials();
-            expectation_type p = distribution.probability_of_success();
 
             std::vector<expectation_type> pmf(n + 1);
             std::forward_list<result_type> indices_big {};
             std::forward_list<result_type> indices_small {};
 
-            pmf[0] = std::pow(1 - p, static_cast<expectation_type>(n));
-            for (result_type k = 1; k <= n; ++k) pmf[static_cast<std::size_t>(k)] = distribution.pmf(k);
+            for (result_type k = 0; k <= n; ++k) pmf[static_cast<std::size_t>(k)] = distribution.pmf(k);
 
             for (result_type k = 0; k <= n; ++k)
             {
-                expectation_type z = (n + 1) * pmf[static_cast<std::size_t>(k)];
+                expectation_type z = static_cast<expectation_type>((n + 1) * pmf[static_cast<std::size_t>(k)]);
                 this->m_cutoff[static_cast<std::size_t>(k)] = z;
                 if (z >= 1) indices_big.push_front(k);
                 else indices_small.push_front(k);
@@ -70,11 +71,11 @@ namespace ropufu::aftermath::random
                     indices_small.push_front(k); // Add {k} to indices_small.
                 } // if (...)
             } // while(...)
-        } // sampler_binomial_alias(...)
+        } // binomial_alias_sampler(...)
 
         result_type operator ()(engine_type& uniform_generator) const
         {
-            expectation_type uniform_random = static_cast<expectation_type>(uniform_generator() - engine_type::min()) / (static_cast<expectation_type>(type::diameter) + 1);
+            expectation_type uniform_random = static_cast<expectation_type>(uniform_generator() - engine_type::min()) / (type::norm);
 
             expectation_type u = static_cast<expectation_type>((this->m_number_of_trials + 1) * uniform_random); // uniform continuous \in[0, n + 1).
             result_type index = static_cast<result_type>(u); // uniform discrete \in[0, n].
@@ -85,7 +86,7 @@ namespace ropufu::aftermath::random
         const std::vector<result_type>& alias() const noexcept { return this->m_alias; }
 
         const std::vector<expectation_type>& cutoff() const noexcept { return this->m_cutoff; }
-    }; // struct sampler_binomial_alias
+    }; // struct binomial_alias_sampler
 } // namespace ropufu::aftermath::random
 
-#endif // ROPUFU_AFTERMATH_RANDOM_SAMPLER_BINOMIAL_ALIAS_HPP_INCLUDED
+#endif // ROPUFU_AFTERMATH_RANDOM_BINOMIAL_ALIAS_SAMPLER_HPP_INCLUDED

@@ -6,10 +6,10 @@
 
 #include "probability/binomial_distribution.hpp"
 #include "probability/exponential_distribution.hpp"
-#include "probability/lognormal_distribution.hpp"
+#include "probability/pareto_distribution.hpp"
 #include "probability/negative_pareto_distribution.hpp"
 #include "probability/normal_distribution.hpp"
-#include "probability/pareto_distribution.hpp"
+#include "probability/lognormal_distribution.hpp"
 #include "probability/uniform_real_distribution.hpp"
 
 #include "probability/empirical_measure.hpp"
@@ -30,7 +30,7 @@ namespace ropufu::aftm
     using exponential_distribution_t = ropufu::aftermath::probability::exponential_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
     template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
-    using lognormal_distribution_t = ropufu::aftermath::probability::lognormal_distribution<t_value_type, t_probability_type, t_expectation_type>;
+    using pareto_distribution_t = ropufu::aftermath::probability::pareto_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
     template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
     using negative_pareto_distribution_t = ropufu::aftermath::probability::negative_pareto_distribution<t_value_type, t_probability_type, t_expectation_type>;
@@ -39,10 +39,10 @@ namespace ropufu::aftm
     using normal_distribution_t = ropufu::aftermath::probability::normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
 
     template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
-    using gaussian_distribution_t = ropufu::aftermath::probability::gaussian_distribution<t_value_type, t_probability_type, t_expectation_type>;
+    using gaussian_distribution_t = ropufu::aftermath::probability::normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
     template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
-    using pareto_distribution_t = ropufu::aftermath::probability::pareto_distribution<t_value_type, t_probability_type, t_expectation_type>;
+    using lognormal_distribution_t = ropufu::aftermath::probability::lognormal_distribution<t_value_type, t_probability_type, t_expectation_type>;
     
     template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
     using uniform_real_distribution_t = ropufu::aftermath::probability::uniform_real_distribution<t_value_type, t_probability_type, t_expectation_type>;

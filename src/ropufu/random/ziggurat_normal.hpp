@@ -70,8 +70,8 @@ namespace ropufu::aftermath::random
             result_type u1, u2;
             while (true)
             {
-                u1 = static_cast<result_type>((uniform_generator() - engine_type::min()) / box_type::modulus);
-                u2 = static_cast<result_type>((uniform_generator() - engine_type::min()) / box_type::modulus);
+                u1 = static_cast<result_type>((uniform_generator() - engine_type::min()) / box_type::norm);
+                u2 = static_cast<result_type>((uniform_generator() - engine_type::min()) / box_type::norm);
                 result = static_cast<result_type>(std::sqrt(r_squared - 2 * std::log(1 - u1)));
                 if (u2 * result < r) return box_index == 0 ? result : -result;
             } // while(...)

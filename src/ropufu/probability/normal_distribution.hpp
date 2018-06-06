@@ -19,8 +19,8 @@ namespace ropufu::aftermath::probability
     template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
     struct normal_distribution;
 
-    template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
-    using gaussian_distribution = normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
+    // template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    // using gaussian_distribution_t = normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
 
     template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
     struct is_continuous<normal_distribution<t_value_type, t_probability_type, t_expectation_type>>

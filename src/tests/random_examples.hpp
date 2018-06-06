@@ -25,8 +25,8 @@ namespace ropufu
             using distribution_type = aftermath::probability::binomial_distribution<std::size_t, t_param_type>;
             using result_type = typename distribution_type::value_type;
             using param_type = typename distribution_type::expectation_type;
-            using sampler_type = aftermath::random::sampler_binomial_alias<t_engine_type, std::size_t, t_param_type>;
-            using lookup_sampler_type = aftermath::random::sampler_binomial_lookup<t_engine_type, std::size_t, t_param_type>;
+            using sampler_type = aftermath::random::binomial_alias_sampler<t_engine_type, std::size_t, t_param_type>;
+            using lookup_sampler_type = aftermath::random::binomial_lookup<t_engine_type, std::size_t, t_param_type>;
             using builtin_distribution_type = std::binomial_distribution<std::size_t>;
 
         private:
@@ -60,7 +60,11 @@ namespace ropufu
             
                 std::uniform_int_distribution<std::size_t> uniform_n(this->m_n_min, this->m_n_max);
                 
-                lookup_sampler_type binomial_matrix(this->m_n_min, this->m_n_max, this->m_probability_of_success, ec);
+                distribution_type from(this->m_n_min, this->m_probability_of_success, ec);
+                if (ec) return 0;
+                distribution_type to(this->m_n_max, this->m_probability_of_success, ec);
+                if (ec) return 0;
+                lookup_sampler_type binomial_matrix(from, to, ec);
                 if (ec) return 0;
                 //param_type size_in_megabytes = (binomial_matrix.size_in_bytes() / static_cast<param_type>(1024 * 1024));
             

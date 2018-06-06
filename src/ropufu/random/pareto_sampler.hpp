@@ -1,6 +1,6 @@
 
-#ifndef ROPUFU_AFTERMATH_RANDOM_SAMPLER_PARETO_HPP_INCLUDED
-#define ROPUFU_AFTERMATH_RANDOM_SAMPLER_PARETO_HPP_INCLUDED
+#ifndef ROPUFU_AFTERMATH_RANDOM_PARETO_SAMPLER_HPP_INCLUDED
+#define ROPUFU_AFTERMATH_RANDOM_PARETO_SAMPLER_HPP_INCLUDED
 
 #include "../probability/pareto_distribution.hpp"
 
@@ -10,9 +10,9 @@
 namespace ropufu::aftermath::random
 {
     template <typename t_engine_type, typename t_result_type = double, typename t_probability_type = double>
-    struct sampler_pareto
+    struct pareto_sampler
     {
-        using type = sampler_pareto<t_engine_type, t_result_type, t_probability_type>;
+        using type = pareto_sampler<t_engine_type, t_result_type, t_probability_type>;
 
         using engine_type = t_engine_type;
         using result_type = t_result_type;
@@ -23,25 +23,26 @@ namespace ropufu::aftermath::random
         using uniform_type = typename t_engine_type::result_type;
 
         static constexpr uniform_type diameter = engine_type::max() - engine_type::min();
+        static constexpr expectation_type norm = static_cast<expectation_type>(type::diameter) + 1;
 
     private:
-        result_type m_x_min = 0;
-        expectation_type m_alpha = 0;
+        result_type m_x_min = 1;
+        expectation_type m_alpha = 1;
 
     public:
-        sampler_pareto() noexcept : sampler_pareto(distribution_type{}) { }
+        pareto_sampler() noexcept { }
 
-        explicit sampler_pareto(const distribution_type& distribution) noexcept
+        explicit pareto_sampler(const distribution_type& distribution) noexcept
             : m_x_min(distribution.x_min()), m_alpha(distribution.alpha())
         {
-        } // sampler_pareto(...)
+        } // pareto_sampler(...)
 
         result_type operator ()(engine_type& uniform_generator) const noexcept
         {
-            expectation_type uniform_random = static_cast<expectation_type>(uniform_generator() - engine_type::min()) / (static_cast<expectation_type>(type::diameter) + 1);
+            expectation_type uniform_random = static_cast<expectation_type>(uniform_generator() - engine_type::min()) / (type::norm);
             return this->m_x_min / static_cast<result_type>(std::pow(1 - uniform_random, 1 / this->m_alpha));
-        }
-    }; // struct sampler_pareto
+        } // operator ()(...)
+    }; // struct pareto_sampler
 } // namespace ropufu::aftermath::random
 
-#endif // ROPUFU_AFTERMATH_RANDOM_SAMPLER_PARETO_HPP_INCLUDED
+#endif // ROPUFU_AFTERMATH_RANDOM_PARETO_SAMPLER_HPP_INCLUDED

@@ -38,8 +38,8 @@ namespace ropufu::aftermath::probability
         static constexpr char name[] = "negative_pareto"; // "negative pareto"
 
     private:
-        expectation_type m_alpha = 1;
         value_type m_x_max = 1;
+        expectation_type m_alpha = 1;
         // ~~ Cached values ~~
         expectation_type m_cache_expected_value = static_cast<expectation_type>(0.5);
         expectation_type m_cache_variance = math_constants<expectation_type>::one_over_twelwe;
@@ -69,21 +69,21 @@ namespace ropufu::aftermath::probability
          *  @param ec Set to std::errc::invalid_argument if \p alpha is not positive.
          *  @param ec Set to std::errc::invalid_argument if \p x_max is not positive.
          */
-        explicit negative_pareto_distribution(expectation_type alpha, value_type x_max, std::error_code& ec) noexcept
-            : m_alpha(alpha), m_x_max(x_max)
+        explicit negative_pareto_distribution(value_type x_max, expectation_type alpha, std::error_code& ec) noexcept
+            : m_x_max(x_max), m_alpha(alpha)
         {
             if (this->validate(ec)) this->cahce();
             else
             {
-                this->m_alpha = 1;
                 this->m_x_max = 1;
+                this->m_alpha = 1;
             } // if (...)
         } // negative_pareto_distribution(...)
 
-        /** Shape parameter of the distribution. */
-        expectation_type alpha() const noexcept { return this->m_alpha; }
         /** Scale parameter of the distribution. */
         value_type x_max() const noexcept { return this->m_x_max; }
+        /** Shape parameter of the distribution. */
+        expectation_type alpha() const noexcept { return this->m_alpha; }
 
         /** Expected value of the distribution. */
         expectation_type expected_value() const noexcept { return this->m_cache_expected_value; }
@@ -119,8 +119,8 @@ namespace ropufu::aftermath::probability
         bool operator ==(const type& other) const noexcept
         {
             return
-                this->m_alpha == other.m_alpha &&
-                this->m_x_max == other.m_x_max;
+                this->m_x_max == other.m_x_max &&
+                this->m_alpha == other.m_alpha;
         } // operator ==(...)
 
         /** Checks if the two distributions are different. */
@@ -149,8 +149,8 @@ namespace std
             std::hash<typename argument_type::expectation_type> expectation_hash = {};
 
             return
-                expectation_hash(x.alpha()) ^
-                value_hash(x.x_max());
+                value_hash(x.x_max()) ^
+                expectation_hash(x.alpha());
         } // operator ()(...)
     }; // struct hash
 } // namespace std
