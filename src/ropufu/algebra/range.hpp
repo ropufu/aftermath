@@ -4,6 +4,7 @@
 
 #include <nlohmann/json.hpp>
 #include "../json_traits.hpp"
+#include "../on_error.hpp"
 
 #include "../enum_parser.hpp"
 
@@ -13,6 +14,7 @@
 #include <iostream>  // std::ostream
 #include <stdexcept> // std::invalid_argument
 #include <string>    // std::string, std::to_string
+#include <system_error> // std::error_code, std::errc
 #include <vector>    // std::vector
 
 namespace ropufu::aftermath::algebra
@@ -102,8 +104,8 @@ namespace ropufu::aftermath::algebra
         static constexpr char jstr_to[] = "to";
 
     private:
-        value_type m_from = { };
-        value_type m_to = { };
+        value_type m_from = {};
+        value_type m_to = {};
 
     public:
         range() noexcept { }
@@ -111,6 +113,26 @@ namespace ropufu::aftermath::algebra
         range(const value_type& from, const value_type& to) noexcept
             : m_from(from), m_to(to)
         {
+        } // range(...)
+
+        range(const nlohmann::json& j, std::error_code& ec) noexcept
+        {
+            if (j.is_array())
+            {
+                std::vector<value_type> range_pair = {};
+                aftermath::noexcept_json::as(j, range_pair, ec);
+                if (ec) return;
+                if (range_pair.size() != 2) { aftermath::detail::on_error(ec, std::errc::bad_message, "Range should be a vector with two entries."); return; }
+                this->m_from = range_pair.front();
+                this->m_to = range_pair.back();
+            } // if (...)
+            else
+            {
+                aftermath::noexcept_json::required(j, type::jstr_from, this->m_from, ec);
+                aftermath::noexcept_json::required(j, type::jstr_to, this->m_to, ec);
+                from = j[type::jstr_from];
+                to = j[type::jstr_to];
+            } // if (...)
         } // range(...)
 
         const value_type& from() const noexcept { return this->m_from; }
@@ -205,23 +227,9 @@ namespace ropufu::aftermath::algebra
     void from_json(const nlohmann::json& j, range<t_value_type>& x)
     {
         using type = range<t_value_type>;
-
-        // Populate default values.
-        t_value_type from = x.from();
-        t_value_type to = x.to();
-        std::vector<t_value_type> v = { from, to };
-
-        // Parse json entries.
-        if (j.is_array()) v = j;
-        else
-        {
-            from = j[type::jstr_from];
-            to = j[type::jstr_to];
-            v = { from, to };
-        } // if (...)
-        
-        if (v.size() != 2) throw std::invalid_argument("Range should be a vector with two entries.");
-        x = type(v.front(), v.back());
+        std::error_code ec {};
+        x = type(j, ec);
+        if (ec) throw std::runtime_error("Parsing failed: " + ec.message());
     } // from_json(...)
 } // namespace ropufu::aftermath::algebra
 

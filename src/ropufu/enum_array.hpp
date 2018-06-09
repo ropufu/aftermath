@@ -4,6 +4,7 @@
 
 #include <nlohmann/json.hpp>
 #include "json_traits.hpp"
+#include "on_error.hpp"
 
 #include "enum_parser.hpp"
 #include "key_value_pair.hpp"
@@ -14,7 +15,8 @@
 #include <ostream>   // std::ostream
 #include <stdexcept> // std::out_of_range, std::logic_error
 #include <string>    // std::string, std::to_string
-#include <type_traits> // ...
+#include <type_traits>  // ...
+#include <system_error> // std::error_code, std::errc
 
 namespace ropufu::aftermath
 {
@@ -246,6 +248,18 @@ namespace ropufu::aftermath
         enum_array() noexcept { }
         explicit enum_array(const value_type& value) noexcept { this->m_collection.fill(value); }
 
+        /** Unpack JSON object { ..., "<enum key>": value, ... }. */
+        enum_array(const nlohmann::json& j, std::error_code& ec) noexcept
+        {
+            for (underlying_type k = type::first_index; k < type::past_the_last_index; ++k)
+            {
+                enum_type key = static_cast<enum_type>(k);
+                std::string key_str = detail::enum_parser<enum_type>::to_string(key);
+                value_type& value = this->operator [](k);
+                aftermath::noexcept_json::optional(j, key_str, value, ec);
+            } // for (...)
+        } // enum_array(...)
+
         const_iterator_type cbegin() const noexcept { return const_iterator_type(this->m_collection.data(), type::first_index); }
         const_iterator_type cend() const noexcept { return const_iterator_type(this->m_collection.data(), type::past_the_last_index); }
 
@@ -293,6 +307,19 @@ namespace ropufu::aftermath
                 this->operator [](k) = true;
             } // for (...)
         } // enum_array
+
+        /** Unpack JSON array [ ..., "<enum key>", ... ]. */
+        enum_array(const nlohmann::json& j, std::error_code& ec) noexcept
+        {
+            std::vector<std::string> str_vector = {};
+            aftermath::noexcept_json::as(j, str_vector, ec);
+            for (const std::string& key_str : str_vector)
+            {
+                enum_type key { };
+                if (detail::enum_parser<enum_type>::try_parse(key_str, key)) this->operator [](key) = true;
+                else aftermath::detail::on_error(ec, std::errc::bad_message, "Unrecognized enum: " + key_str + std::string("."));
+            } // for (...)
+        } // enum_array(...)
 
         const_iterator_type cbegin() const noexcept { return const_iterator_type(this->m_collection.data(), type::first_index); }
         const_iterator_type cend() const noexcept { return const_iterator_type(this->m_collection.data(), type::past_the_last_index); }
@@ -385,6 +412,18 @@ namespace ropufu::aftermath
             this->m_collection = s_instance.m_collection;
         } // enum_array(...)
 
+        /** Unpack JSON array [ ..., "<enum key>", ... ]. */
+        enum_array(const nlohmann::json& j, std::error_code& ec) noexcept
+        {
+            std::vector<std::string> str_vector = {};
+            aftermath::noexcept_json::as(j, str_vector, ec);
+            /** @todo Check existing strings in \c str_vector against \c enum_array values. */
+            if (str_vector.size() != type::capacity) aftermath::detail::on_error(ec, std::errc::bad_message, "Size mismatch.");
+
+            static type s_instance(nullptr); // Populate the list only once.
+            this->m_collection = s_instance.m_collection;
+        } // enum_array(...)
+
         constexpr std::size_t size() const noexcept { return type::capacity; }
         constexpr std::size_t max_size() const noexcept { return type::capacity; }
 
@@ -448,14 +487,9 @@ namespace ropufu::aftermath
     void from_json(const nlohmann::json& j, enum_array<t_enum_type, t_value_type>& x)
     {
         using type = enum_array<t_enum_type, t_value_type>;
-        using underlying_type = std::underlying_type_t<t_enum_type>;
-
-        for (underlying_type k = type::first_index; k < type::past_the_last_index; ++k)
-        {
-            t_enum_type key = static_cast<t_enum_type>(k);
-            std::string key_str = detail::enum_parser<t_enum_type>::to_string(key);
-            if (j.count(key_str) > 0) x[key] = j[key_str].get<t_value_type>();
-        } // for (...)
+        std::error_code ec {};
+        x = type(j, ec);
+        if (ec) throw std::runtime_error("Parsing failed: " + ec.message());
     } // from_json(...)
 
     /** Unpack array [ ..., "<enum key>", ... ]. */
@@ -463,25 +497,19 @@ namespace ropufu::aftermath
     void from_json(const nlohmann::json& j, enum_array<t_enum_type, bool>& x)
     {
         using type = enum_array<t_enum_type, bool>;
-
-        std::vector<std::string> str_vector = j;
-        for (const std::string& key_str : str_vector)
-        {
-            t_enum_type key { };
-            if (detail::enum_parser<t_enum_type>::try_parse(key_str, key)) x[key] = true;
-            else json_traits<type>::warning("Unrecognized enum: " + key_str + std::string("."));
-        } // for (...)
+        std::error_code ec {};
+        x = type(j, ec);
+        if (ec) throw std::runtime_error("Parsing failed: " + ec.message());
     } // from_json(...)
 
     /** Unpack array [ ..., "<enum key>", ... ]. */
     template <typename t_enum_type>
     void from_json(const nlohmann::json& j, enum_array<t_enum_type, void>& x)
     {
-        // using type = enum_array<t_enum_type, void>;
-
-        std::vector<std::string> str_vector = j;
-        /** @todo Check existing strings in \c str_vector against \c enum_array values. */
-        if (str_vector.size() != x.size()) throw std::logic_error("Size mismatch.");
+        using type = enum_array<t_enum_type, void>;
+        std::error_code ec {};
+        x = type(j, ec);
+        if (ec) throw std::runtime_error("Parsing failed: " + ec.message());
     } // from_json(...)
 } // namespace ropufu::aftermath
 
