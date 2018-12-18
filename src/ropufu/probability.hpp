@@ -4,6 +4,7 @@
 
 #include "probability/distribution_traits.hpp"
 
+#include "probability/bernoulli_distribution.hpp"
 #include "probability/binomial_distribution.hpp"
 #include "probability/exponential_distribution.hpp"
 #include "probability/pareto_distribution.hpp"
@@ -22,6 +23,9 @@ namespace ropufu::aftm
     
     template <typename t_distribution_type>
     inline constexpr bool is_discrete_v = ropufu::aftermath::probability::is_discrete_v<t_distribution_type>;
+
+    template <typename t_probability_type = double, typename t_expectation_type = t_probability_type>
+    using bernoulli_distribution_t = ropufu::aftermath::probability::bernoulli_distribution<t_probability_type, t_expectation_type>;
 
     template <typename t_value_type = std::size_t, typename t_probability_type = double, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
     using binomial_distribution_t = ropufu::aftermath::probability::binomial_distribution<t_value_type, t_probability_type, t_expectation_type>;

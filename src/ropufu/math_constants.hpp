@@ -55,12 +55,12 @@ namespace ropufu::aftermath
     //     static constexpr bool is_not_defined = false;
     // }; // struct is_power_of_two<...>
 
-    /** Finds the largest integer <x> such that 2 to the power <x> is less than or equal to \tparam t_number. */
+    /** @breief Finds the largest integer <x> such that 2 to the power <x> is less than or equal to \tparam t_number.
+     *  @remark When \p number is 0 returns 0.
+     */
     template <typename t_integer_type>
     inline constexpr t_integer_type log_base_two(t_integer_type number)
     {
-        static_assert(number != 0, "Log(0) is not defined.");
-        
         t_integer_type result = 0;
         number /= 2;
         while (number != 0)
@@ -96,12 +96,12 @@ namespace ropufu::aftermath
     // }; // struct log_base_two<...>
     
 
-    /** Finds the largest integer <x> such that \tparam t_base to the power <x> is less than or equal to \tparam t_number. */
+    /** @brief Finds the largest integer <x> such that \tparam t_base to the power <x> is less than or equal to \tparam t_number.
+     *  @remark When \p number is 0 returns 0.
+     */
     template <typename t_integer_type, typename t_base_type>
     inline constexpr t_integer_type log_base_n(t_integer_type number, t_base_type base)
-    {
-        static_assert(number != 0, "Log(0) is not defined.");
-        
+    {        
         t_integer_type result = 0;
         number /= base;
         while (number != 0)

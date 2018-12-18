@@ -98,7 +98,9 @@ namespace ropufu::aftermath::random
             expectation_type u = static_cast<expectation_type>((number_of_trials + 1) * uniform_random); // uniform continuous \in[0, n + 1).
             result_type index = static_cast<result_type>(u); // uniform discrete \in[0, n].
             u = (index + 1) - u; // 1 - overshoot: uniform continuous \in(0, 1].
-            return (u > this->m_cutoff(current_row, index)) ? this->m_alias(current_row, index) : index; // Potential unauthorized memory access due to unchecked <number_of_trials>.
+            expectation_type cutoff = this->m_cutoff(current_row, index);
+            result_type maybe = this->m_alias(current_row, index);
+            return (u > cutoff) ? maybe : index; // Potential unauthorized memory access due to unchecked <number_of_trials>.
         } // operator ()(...)
     }; // struct binomial_lookup
 } // namespace ropufu::aftermath::random

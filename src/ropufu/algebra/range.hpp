@@ -92,6 +92,13 @@ namespace ropufu::aftermath::algebra
         }; // struct range_container<...>
     } // namespace detail
 
+    template <typename t_value_type>
+    struct range;
+    template <typename t_value_type>
+    void to_json(nlohmann::json& j, const range<t_value_type>& x) noexcept;
+    template <typename t_value_type>
+    void from_json(const nlohmann::json& j, range<t_value_type>& x);
+
     /** @brief Inspired by MATLAB's linspace function. */
     template <typename t_value_type>
     struct range
@@ -130,9 +137,7 @@ namespace ropufu::aftermath::algebra
             {
                 aftermath::noexcept_json::required(j, type::jstr_from, this->m_from, ec);
                 aftermath::noexcept_json::required(j, type::jstr_to, this->m_to, ec);
-                from = j[type::jstr_from];
-                to = j[type::jstr_to];
-            } // if (...)
+            } // else (...)
         } // range(...)
 
         const value_type& from() const noexcept { return this->m_from; }

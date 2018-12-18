@@ -5,6 +5,7 @@
 #include <algorithm>   // std::copy
 #include <cstddef>     // std::size_t
 #include <cstring>     // std::memcpy
+#include <iterator>    // std::cbegin, std::cend
 #include <stdexcept>   // std::logic_error
 #include <type_traits> // ...
 
@@ -32,7 +33,7 @@ namespace ropufu::aftermath::algebra
                 const t_derived_type& self = static_cast<const t_derived_type&>(*this);
                 std::copy(self.begin(), self.end(), destination.begin());
             } // copy(...)
-        };
+        }; // struct matrix_slice_copy_module
         
         template <typename t_derived_type, typename t_value_type>
         struct matrix_slice_paste_module
@@ -40,11 +41,11 @@ namespace ropufu::aftermath::algebra
             void paste(const t_value_type* source, std::size_t count)
             {
                 const t_derived_type& self = static_cast<const t_derived_type&>(*this);
-                if constexpr (!std::is_trivially_copyable_v<t_value_type>) std::copy(source.begin(), source.end(), self.begin());
+                if constexpr (!std::is_trivially_copyable_v<t_value_type>) std::copy(std::cbegin(source), std::cend(source), self.begin());
                 else
                 {
                     if (self.contiguous()) std::memcpy(self.m_begin_ptr, source, count * sizeof(t_value_type));
-                    else std::copy(source.begin(), source.end(), self.begin());
+                    else std::copy(std::cbegin(source), std::cend(source), self.begin());
                 } // if constexpr (...)
             } // paste(...)
 
@@ -54,7 +55,7 @@ namespace ropufu::aftermath::algebra
                 const t_derived_type& self = static_cast<const t_derived_type&>(*this);
                 std::copy(source.begin(), source.end(), self.begin());
             } // paste(...)
-        };
+        }; // struct matrix_slice_paste_module
 
         template <typename t_value_type, typename t_size_type, bool t_is_const>
         struct matrix_slice_iterator

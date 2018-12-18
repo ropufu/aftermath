@@ -13,8 +13,8 @@
 /** Shorthand notation. */
 namespace ropufu::aftm
 {
-    template <typename t_engine_type, typename t_result_type = std::size_t, typename t_probability_type = double>
-    using bernoulli_sampler_t = ropufu::aftermath::random::bernoulli_sampler<t_engine_type, t_result_type, t_probability_type>;
+    template <typename t_engine_type, typename t_probability_type = double>
+    using bernoulli_sampler_t = ropufu::aftermath::random::bernoulli_sampler<t_engine_type, t_probability_type>;
 
     template <typename t_engine_type, typename t_result_type = std::size_t, typename t_probability_type = double>
     using binomial_alias_sampler_t = ropufu::aftermath::random::binomial_alias_sampler<t_engine_type, t_result_type, t_probability_type>;

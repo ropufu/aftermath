@@ -76,7 +76,6 @@ namespace ropufu::aftermath
         template <typename t_value_type>
         static void parse(const nlohmann::json& j, const std::string& key, t_value_type& result, std::error_code& ec, bool is_optional) noexcept
         {
-            using decayed_type = std::decay_t<t_value_type>;
             if (!type::exists(j, key, ec, is_optional)) return;
             type::interpret(j[key], result, ec); // We made sure that the key exists.
         } // parse(...)
@@ -156,7 +155,7 @@ namespace ropufu::aftermath
             {
                 if (count == t_size)
                 {
-                    ec = std::invalid_argument(std::errc::invalid_argument);
+                    ec = std::make_error_code(std::errc::invalid_argument);
                     return;
                 } // if (...)
 
@@ -168,7 +167,7 @@ namespace ropufu::aftermath
                 ++count;
             } // for (...)
 
-            if (count != t_size) ec = std::invalid_argument(std::errc::invalid_argument);
+            if (count != t_size) ec = std::make_error_code(std::errc::invalid_argument);
         } // interpret(...)
         
         /** @brief Tries to parse \c j as a vector.
