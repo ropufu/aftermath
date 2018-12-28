@@ -29,6 +29,9 @@ namespace ropufu::aftermath::random
             static constexpr result_type box_volume = result_type(0.00098010797069741627);
             static constexpr uniform_type box_volume_diameter = static_cast<uniform_type>(box_volume * norm);
 
+            /** Implicit assignment is deleted because of const members. */
+            type& operator =(const type& other) { return *this; }
+
         protected:
             // (<diameter> + 1)-downscaled right (left) x-endpoints of the boxes, modified for the tail boxes: { x_0*, x_1, x_2, ..., x_{n - 1}, x_n* }.
             const result_type m_width_scaled[n_boxes] = {
