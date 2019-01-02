@@ -29,7 +29,7 @@ namespace ropufu::aftermath::random
 
     private:
         expectation_type m_mu = 0;
-        expectation_type m_sigma = 0;
+        expectation_type m_sigma = 1;
         ziggurat_type m_ziggurat = {};
 
     public:
