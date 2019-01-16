@@ -8,6 +8,7 @@
 #include "enum_array_test.hpp"
 
 #include "test_algebra.hpp"
+#include "test_matrix.hpp"
 
 #include <exception> // std::exception
 
@@ -100,6 +101,30 @@ std::int32_t main(std::int32_t /**argc*/, char** /**argv*/, char** /*envp*/)
         run_definitive_test("fraction 5a", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_5<std::size_t>(); });
         run_definitive_test("fraction 5b", [&]() { return ropufu::test_aftermath::algebra::fraction_tester::test_5<std::int_fast32_t>(); });
         
+        run_definitive_test("matrix ops-n 1a", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_ops<std::size_t>(5, 3); });
+        run_definitive_test("matrix ops-n 1b", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_ops<std::size_t>(3, 6); });
+        run_definitive_test("matrix ops-n 1c", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_ops<std::size_t>(4, 4); });
+        run_definitive_test("matrix ops-n 1d", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_ops<std::size_t>(1, 1); });
+        run_definitive_test("matrix ops-n 1e", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_ops<std::size_t>(0, 0); });
+
+        run_definitive_test("matrix ops-n 2a", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_ops<std::int_fast32_t>(5, 3); });
+        run_definitive_test("matrix ops-n 2b", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_ops<std::int_fast32_t>(3, 6); });
+        run_definitive_test("matrix ops-n 2c", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_ops<std::int_fast32_t>(4, 4); });
+        run_definitive_test("matrix ops-n 2d", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_ops<std::int_fast32_t>(1, 1); });
+        run_definitive_test("matrix ops-n 2e", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_ops<std::int_fast32_t>(0, 0); });
+        
+        run_definitive_test("matrix scalar ops-1 1a", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::size_t>(5, 3); });
+        run_definitive_test("matrix scalar ops-1 1b", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::size_t>(3, 6); });
+        run_definitive_test("matrix scalar ops-1 1c", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::size_t>(4, 4); });
+        run_definitive_test("matrix scalar ops-1 1d", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::size_t>(1, 1); });
+        run_definitive_test("matrix scalar ops-1 1e", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::size_t>(0, 0); });
+
+        run_definitive_test("matrix scalar ops-1 2a", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::int_fast32_t>(5, 3); });
+        run_definitive_test("matrix scalar ops-1 2b", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::int_fast32_t>(3, 6); });
+        run_definitive_test("matrix scalar ops-1 2c", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::int_fast32_t>(4, 4); });
+        run_definitive_test("matrix scalar ops-1 2d", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::int_fast32_t>(1, 1); });
+        run_definitive_test("matrix scalar ops-1 2e", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::int_fast32_t>(0, 0); });
+
 
         std::cout << "Randomized tests with std::default_random_engine and double." << std::endl;
         // std::cout << "Randomized tests with std::default_random_engine: (i) float, then (ii) double." << std::endl;

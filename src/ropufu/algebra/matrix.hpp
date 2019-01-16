@@ -18,18 +18,23 @@
 #include <vector>    // std::vector
 
 #define ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(BINOP, OPNAME)                                        \
-template <bool t_is_enabled, typename t_derived_type>                                                   \
+template <bool t_is_enabled, typename t_derived_type, typename t_value_type>                            \
 struct matrix_##OPNAME##_assign_op_module { };                                                          \
                                                                                                         \
-template <typename t_derived_type>                                                                      \
-struct matrix_##OPNAME##_assign_op_module<true, t_derived_type>                                         \
+template <typename t_derived_type, typename t_value_type>                                               \
+struct matrix_##OPNAME##_assign_op_module<true, t_derived_type, t_value_type>                           \
 {                                                                                                       \
-    t_derived_type& operator BINOP##=(const t_derived_type& other)                                      \
+private:                                                                                                \
+    using matrix_type = t_derived_type;                                                                 \
+    using scalar_type = t_value_type;                                                                   \
+                                                                                                        \
+public:                                                                                                 \
+    matrix_type& operator BINOP##=(const matrix_type& other)                                            \
     {                                                                                                   \
-        using size_type = typename t_derived_type::size_type;                                           \
-        using value_type = typename t_derived_type::value_type;                                         \
-        t_derived_type& self = static_cast<t_derived_type&>(*this);                                     \
-        if (!t_derived_type::compatible(self, other)) throw std::logic_error("Matrices incompatible."); \
+        using size_type = typename matrix_type::size_type;                                              \
+        using value_type = scalar_type;                                                                 \
+        matrix_type& self = static_cast<matrix_type&>(*this);                                           \
+        if (!matrix_type::compatible(self, other)) throw std::logic_error("Matrices incompatible.");    \
         value_type* left_ptr = self.m_begin_ptr;                                                        \
         const value_type* right_ptr = other.m_begin_ptr;                                                \
         for (size_type k = 0; k < self.m_size; ++k)                                                     \
@@ -41,11 +46,33 @@ struct matrix_##OPNAME##_assign_op_module<true, t_derived_type>                 
         return self;                                                                                    \
     }                                                                                                   \
                                                                                                         \
-    friend t_derived_type operator BINOP(t_derived_type left, const t_derived_type& right)              \
+    matrix_type& operator BINOP##=(const scalar_type& other) noexcept                                   \
+    {                                                                                                   \
+        using value_type = scalar_type;                                                                 \
+        matrix_type& self = static_cast<matrix_type&>(*this);                                           \
+        for (value_type* it = self.m_begin_ptr; it != self.m_end_ptr; ++it)                             \
+        {                                                                                               \
+            (*it) BINOP##= other;                                                                       \
+        }                                                                                               \
+        return self;                                                                                    \
+    }                                                                                                   \
+                                                                                                        \
+    friend matrix_type operator BINOP(matrix_type left, const matrix_type& right)                       \
+    {                                                                                                   \
+        left BINOP##= right; return left;                                                               \
+    }                                                                                                   \
+                                                                                                        \
+    friend matrix_type operator BINOP(matrix_type left, const scalar_type& right) noexcept              \
     {                                                                                                   \
         left BINOP##= right; return left;                                                               \
     }                                                                                                   \
 };                                                                                                      \
+
+#define ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(OPNAME) \
+matrix_##OPNAME##_assign_op_module<                               \
+    type_traits::has_add_assign_v<t_value_type>,                  \
+    matrix<t_value_type, t_arrangement_type, t_allocator_type>,   \
+    t_value_type>                                                 \
 
 
 namespace ropufu::aftermath::algebra
@@ -92,22 +119,24 @@ namespace ropufu::aftermath::algebra
         ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(&, binand)
         ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(^, binxor)
         
-        template <bool t_is_enabled, typename t_derived_type>
+        template <bool t_is_enabled, typename t_derived_type, typename t_value_type>
         struct matrix_inequality_op_module { };
 
-        template <typename t_derived_type>
-        struct matrix_inequality_op_module<true, t_derived_type>
+        template <typename t_derived_type, typename t_value_type>
+        struct matrix_inequality_op_module<true, t_derived_type, t_value_type>
         {
-            bool operator ==(const t_derived_type& other) const noexcept
+            using matrix_type = t_derived_type;
+            using scalar_type = t_value_type;
+            
+            bool operator ==(const matrix_type& other) const noexcept
             {
-                using size_type = typename t_derived_type::size_type;
-                using value_type = typename t_derived_type::value_type;
-                const t_derived_type& self = static_cast<const t_derived_type&>(*this);
+                using size_type = typename matrix_type::size_type;
+                const matrix_type& self = static_cast<const matrix_type&>(*this);
                 // Check dimensions.
-                if (!t_derived_type::compatible(self, other)) return false;
+                if (!matrix_type::compatible(self, other)) return false;
                 // Check values.
-                const value_type* left_ptr = self.m_begin_ptr;
-                const value_type* right_ptr = other.m_begin_ptr;
+                const scalar_type* left_ptr = self.m_begin_ptr;
+                const scalar_type* right_ptr = other.m_begin_ptr;
                 for (size_type k = 0; k < self.m_size; ++k)
                 {
                     if (*(left_ptr) != *(right_ptr)) return false;
@@ -118,7 +147,7 @@ namespace ropufu::aftermath::algebra
             } // operator /=(...)
 
             /** Checks two matrices for inequality. */
-            bool operator !=(const t_derived_type& other) const noexcept
+            bool operator !=(const matrix_type& other) const noexcept
             {
                 return !(this->operator ==(other));
             } // operator !=(...)
@@ -147,14 +176,14 @@ namespace ropufu::aftermath::algebra
     template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
     struct matrix
         : public detail::matrix_wipe_module<std::is_arithmetic_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>, t_value_type, typename t_arrangement_type::size_type>,
-        public detail::matrix_add_assign_op_module<type_traits::has_add_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
-        public detail::matrix_subtract_assign_op_module<type_traits::has_subtract_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
-        public detail::matrix_multiply_assign_op_module<type_traits::has_multiply_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
-        public detail::matrix_divide_assign_op_module<type_traits::has_divide_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
-        public detail::matrix_binor_assign_op_module<type_traits::has_binor_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
-        public detail::matrix_binand_assign_op_module<type_traits::has_binand_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
-        public detail::matrix_binxor_assign_op_module<type_traits::has_binxor_assign_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>,
-        public detail::matrix_inequality_op_module<type_traits::has_inequality_binary_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>>
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(add),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(subtract),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(multiply),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(divide),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(binor),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(binand),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(binxor),
+        public detail::matrix_inequality_op_module<type_traits::has_inequality_binary_v<t_value_type>, matrix<t_value_type, t_arrangement_type, t_allocator_type>, t_value_type>
     {
         using type = matrix<t_value_type, t_arrangement_type, t_allocator_type>;
         using value_type = t_value_type;
@@ -174,14 +203,14 @@ namespace ropufu::aftermath::algebra
 
         template <typename, typename, typename> friend struct matrix;
         template <bool, typename, typename, typename> friend struct detail::matrix_wipe_module;
-        template <bool, typename> friend struct detail::matrix_add_assign_op_module;
-        template <bool, typename> friend struct detail::matrix_subtract_assign_op_module;
-        template <bool, typename> friend struct detail::matrix_multiply_assign_op_module;
-        template <bool, typename> friend struct detail::matrix_divide_assign_op_module;
-        template <bool, typename> friend struct detail::matrix_binor_assign_op_module;
-        template <bool, typename> friend struct detail::matrix_binand_assign_op_module;
-        template <bool, typename> friend struct detail::matrix_binxor_assign_op_module;
-        template <bool, typename> friend struct detail::matrix_inequality_op_module;
+        template <bool, typename, typename> friend struct detail::matrix_add_assign_op_module;
+        template <bool, typename, typename> friend struct detail::matrix_subtract_assign_op_module;
+        template <bool, typename, typename> friend struct detail::matrix_multiply_assign_op_module;
+        template <bool, typename, typename> friend struct detail::matrix_divide_assign_op_module;
+        template <bool, typename, typename> friend struct detail::matrix_binor_assign_op_module;
+        template <bool, typename, typename> friend struct detail::matrix_binand_assign_op_module;
+        template <bool, typename, typename> friend struct detail::matrix_binxor_assign_op_module;
+        template <bool, typename, typename> friend struct detail::matrix_inequality_op_module;
 
     private:
         template <typename t_other_value_type>
