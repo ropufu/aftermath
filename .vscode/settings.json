@@ -65,6 +65,12 @@
         "unordered_set": "cpp",
         "*.tcc": "cpp",
         "cstdarg": "cpp",
-        "cwctype": "cpp"
+        "cwctype": "cpp",
+        "__locale": "cpp",
+        "__hash_table": "cpp",
+        "__split_buffer": "cpp",
+        "__tree": "cpp",
+        "bitset": "cpp",
+        "string_view": "cpp"
     }
 }

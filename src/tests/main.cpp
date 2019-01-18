@@ -125,6 +125,11 @@ std::int32_t main(std::int32_t /**argc*/, char** /**argv*/, char** /*envp*/)
         run_definitive_test("matrix scalar ops-1 2d", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::int_fast32_t>(1, 1); });
         run_definitive_test("matrix scalar ops-1 2e", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_scalar_ops<std::int_fast32_t>(0, 0); });
 
+        run_definitive_test("matrix cast 1a", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_cast<std::size_t, float>(5, 3); });
+        run_definitive_test("matrix cast 1b", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_cast<double, std::size_t>(3, 6); });
+        run_definitive_test("matrix cast 1c", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_cast<std::int32_t, std::size_t>(4, 4); });
+        run_definitive_test("matrix cast 1d", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_cast<std::size_t, std::int64_t>(1, 1); });
+        run_definitive_test("matrix cast 1e", [&]() { return ropufu::test_aftermath::algebra::matrix_tester::test_matrix_cast<float, double>(0, 0); });
 
         std::cout << "Randomized tests with std::default_random_engine and double." << std::endl;
         // std::cout << "Randomized tests with std::default_random_engine: (i) float, then (ii) double." << std::endl;

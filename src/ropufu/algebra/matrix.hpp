@@ -213,9 +213,6 @@ namespace ropufu::aftermath::algebra
         template <bool, typename, typename> friend struct detail::matrix_inequality_op_module;
 
     private:
-        template <typename t_other_value_type>
-        using other_t = matrix<t_other_value_type, t_arrangement_type, t_allocator_type>;
-
         size_type m_height = 0; // Height of the matrix.
         size_type m_width = 0;  // Width of the matrix.
         size_type m_size = 0;   // Number of elements in the matrix.
@@ -387,16 +384,27 @@ namespace ropufu::aftermath::algebra
             if constexpr (type::is_trivial) std::memcpy(this->m_begin_ptr, other.m_begin_ptr, static_cast<std::size_t>(this->m_size) * sizeof(value_type));
             else
             {
-                value_type* left_ptr = this->m_begin_ptr;
-                const value_type* right_ptr = other.m_begin_ptr;
-                for (size_type k = 0; k < this->m_size; ++k)
+                const value_type* other_it = other.m_begin_ptr;
+                for (value_type* it = this->m_begin_ptr; it != this->m_end_ptr; ++it)
                 {
-                    allocator_traits_type::construct(this->m_allocator, left_ptr, (*right_ptr));
-                    ++left_ptr;
-                    ++right_ptr;
+                    allocator_traits_type::construct(this->m_allocator, it, *(other_it));
+                    ++other_it;
                 } // for (...)
             } // if constexpr (...)
         } // matrix(...)
+
+        /** @brief Creates a matrix as a copy of another matrix by casting its underlying values. */
+        template <typename t_other_value_type, typename t_other_arrangement_type, typename t_other_allocator_type>
+        explicit matrix(const matrix<t_other_value_type, t_other_arrangement_type, t_other_allocator_type>& other)
+            : matrix(nullptr, other.m_height, other.m_width)
+        {
+            const t_other_value_type* other_it = other.m_begin_ptr;
+            for (value_type* it = this->m_begin_ptr; it != this->m_end_ptr; ++it)
+            {
+                allocator_traits_type::construct(this->m_allocator, it, static_cast<value_type>(*(other_it)));
+                ++other_it;
+            } // for (...)
+        } // matrix_cast(...)
 
         /** Overwrites the matrix with values from \p other. */
         type& operator =(const type& other) noexcept

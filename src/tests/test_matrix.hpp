@@ -15,6 +15,49 @@ namespace ropufu::test_aftermath::algebra
         template <typename t_scalar_type>
         using tested_t = ropufu::aftermath::algebra::matrix<t_scalar_type>;
 
+        template <typename t_left_scalar_type, typename t_right_scalar_type>
+        static bool is_close(const tested_t<t_left_scalar_type>& left, const tested_t<t_right_scalar_type>& right, double tolerance = 0.01)
+        {
+            if (left.width() != right.width()) return false;
+            if (left.height() != right.height()) return false;
+
+            for (std::size_t i = 0; i < left.height(); ++i)
+            {
+                for (std::size_t j = 0; j < left.width(); ++j)
+                {
+                    double diff = static_cast<double>(left(i, j)) - static_cast<double>(right(i, j));
+                    if (diff < 0) diff = -diff;
+                    if (diff > tolerance) return false;
+                } // for (...)
+            } // for (...)
+
+            return true;
+        } // is_close(...)
+
+        template <typename t_from_scalar_type, typename t_to_scalar_type>
+        bool static test_matrix_cast(std::size_t height, std::size_t width) noexcept
+        {
+            tested_t<t_from_scalar_type> zero { height, width };
+            tested_t<t_from_scalar_type> one { height, width };
+            tested_t<t_from_scalar_type> b { height, width };
+            tested_t<t_from_scalar_type> c { height, width };
+
+            one.fill(1);
+            for (std::size_t i = 0; i < height; ++i) for (std::size_t j = 0; j < width; ++j) b(i, j) = static_cast<t_from_scalar_type>(i + (j % 2));
+            for (std::size_t i = 0; i < height; ++i) for (std::size_t j = 0; j < width; ++j) c(i, j) = static_cast<t_from_scalar_type>(b(i, j) + 1);
+            
+            tested_t<t_to_scalar_type> zero_cast { zero };
+            tested_t<t_to_scalar_type> one_cast { one };
+            tested_t<t_to_scalar_type> b_cast { b };
+            tested_t<t_to_scalar_type> c_cast { c };
+
+            if (!is_close(zero, zero_cast)) return false;
+            if (!is_close(one, one_cast)) return false;
+            if (!is_close(b, b_cast)) return false;
+            if (!is_close(c, c_cast)) return false;
+            return true;
+        } // test_matrix_cast(...)
+
         template <typename t_scalar_type>
         bool static test_matrix_ops(std::size_t height, std::size_t width) noexcept
         {
