@@ -47,7 +47,7 @@ namespace std
         result_type operator ()(const argument_type& x) const noexcept
         {
             std::hash<t_size_type> index_hash {};
-            return index_hash(x.row ^ x.column);
+            return index_hash((x.row << 8) ^ x.column);
         }
     }; // struct hash<...>
 } // namespace std

@@ -54,7 +54,7 @@ namespace ropufu::aftermath::probability
 
         bool validate(std::error_code& ec) const noexcept
         {
-            if (this->m_number_of_trials <= 0) return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Number of trials must be positive.", false);
+            if (this->m_number_of_trials < 0) return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Number of trials must be non-negative.", false);
             if (std::isnan(this->m_probability_of_success) || std::isinf(this->m_probability_of_success) || this->m_probability_of_success < 0 || this->m_probability_of_success > 1)
                 return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Probability of success must be in the range from 0 to 1.", false);
             return true;
@@ -82,7 +82,7 @@ namespace ropufu::aftermath::probability
 
         /** @brief Constructs a binomial distribution from the number of trials, \p n, and probability of success.
          *  @param ec Set to std::errc::invalid_argument if \p probability_of_success is not in the interval [0, 1].
-         *  @param ec Set to std::errc::invalid_argument if \p number_of_trials is not in the interval [0, 1].
+         *  @param ec Set to std::errc::invalid_argument if \p number_of_trials is negative.
          */
         explicit binomial_distribution(value_type number_of_trials, probability_type probability_of_success, std::error_code& ec) noexcept
             : m_number_of_trials(number_of_trials), m_probability_of_success(probability_of_success)
