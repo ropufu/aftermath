@@ -71,6 +71,7 @@
         "__split_buffer": "cpp",
         "__tree": "cpp",
         "bitset": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "cctype": "cpp"
     }
 }

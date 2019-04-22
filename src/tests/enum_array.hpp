@@ -1,4 +1,7 @@
 
+#ifndef ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_HPP_INCLUDED
+#define ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_HPP_INCLUDED
+
 #include <nlohmann/json.hpp>
 
 #include "../ropufu/enum_array.hpp"
@@ -10,7 +13,7 @@
 #include <string>   // std::string, std::to_string
 #include <type_traits> // std::underlying_type_t
 
-namespace ropufu::test_aftermath
+namespace ropufu::aftermath::tests
 {
     enum struct funny
     {
@@ -19,20 +22,20 @@ namespace ropufu::test_aftermath
         almost_surely = 2,
         surely = 3
     }; // enum struct funny
-} // namespace ropufu::test_aftermath
+} // namespace ropufu::aftermath::tests
 
 namespace std
 {
-    std::string to_string(ropufu::test_aftermath::funny x) noexcept
+    std::string to_string(ropufu::aftermath::tests::funny x) noexcept
     {
-        using enum_type = ropufu::test_aftermath::funny;
+        using enum_type = ropufu::aftermath::tests::funny;
         switch (x)
         {
-        case enum_type::maybe: return "maybe";
-        case enum_type::perhaps: return "perhaps";
-        case enum_type::almost_surely: return "almost surely";
-        case enum_type::surely: return "surely";
-        default: return std::to_string(static_cast<std::size_t>(x));
+            case enum_type::maybe: return "maybe";
+            case enum_type::perhaps: return "perhaps";
+            case enum_type::almost_surely: return "almost surely";
+            case enum_type::surely: return "surely";
+            default: return std::to_string(static_cast<std::size_t>(x));
         } // switch (...)
     } // to_string(...)
 } // namespace std
@@ -40,17 +43,17 @@ namespace std
 namespace ropufu::aftermath::detail
 {
     template <>
-    struct enum_array_keys<ropufu::test_aftermath::funny>
+    struct enum_array_keys<ropufu::aftermath::tests::funny>
     {
-        using underlying_type = std::underlying_type_t<ropufu::test_aftermath::funny>;
+        using underlying_type = std::underlying_type_t<ropufu::aftermath::tests::funny>;
         static constexpr underlying_type first_index = 1;
         static constexpr underlying_type past_the_last_index = 4;
     }; // struct enum_array_keys<...>
 
     template <>
-    struct enum_parser<ropufu::test_aftermath::funny>
+    struct enum_parser<ropufu::aftermath::tests::funny>
     {
-        using enum_type = ropufu::test_aftermath::funny;
+        using enum_type = ropufu::aftermath::tests::funny;
 
         static std::string to_string(const enum_type& from) noexcept
         {
@@ -68,11 +71,11 @@ namespace ropufu::aftermath::detail
     }; // struct enum_parser<...>
 } // namespace ropufu::aftermath::detail
 
-namespace ropufu::test_aftermath
+namespace ropufu::aftermath::tests
 {
     struct enum_array_test
     {
-        using enum_type = ropufu::test_aftermath::funny;
+        using enum_type = funny;
         using underlying_type = std::underlying_type_t<enum_type>;
 
         template <typename t_type>
@@ -116,4 +119,6 @@ namespace ropufu::test_aftermath
             return true;
         } // basic_test_void(...)
     }; // struct enum_array_test
-} // namespace ropufu::test_aftermath
+} // namespace ropufu::aftermath::tests
+
+#endif // ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_HPP_INCLUDED

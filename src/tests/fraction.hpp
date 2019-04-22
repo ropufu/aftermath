@@ -1,13 +1,13 @@
 
-#ifndef ROPUFU_AFTERMATH_TESTS_TEST_ALGEBRA_HPP_INCLUDED
-#define ROPUFU_AFTERMATH_TESTS_TEST_ALGEBRA_HPP_INCLUDED
+#ifndef ROPUFU_AFTERMATH_TESTS_FRACTION_HPP_INCLUDED
+#define ROPUFU_AFTERMATH_TESTS_FRACTION_HPP_INCLUDED
 
 #include "../ropufu/algebra.hpp"
 
 #include <system_error> // std::error_code, std::errc
 #include <type_traits>
 
-namespace ropufu::test_aftermath::algebra
+namespace ropufu::aftermath::tests
 {
     struct fraction_tester
     {
@@ -64,9 +64,9 @@ namespace ropufu::test_aftermath::algebra
             else
             {
                 return ((f + g) - h == t) && (g - h > 0);
-            } // if constexpr
+            } // else
         } // test_5(...)
     }; // struct fraction_tester
-} // namespace ropufu::test_aftermath::algebra
+} // namespace ropufu::aftermath::tests
 
-#endif // ROPUFU_AFTERMATH_TESTS_TEST_ALGEBRA_HPP_INCLUDED
+#endif // ROPUFU_AFTERMATH_TESTS_FRACTION_HPP_INCLUDED
