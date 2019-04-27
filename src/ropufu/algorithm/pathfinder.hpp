@@ -120,7 +120,8 @@ namespace ropufu::aftermath::algorithm
             current.closed = true;
 
             // Mark its neighbors as pending.
-            projector_ref.neighbors(current_index, this->m_temp_neighbors);
+            std::error_code ec {};
+            projector_ref.neighbors(current_index, this->m_temp_neighbors/*, ec*/);
             for (pair_type& item : this->m_temp_neighbors)
             {
                 node_type& neighbor = this->m_traceback[item.index];

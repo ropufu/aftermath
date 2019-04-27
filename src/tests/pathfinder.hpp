@@ -36,7 +36,9 @@ namespace ropufu::aftermath::tests
             // 2  x--#--x--o
             // 3  o--#--o--o
             // 4  o--o--o--o
-            matrix_type m1 {5, 4};
+            projector_type projector {5, 4};
+            projector.set_blocked_indicator(true);
+            matrix_type& m1 = projector.surface();
             m1(1, 2) = true;
             m1(2, 1) = true;
             m1(3, 1) = true;
@@ -52,7 +54,6 @@ namespace ropufu::aftermath::tests
                 {2, 2}
             };
 
-            projector_type projector {m1, true};
             tested_type pathfinder {projector, source, ec};
             if (ec.value() != 0) return false;
 
