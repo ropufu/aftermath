@@ -37,6 +37,16 @@ namespace ropufu::aftermath::algorithm
     template <typename t_projector_type>
     struct pathfinder;
 
+    template <typename t_projector_type>
+    static void trace(const algebra::matrix_index<std::size_t>& from, const algebra::matrix_index<std::size_t>& to,
+        const t_projector_type& projector,
+        std::vector<algebra::matrix_index<std::size_t>>& path, std::error_code& ec) noexcept
+    {
+        pathfinder<t_projector_type> router {projector, from, ec};
+        if (ec.value() != 0) return;
+        router.trace(to, path, ec);
+    } // trace(...)
+
     /** @brief Traces a shortest path on a surface from one index to another. Inspired by the A-star algorithm.
      *  @reference https://en.wikipedia.org/wiki/A*_search_algorithm.
      */
@@ -46,14 +56,13 @@ namespace ropufu::aftermath::algorithm
         using type = pathfinder<t_projector_type>;
         using projector_type = t_projector_type;
         using surface_type = typename projector_type::surface_type;
-        using position_type = typename projector_type::position_type;
         using cost_type = typename projector_type::cost_type;
 
         using index_type = algebra::matrix_index<std::size_t>;
         using node_type = detail::pathfinder_node<std::size_t, cost_type>;
         using pair_type = index_cost_pair<std::size_t, cost_type>;
 
-        static constexpr bool default_neighbor_capacity = 4;
+        static constexpr std::size_t default_neighbor_capacity = 4;
 
     private:
         projector_type m_projector = {};

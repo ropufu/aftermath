@@ -13,13 +13,12 @@ namespace ropufu::aftm
     template <typename t_size_type, typename t_cost_type>
     using index_cost_pair = ropufu::aftermath::algorithm::index_cost_pair<t_size_type, t_cost_type>;
 
-    template <typename t_derived_type, typename t_surface_type, typename t_position_type, typename t_cost_type>
-    using projector = ropufu::aftermath::algorithm::projector<t_derived_type, t_surface_type, t_position_type, t_cost_type>;
+    template <typename t_derived_type, typename t_surface_type, typename t_cost_type>
+    using projector = ropufu::aftermath::algorithm::projector<t_derived_type, t_surface_type, t_cost_type>;
 
     template <typename t_projector_type>
     using projector_t = projector<t_projector_type,
         typename t_projector_type::surface_type,
-        typename t_projector_type::position_type,
         typename t_projector_type::cost_type>;
 
     template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
