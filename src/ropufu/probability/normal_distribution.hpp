@@ -9,6 +9,7 @@
 #include <cmath>      // std::isnan, std::isinf, std::sqrt, std::pow, std::erfc
 #include <cstddef>    // std::size_t
 #include <functional> // std::hash
+#include <limits>     // std::limits
 #include <random>     // std::normal_distribution
 #include <system_error> // std::error_code, std::errc
 #include <utility>    // std::declval
@@ -121,6 +122,22 @@ namespace ropufu::aftermath::probability
         {
             return this->m_cache_pdf_scale * static_cast<expectation_type>(std::exp(-(x - this->m_mu) * (x - this->m_mu) / (2 * this->m_cache_variance)));
         } // pdf(...)
+        
+        /** For a given 0 <= p <= 1, solve cdf(t) = p, or, equivalently, erfc(-t / sqrt(2)) = 2 p. */
+        expectation_type quantile(probability_type p, std::error_code& ec, expectation_type tolerance = std::numeric_limits<expectation_type>::epsilon()) const noexcept
+        {
+            if (std::isnan(p) || std::isinf(p) || p < 0 || p > 1) return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Probability must be a finite number between 0 and 1.", 0);
+            p *= 2;
+
+            expectation_type dx = 1 + tolerance;
+            expectation_type x = 0;
+            while (dx > tolerance || dx < -tolerance)
+            {
+                dx = (std::erfc(x) - p) * std::exp(x * x) * math_constants<expectation_type>::root_pi_div_two;
+                x += dx;
+            } // while(...)
+            return this->m_mu - this->m_cache_sigma_root_two * x;
+        } // quantile(...)
 
         /** Checks if the two distributions are the same. */
         bool operator ==(const type& other) const noexcept

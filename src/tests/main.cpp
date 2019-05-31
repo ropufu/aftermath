@@ -7,6 +7,7 @@
 #include "matrix.hpp"
 #include "matstream.hpp"
 #include "pathfinder.hpp"
+#include "probability.hpp"
 #include "sampler.hpp"
 
 #include "examples.hpp"
@@ -87,6 +88,8 @@ std::int32_t main(std::int32_t /**argc*/, char** /**argv*/, char** /*envp*/)
         run_definitive_test("enum array 2", [&]() { return ropufu::aftermath::tests::enum_array_test::basic_test<std::size_t>(); });
         run_definitive_test("enum array 3", [&]() { return ropufu::aftermath::tests::enum_array_test::basic_test_bool(); });
         run_definitive_test("enum array 4", [&]() { return ropufu::aftermath::tests::enum_array_test::basic_test_void(); });
+
+        run_definitive_test("normal quantiles", [&]() { return ropufu::aftermath::tests::probability_tester::test_normal_quantiles(); });
 
         run_definitive_test("fraction 1a", [&]() { return ropufu::aftermath::tests::fraction_tester::test_1<std::size_t>(); });
         run_definitive_test("fraction 1b", [&]() { return ropufu::aftermath::tests::fraction_tester::test_1<std::int_fast32_t>(); });

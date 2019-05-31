@@ -16,10 +16,16 @@ namespace ropufu::aftermath
         static constexpr t_numeric_type root_e_minus_one = t_numeric_type(1.3108324944320861759067703611346874340006);
         /** The number π. */
         static constexpr t_numeric_type pi = t_numeric_type(3.141592653589793238462643383);
+        /** √π. */
+        static constexpr t_numeric_type root_pi = t_numeric_type(1.7724538509055160272981674833411);
+        /** √π / 2. */
+        static constexpr t_numeric_type root_pi_div_two = t_numeric_type(0.88622692545275801364908374167057);
         /** √2. */
         static constexpr t_numeric_type root_two = t_numeric_type(1.4142135623730950488016887242097);
-        /** 1 / √(2 pi). */
+        /** 1 / √(2 π). */
         static constexpr t_numeric_type one_div_root_two_pi = t_numeric_type(0.39894228040143267793994605993438);
+        /** 2 / √π. */
+        static constexpr t_numeric_type two_div_root_pi = t_numeric_type(1.1283791670955125738961589031215);
         /** 2 to the power 32 (also known as 4294967296). */
         static constexpr t_numeric_type two_pow_32 = t_numeric_type(4294967296);
 

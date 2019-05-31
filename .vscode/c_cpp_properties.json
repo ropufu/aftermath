@@ -5,7 +5,7 @@
             "includePath": [
                 "/usr/local/Cellar/gcc/8.3.0/include/c++/8.3.0",
                 "${workspaceRoot}",
-                "${workspaceRoot}/../opensource"
+                "${workspaceRoot}/../../include"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -13,7 +13,7 @@
                 "path": [
                     "/usr/local/Cellar/gcc/8.3.0/include/c++/8.3.0",
                     "${workspaceRoot}",
-                    "${workspaceRoot}/../opensource"
+                    "${workspaceRoot}/../../include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -29,7 +29,7 @@
                 "/usr/include",
                 "/usr/local/include",
                 "${workspaceRoot}",
-                "${workspaceRoot}/../opensource"
+                "${workspaceRoot}/../../include"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -38,7 +38,7 @@
                     "/usr/include",
                     "/usr/local/include",
                     "${workspaceRoot}",
-                    "${workspaceRoot}/../opensource"
+                    "${workspaceRoot}/../../include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -50,7 +50,7 @@
                 "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.20.27508/include",
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/ucrt",
                 "${workspaceRoot}",
-                "${workspaceRoot}/../opensource"
+                "${workspaceRoot}/../../include"
             ],
             "defines": [
                 "_DEBUG",
@@ -62,7 +62,7 @@
                     "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.20.27508/include/*",
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.17763.0/ucrt/*",
                     "${workspaceRoot}",
-                    "${workspaceRoot}/../opensource"
+                    "${workspaceRoot}/../../include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
