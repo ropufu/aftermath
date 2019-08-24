@@ -7,6 +7,7 @@
 
 namespace ropufu::aftermath::algebra
 {
+    /** @brief A compact way to subscript matrices. */
     template <typename t_size_type = std::size_t>
     struct matrix_index
     {
@@ -48,7 +49,7 @@ namespace std
         {
             std::hash<t_size_type> index_hash {};
             return index_hash((x.row << 8) ^ x.column);
-        }
+        } // operator ()(...)
     }; // struct hash<...>
 } // namespace std
 

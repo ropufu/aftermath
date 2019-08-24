@@ -2,21 +2,23 @@
 #ifndef ROPUFU_AFTERMATH_ALGEBRA_FRACTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_ALGEBRA_FRACTION_HPP_INCLUDED
 
-#include "../on_error.hpp"
-
-#include <cstddef>      // std::size_t
-#include <functional>   // std::hash
-#include <limits>       // std::numeric_limits::is_integer
-#include <numeric>      // std::gcd
-#include <ostream>      // std::ostream
-#include <stdexcept>    // std::logic_error
-#include <string>       // std::string
-#include <system_error> // std::error_code, std::errc
-#include <type_traits>  // ...
-#include <utility>      // std::swap
+#include <cmath>       // std::round
+#include <cstddef>     // std::size_t
+#include <functional>  // std::hash
+#include <limits>      // std::numeric_limits
+#include <numeric>     // std::gcd
+#include <ostream>     // std::ostream
+#include <stdexcept>   // std::logic_error
+#include <string>      // std::string
+#include <type_traits> // ...
+#include <utility>     // std::swap
 
 namespace ropufu::aftermath::algebra
 {
+    /** @brief Represents a rational number (fraction of two integers). */
+    template <typename t_integer_type>
+    struct fraction;
+
     namespace detail
     {
         template <bool t_is_enabled, typename t_derived_type>
@@ -49,16 +51,27 @@ namespace ropufu::aftermath::algebra
             } // negate(...)
 
             /** Flips the sign of the fraction. */
-            t_derived_type& operator -() noexcept
+            t_derived_type operator -() const noexcept
             {
-                t_derived_type* that = static_cast<t_derived_type*>(this);
-                this->negate();
-                return *that;
+                const t_derived_type* that = static_cast<const t_derived_type*>(this);
+                return t_derived_type(nullptr, -(that->m_numerator), that->m_denominator);
             } // operator -(...)
         }; // struct fraction_negate_module<...>
     } // namespace detail
 
-    /** @brief Rational numbers, as a fraction of two integers. */
+    /** Approximates the floating point number with a nearest fraction, keeping its denominator. */
+    template <typename t_float_type, typename t_integer_type>
+    static void nearest_fraction(const t_float_type& value, fraction<t_integer_type>& nearest)
+    {
+        if constexpr (!std::is_signed_v<t_integer_type>)
+        {
+            if (value < 0) throw std::logic_error("Specified integer type cannot accomodate negative numbers.");
+        } // if constexpr (...)
+
+        nearest.set_numerator(static_cast<t_integer_type>(std::round(value * nearest.denominator())));
+    } // nearest_fraction(...)
+
+    /** @brief Represents a rational number (fraction of two integers). */
     template <typename t_integer_type>
     struct fraction : public detail::fraction_negate_module<std::is_signed_v<t_integer_type>, fraction<t_integer_type>>
     {
@@ -71,10 +84,18 @@ namespace ropufu::aftermath::algebra
         integer_type m_numerator = 0; // Numerator of the fraction. Could be negative.
         integer_type m_denominator = 1; // Denominator of the fraction. Always positive.
 
-        static constexpr void traits_check()
+        static constexpr void traits_check() noexcept
         {
             static_assert(std::numeric_limits<integer_type>::is_integer, "Underlying type has to be an integer type.");
         } // traits_check(...)
+
+        /** @brief Unchecked constructor. */
+        fraction(std::nullptr_t, const integer_type& numerator, const integer_type& denominator) noexcept
+            : m_numerator(numerator), m_denominator(denominator)
+        {
+            type::traits_check();
+            this->regularize();
+        } // fraction(...)
 
     public:
         /** Constructs a defult \c fraction with value 0. */
@@ -84,21 +105,25 @@ namespace ropufu::aftermath::algebra
          *  @remark Also defines implicit conversion.
          */
         /*implicit*/ fraction(const integer_type& value) noexcept
-            : m_numerator(value), m_denominator(1)
+            : m_numerator(value)
         {
             type::traits_check();
         } // fraction(...)
 
         /** @brief Constructs a \c fraction as a ratio \p numerator / \p denominator.
-         *  @param ec Set to \c std::errc::invalid_argument if \p denominator is zero.
+         *  @exception std::logic_error \p denominator is zero.
          */
-        fraction(const integer_type& numerator, const integer_type& denominator, std::error_code& ec) noexcept
-            : m_numerator(numerator), m_denominator(denominator)
+        fraction(const integer_type& numerator, const integer_type& denominator)
+            : fraction(nullptr, numerator, denominator)
         {
-            type::traits_check();
-            if (denominator == 0) { aftermath::detail::on_error(ec, std::errc::invalid_argument, "Denominator cannot be zero."); return; }
-            this->regularize();
+            if (denominator == 0) throw std::logic_error("Denominator cannot be zero.");
         } // fraction(...)
+
+        /** @brief Constructs a \c fraction as a ratio \p numerator / \p denominator without checking if \p denominator is zero. */
+        static type unchecked(const integer_type& numerator, const integer_type& denominator) noexcept
+        {
+            return type(nullptr, numerator, denominator);
+        } // unchecked(...)
 
         /** Simplifies the fraction. */
         void simplify() noexcept
@@ -115,14 +140,20 @@ namespace ropufu::aftermath::algebra
         } // subtract_from_one(...)
 
         /** @brief Replaces the fraction with 1 / (this fraction). 
-         *  @param ec Set to \c std::function_not_supported if this is a zero fraction.
+         *  @exception std::logic_error This is a zero fraction.
          */
-        void invert(std::error_code& ec) noexcept
+        void invert()
         {
-            if (this->m_numerator == 0) return aftermath::detail::on_error(ec, std::errc::function_not_supported, "Cannot invert a zero fraction.");
+            if (this->m_numerator == 0) throw std::logic_error("Cannot invert a zero fraction.");
+            this->invert_unchecked();
+        } // invert(...)
+
+        /** @brief Replaces the fraction with 1 / (this fraction) without checking if this is a zero fraction. */
+        void invert_unchecked() noexcept
+        {
             std::swap(this->m_numerator, this->m_denominator);
             this->regularize();
-        } // invert(...)
+        } // invert_unchecked(...)
 
         /** Numerator of the fraction. */
         const integer_type& numerator() const noexcept { return this->m_numerator; }
@@ -131,15 +162,21 @@ namespace ropufu::aftermath::algebra
 
         /** Denominator of the fraction. */
         const integer_type& denominator() const noexcept { return this->m_denominator; }
-        /** @brief Sets the denominator of the fraction.
-         *  @param ec Set to \c std::function_not_supported if \p value is zero.
+        /** @brief Sets the denominator of the fraction. 
+         *  @exception std::logic_error \p value is zero.
          */
-        void set_denominator(const integer_type& value, std::error_code& ec) noexcept
+        void set_denominator(const integer_type& value)
         {
-            if (value == 0) return aftermath::detail::on_error(ec, std::errc::function_not_supported, "Denominator cannot be zero.");
+            if (value == 0) throw std::logic_error("Denominator cannot be zero.");
+            this->set_denominator_unchecked();
+        } // set_denominator(...)
+        /** @brief Sets the denominator of the fraction without checking if \p value is zero.
+         */
+        void set_denominator_unchecked(const integer_type& value) noexcept
+        {
             this->m_denominator = value;
             this->regularize();
-        } // set_denominator(...)
+        } // set_denominator_unchecked(...)
         
         /** Casts the fraction to double. */
         explicit operator double() const noexcept { return static_cast<double>(this->m_numerator) / this->m_denominator; }
@@ -157,26 +194,17 @@ namespace ropufu::aftermath::algebra
         type& operator +=(const integer_type& other) noexcept { this->m_numerator += other * this->m_denominator; return *this; }
         type& operator +=(const type& other) noexcept
         {
-            if (this->m_denominator == other.m_denominator) this->m_numerator += other.m_numerator;
-            else
-            {
-                this->m_numerator = this->m_numerator * other.m_denominator + other.m_numerator * this->m_denominator;
-                this->m_denominator *= other.m_denominator;
-            }
+            this->m_numerator = this->m_numerator * other.m_denominator + other.m_numerator * this->m_denominator;
+            this->m_denominator *= other.m_denominator;
             return *this;
         } // operator +=(...)
 
         // ~~ Subtraction ~~
         type& operator -=(const integer_type& other) noexcept { this->m_numerator -= other * this->m_denominator; return *this; }
-        friend type operator -(const integer_type& left, type right) noexcept { right.m_numerator = left * right.m_denominator - right.m_numerator; return right; }
         type& operator -=(const type& other) noexcept
         {
-            if (this->m_denominator == other.m_denominator) this->m_numerator -= other.m_numerator;
-            else
-            {
-                this->m_numerator = this->m_numerator * other.m_denominator - other.m_numerator * this->m_denominator;
-                this->m_denominator *= other.m_denominator;
-            }
+            this->m_numerator = this->m_numerator * other.m_denominator - other.m_numerator * this->m_denominator;
+            this->m_denominator *= other.m_denominator;
             return *this;
         } // operator -=(...)
 
@@ -193,26 +221,35 @@ namespace ropufu::aftermath::algebra
         type& operator /=(const integer_type& other)
         {
             if (other == 0) throw std::logic_error("Cannot divide by zero.");
-            this->m_denominator *= other;
-            this->regularize();
-            return *this;
+            return this->divide_unchecked(other);
         } // operator /=(...)
-        friend type operator /(const integer_type& left, type right) { right.m_denominator *= left; right.invert(); return right; }
         type& operator /=(const type& other)
         {
             if (other.m_numerator == 0) throw std::logic_error("Cannot divide by zero.");
+            return this->divide_unchecked(other);
+        } // operator /=(...)
+        /** @brief Divides this fraction by \p other without checking if \p other is zero. */
+        type& divide_unchecked(const integer_type& other) noexcept
+        {
+            this->m_denominator *= other;
+            this->regularize();
+            return *this;
+        } // set_denominator_unchecked(...)
+        /** @brief Divides this fraction by \p other without checking if \p other is zero. */
+        type& divide_unchecked(const type& other) noexcept
+        {
             this->m_numerator *= other.m_denominator;
             this->m_denominator *= other.m_numerator;
             this->regularize();
             return *this;
-        } // operator /=(...)
+        } // set_denominator_unchecked(...)
 
-        /** Something clever taken from http://en.cppreference.com/w/cpp/language/operators. */
         friend type operator +(type left, const integer_type& right) noexcept { left += right; return left; }
         friend type operator +(const integer_type& left, type right) noexcept { right += left; return right; }
         friend type operator +(type left, const type& right) noexcept { left += right; return left; }
         
         friend type operator -(type left, const integer_type& right) noexcept { left -= right; return left; }
+        friend type operator -(const integer_type& left, type right) noexcept { right.m_numerator = left * right.m_denominator - right.m_numerator; return right; }
         friend type operator -(type left, const type& right) noexcept { left -= right; return left; }
         
         friend type operator *(type left, const integer_type& right) noexcept { left *= right; return left; }
@@ -220,6 +257,7 @@ namespace ropufu::aftermath::algebra
         friend type operator *(type left, const type& right) noexcept { left *= right; return left; }
 
         friend type operator /(type left, const integer_type& right) { left /= right; return left; }
+        friend type operator /(const integer_type& left, type right) { right.m_denominator *= left; right.invert(); return right; }
         friend type operator /(type left, const type& right) { left /= right; return left; }
 
 
@@ -245,8 +283,9 @@ namespace ropufu::aftermath::algebra
         bool operator !=(const type& other) const noexcept { return !(this->operator ==(other)); }
 
         /** Output \p that to \p os. */
-        friend std::ostream& operator <<(std::ostream& os, const type& self) noexcept
+        friend std::ostream& operator <<(std::ostream& os, const type& self)
         {
+            if (self.m_denominator == 1) return os << self.m_numerator;
             return os << self.m_numerator << "/" << self.m_denominator;
         } // operator <<(...)
     }; // struct fraction
@@ -264,8 +303,8 @@ namespace std
         {
             std::hash<t_integer_type> integer_hash {};
             return
-                integer_hash(x.numerator()) ^ 
-                integer_hash(x.denominator());
+                (integer_hash(x.numerator()) << 4) ^ 
+                (integer_hash(x.denominator()));
         } // operator ()(...)
     }; // struct hash<...>
 } // namespace std

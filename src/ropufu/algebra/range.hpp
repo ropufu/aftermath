@@ -3,65 +3,19 @@
 #define ROPUFU_AFTERMATH_ALGEBRA_RANGE_HPP_INCLUDED
 
 #include <nlohmann/json.hpp>
-#include "../json_traits.hpp"
-#include "../on_error.hpp"
+#include "../noexcept_json.hpp"
 
-#include "../enum_parser.hpp"
+#include "range_spacing.hpp"
 
-#include <cmath>     // std::log10, std::pow
-#include <cstddef>   // std::size_t
+#include <cmath>      // std::log10, std::pow
+#include <cstddef>    // std::size_t
+#include <functional> // std::hash
 #include <initializer_list> // std::initializer_list
-#include <iostream>  // std::ostream
-#include <stdexcept> // std::invalid_argument
-#include <string>    // std::string, std::to_string
+#include <iostream>   // std::ostream
+#include <stdexcept>  // std::runtime_error
+#include <string>     // std::string
 #include <system_error> // std::error_code, std::errc
-#include <vector>    // std::vector
-
-namespace ropufu::aftermath::algebra
-{
-    enum struct spacing : char
-    {
-        linear = 0,
-        logarithmic = 1,
-        exponential = 2
-    }; // enum struct spacing
-} // namespace ropufu::aftermath::algebra
-
-namespace std
-{
-    std::string to_string(ropufu::aftermath::algebra::spacing value) noexcept
-    {
-        using type = ropufu::aftermath::algebra::spacing;
-
-        switch (value)
-        {
-            case type::linear: return "linear";
-            case type::logarithmic: return "logarithmic";
-            case type::exponential: return "exponential";
-            default: return "unknown";
-        } // switch (...)
-    } // to_string(...)
-} // namespace std
-
-namespace ropufu::aftermath::detail
-{
-    template <>
-    struct enum_parser<ropufu::aftermath::algebra::spacing>
-    {
-        using type = enum_parser<ropufu::aftermath::algebra::spacing>;
-        using enum_type = ropufu::aftermath::algebra::spacing;
-
-        static std::string to_string(const enum_type& from) noexcept { return std::to_string(from); }
-
-        static bool try_parse(const std::string& from, enum_type& to) noexcept
-        {
-            if (from == "linear" || from == "lin") { to = enum_type::linear; return true; }
-            if (from == "logarithmic" || from == "log") { to = enum_type::logarithmic; return true; }
-            if (from == "exponential" || from == "exp") { to = enum_type::exponential; return true; }
-            return false;
-        } // try_parse(...)
-    }; // struct enum_parser
-} // namespace ropufu::aftermath::detail
+#include <vector>     // std::vector
 
 namespace ropufu::aftermath::algebra
 {
@@ -128,8 +82,12 @@ namespace ropufu::aftermath::algebra
             {
                 std::vector<value_type> range_pair = {};
                 aftermath::noexcept_json::as(j, range_pair, ec);
-                if (ec) return;
-                if (range_pair.size() != 2) { aftermath::detail::on_error(ec, std::errc::bad_message, "Range should be a vector with two entries."); return; }
+                if (ec.value() != 0) return;
+                if (range_pair.size() != 2) // Range should be a vector with two entries.
+                {
+                    ec = std::make_error_code(std::errc::bad_message);
+                    return;
+                } // if (...)
                 this->m_from = range_pair.front();
                 this->m_to = range_pair.back();
             } // if (...)
@@ -144,34 +102,30 @@ namespace ropufu::aftermath::algebra
         const value_type& to() const noexcept { return this->m_to; }
 
         template <typename t_container_type>
-        bool explode(t_container_type& container, std::size_t count, spacing transform = spacing::linear) const noexcept
+        void explode(t_container_type& container, std::size_t count) const noexcept
         {
-            switch (transform)
-            {
-                case spacing::linear: return this->explode(container, count, [] (const value_type& x) { return x; }, [] (const value_type& x) { return x; }); // break;
-                case spacing::logarithmic: return this->explode(container, count, [] (const value_type& x) { return std::log10(x); }, [] (const value_type& x) { return std::pow(10, x); }); // break;
-                case spacing::exponential: return this->explode(container, count, [] (const value_type& x) { return std::pow(10, x); }, [] (const value_type& x) { return std::log10(x); }); // break;
-            } // switch (...)
-            return false; // Spacing not recognized.
+            linear_spacing<value_type> lin_spacing {};
+            this->explode(container, count, lin_spacing);
         } // explode(...)
 
-        template <typename t_container_type, typename t_forward_transform_type, typename t_backward_transform_type>
-        bool explode(t_container_type& container, std::size_t count, const t_forward_transform_type& forward, const t_backward_transform_type& backward) const noexcept
+        template <typename t_container_type, typename t_spacing_type>
+        void explode(t_container_type& container, std::size_t count, const t_spacing_type& spacing) const noexcept
         {
             using helper_type = detail::range_container<value_type, t_container_type>;
+            using intermediate_type = typename t_spacing_type::intermediate_type;
 
             switch (count)
             {
-                case 0: container = helper_type::make_empty(); return true;
-                case 1: container = helper_type::make_init({ this->m_from }); return true;
-                case 2: container = helper_type::make_init({ this->m_from, this->m_to }); return true;
+                case 0: container = helper_type::make_empty(); return;
+                case 1: container = helper_type::make_init({ this->m_from }); return;
+                case 2: container = helper_type::make_init({ this->m_from, this->m_to }); return;
             } // switch (...)
 
             container = helper_type::make_empty(count);
 
-            value_type f_from = forward(this->m_from);
-            value_type f_to = forward(this->m_to);
-            value_type f_range = f_to - f_from;
+            intermediate_type f_from = spacing.forward_transform(this->m_from);
+            intermediate_type f_to = spacing.forward_transform(this->m_to);
+            intermediate_type f_range = f_to - f_from;
 
             std::size_t i = 0;
             bool is_first = true;
@@ -184,14 +138,13 @@ namespace ropufu::aftermath::algebra
                 else if (is_last) x = this->m_to;
                 else
                 {
-                    value_type f_step = (i * f_range) / (count - 1);
-                    x = backward(f_from + f_step);
-                }
+                    intermediate_type f_step = (i * f_range) / (count - 1);
+                    x = spacing.backward_transform(f_from + f_step);
+                } // for (...)
                 ++i;
                 is_first = false;
-            }
+            } // for (...)
             helper_type::shrink(container);
-            return true;
         } // explode(...)
 
         /** Checks if the two objects are equal. */
@@ -208,8 +161,7 @@ namespace ropufu::aftermath::algebra
         /** @brief Output to a stream. */
         friend std::ostream& operator <<(std::ostream& os, const type& self) noexcept
         {
-            nlohmann::json j = self;
-            return os << j;
+            return os << self.m_from << "--" << self.m_to;
         } // operator <<(...)
     }; // struct range
 
@@ -234,8 +186,26 @@ namespace ropufu::aftermath::algebra
         using type = range<t_value_type>;
         std::error_code ec {};
         x = type(j, ec);
-        if (ec) throw std::runtime_error("Parsing failed: " + ec.message());
+        if (ec.value() != 0) throw std::runtime_error("Parsing <range> failed: " + j.dump());
     } // from_json(...)
 } // namespace ropufu::aftermath::algebra
+
+namespace std
+{
+    template <typename t_value_type>
+    struct hash<ropufu::aftermath::algebra::range<t_value_type>>
+    {
+        using argument_type = ropufu::aftermath::algebra::range<t_value_type>;
+        using result_type = std::size_t;
+
+        result_type operator ()(const argument_type& x) const noexcept
+        {
+            std::hash<t_value_type> value_hash {};
+            return
+                (value_hash(x.from()) << 4) ^ 
+                (value_hash(x.to()));
+        } // operator ()(...)
+    }; // struct hash<...>
+} // namespace std
 
 #endif // ROPUFU_AFTERMATH_ALGEBRA_RANGE_HPP_INCLUDED

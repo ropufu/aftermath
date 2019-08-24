@@ -3,8 +3,7 @@
 #define ROPUFU_AFTERMATH_ENUM_ARRAY_HPP_INCLUDED
 
 #include <nlohmann/json.hpp>
-#include "json_traits.hpp"
-#include "on_error.hpp"
+#include "noexcept_json.hpp"
 
 #include "enum_parser.hpp"
 #include "key_value_pair.hpp"
@@ -47,7 +46,7 @@ namespace ropufu::aftermath
             static constexpr underlying_type past_the_last_index = helper_type::past_the_last_index;
 
         protected:
-            std::array<value_type, type::capacity> m_collection = { };
+            std::array<value_type, type::capacity> m_collection = {};
 
             const value_type& operator [](underlying_type k) const
             {
@@ -298,6 +297,7 @@ namespace ropufu::aftermath
         static constexpr underlying_type past_the_last_index = helper_type::past_the_last_index;
 
         enum_array() noexcept { }
+
         /*implicit*/ enum_array(std::initializer_list<enum_type> flags) noexcept
         {
             for (enum_type flag : flags)
@@ -308,16 +308,18 @@ namespace ropufu::aftermath
             } // for (...)
         } // enum_array
 
-        /** Unpack JSON array [ ..., "<enum key>", ... ]. */
+        /** @brief Unpack JSON array [ ..., "<enum key>", ... ].
+         *  @param ec Will contain \c std::errc::bad_message if enum was not recognized.
+         */
         enum_array(const nlohmann::json& j, std::error_code& ec) noexcept
         {
             std::vector<std::string> str_vector = {};
             aftermath::noexcept_json::as(j, str_vector, ec);
             for (const std::string& key_str : str_vector)
             {
-                enum_type key { };
+                enum_type key {};
                 if (detail::enum_parser<enum_type>::try_parse(key_str, key)) this->operator [](key) = true;
-                else aftermath::detail::on_error(ec, std::errc::bad_message, "Unrecognized enum: " + key_str + std::string("."));
+                else ec = std::make_error_code(std::errc::bad_message); // Unrecognized enum key.
             } // for (...)
         } // enum_array(...)
 
@@ -369,7 +371,6 @@ namespace ropufu::aftermath
             return *this;
         } // operator ^=(...)
 
-        /** Something clever taken from http://en.cppreference.com/w/cpp/language/operators. */
         friend type operator |(type left, const type& right) noexcept { left |= right; return left; }
         friend type operator &(type left, const type& right) noexcept { left &= right; return left; }
         friend type operator ^(type left, const type& right) noexcept { left ^= right; return left; }
@@ -412,13 +413,15 @@ namespace ropufu::aftermath
             this->m_collection = s_instance.m_collection;
         } // enum_array(...)
 
-        /** Unpack JSON array [ ..., "<enum key>", ... ]. */
+        /** @brief Unpack JSON array [ ..., "<enum key>", ... ].
+         *  @param ec Will contain \c std::errc::bad_message if enum was not recognized.
+         */
         enum_array(const nlohmann::json& j, std::error_code& ec) noexcept
         {
             std::vector<std::string> str_vector = {};
             aftermath::noexcept_json::as(j, str_vector, ec);
             /** @todo Check existing strings in \c str_vector against \c enum_array values. */
-            if (str_vector.size() != type::capacity) aftermath::detail::on_error(ec, std::errc::bad_message, "Size mismatch.");
+            if (str_vector.size() != type::capacity) ec = std::make_error_code(std::errc::bad_message); // Unrecognized enum key.
 
             static type s_instance(nullptr); // Populate the list only once.
             this->m_collection = s_instance.m_collection;
@@ -489,7 +492,7 @@ namespace ropufu::aftermath
         using type = enum_array<t_enum_type, t_value_type>;
         std::error_code ec {};
         x = type(j, ec);
-        if (ec) throw std::runtime_error("Parsing failed: " + ec.message());
+        if (ec.value() != 0) throw std::runtime_error("Parsing <enum_array> failed: " + j.dump());
     } // from_json(...)
 
     /** Unpack array [ ..., "<enum key>", ... ]. */
@@ -499,7 +502,7 @@ namespace ropufu::aftermath
         using type = enum_array<t_enum_type, bool>;
         std::error_code ec {};
         x = type(j, ec);
-        if (ec) throw std::runtime_error("Parsing failed: " + ec.message());
+        if (ec.value() != 0) throw std::runtime_error("Parsing <enum_array> failed: " + j.dump());
     } // from_json(...)
 
     /** Unpack array [ ..., "<enum key>", ... ]. */
@@ -509,7 +512,7 @@ namespace ropufu::aftermath
         using type = enum_array<t_enum_type, void>;
         std::error_code ec {};
         x = type(j, ec);
-        if (ec) throw std::runtime_error("Parsing failed: " + ec.message());
+        if (ec.value() != 0) throw std::runtime_error("Parsing <enum_array> failed: " + j.dump());
     } // from_json(...)
 } // namespace ropufu::aftermath
 

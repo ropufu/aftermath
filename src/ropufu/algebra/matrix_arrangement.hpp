@@ -102,7 +102,7 @@ namespace ropufu::aftermath::algebra
             using pointer_type = const t_value_type*;
             using const_iterator_type = matrix_slice_iterator<t_value_type, t_size_type, true>;
 
-            friend struct matrix_slice_copy_module<type, t_value_type>;
+            friend matrix_slice_copy_module<type, t_value_type>;
             template <typename, typename> friend struct matrix_slice;
 
         private:
@@ -140,8 +140,8 @@ namespace ropufu::aftermath::algebra
             using const_iterator_type = matrix_slice_iterator<t_value_type, t_size_type, true>;
 
             using const_type = const_matrix_slice<t_value_type, t_size_type>;
-            friend struct matrix_slice_copy_module<type, t_value_type>;
-            friend struct matrix_slice_paste_module<type, t_value_type>;
+            friend matrix_slice_copy_module<type, t_value_type>;
+            friend matrix_slice_paste_module<type, t_value_type>;
 
         private:
             pointer_type m_begin_ptr = nullptr;
@@ -215,6 +215,13 @@ namespace ropufu::aftermath::algebra
                 return row_index * width + column_index;
             } // flatten(...)
 
+            /** Translates a 1-dimensional index into a 2-dimentional index. Does not perform range validation. */
+            static void reconstruct(size_type flat_index, size_type /*height*/, size_type width, size_type& row_index, size_type& column_index) noexcept
+            {
+                column_index = flat_index % width;
+                row_index = (flat_index - column_index) / width;
+            } // reconstruct(...)
+
             /** Slice stride used when iterating over a given column. */
             static size_type column_iterator_stride(size_type /*height*/, size_type width) noexcept { return width; }
             /** Slice stride used when iterating over a given row. */
@@ -241,6 +248,13 @@ namespace ropufu::aftermath::algebra
             {
                 return column_index * height + row_index;
             } // flatten(...)
+
+            /** Translates a 1-dimensional index into a 2-dimentional index. Does not perform range validation. */
+            static void reconstruct(size_type flat_index, size_type height, size_type /*width*/, size_type& row_index, size_type& column_index) noexcept
+            {
+                row_index = flat_index % height;
+                column_index = (flat_index - row_index) / height;
+            } // reconstruct(...)
 
             /** Slice stride used when iterating over a given column. */
             static constexpr size_type column_iterator_stride(size_type /*height*/, size_type /*width*/) noexcept { return 1; }

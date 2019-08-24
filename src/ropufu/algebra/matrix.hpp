@@ -31,16 +31,14 @@ private:                                                                        
 public:                                                                                                 \
     matrix_type& operator BINOP##=(const matrix_type& other)                                            \
     {                                                                                                   \
-        using size_type = typename matrix_type::size_type;                                              \
         using value_type = scalar_type;                                                                 \
         matrix_type& self = static_cast<matrix_type&>(*this);                                           \
         if (!matrix_type::compatible(self, other)) throw std::logic_error("Matrices incompatible.");    \
-        value_type* left_ptr = self.m_begin_ptr;                                                        \
+                                                                                                        \
         const value_type* right_ptr = other.m_begin_ptr;                                                \
-        for (size_type k = 0; k < self.m_size; ++k)                                                     \
+        for (value_type* left_ptr = self.m_begin_ptr; left_ptr != self.m_end_ptr; ++left_ptr)           \
         {                                                                                               \
             (*left_ptr) BINOP##= (*right_ptr);                                                          \
-            ++left_ptr;                                                                                 \
             ++right_ptr;                                                                                \
         }                                                                                               \
         return self;                                                                                    \
@@ -130,17 +128,15 @@ namespace ropufu::aftermath::algebra
             
             bool operator ==(const matrix_type& other) const noexcept
             {
-                using size_type = typename matrix_type::size_type;
                 const matrix_type& self = static_cast<const matrix_type&>(*this);
                 // Check dimensions.
                 if (!matrix_type::compatible(self, other)) return false;
                 // Check values.
-                const scalar_type* left_ptr = self.m_begin_ptr;
+
                 const scalar_type* right_ptr = other.m_begin_ptr;
-                for (size_type k = 0; k < self.m_size; ++k)
+                for (const scalar_type* left_ptr = self.m_begin_ptr; left_ptr != self.m_end_ptr; ++left_ptr)
                 {
                     if (*(left_ptr) != *(right_ptr)) return false;
-                    ++left_ptr;
                     ++right_ptr;
                 } // for (...)
                 return true;
@@ -160,13 +156,13 @@ namespace ropufu::aftermath::algebra
         typename t_allocator_type = std::allocator<t_value_type>>
     struct matrix;
 
-    /** @brief Row major matrix alias with default allocator. */
+    /** @brief Row major matrix with default allocator. */
     template <typename t_value_type>
     using rmatrix_t = matrix<t_value_type,
         detail::row_major<typename std::allocator_traits<std::allocator<t_value_type>>::size_type>,
         std::allocator<t_value_type>>;
 
-    /** @brief Column major matrix alias with default allocator. */
+    /** @brief Column major matrix with default allocator. */
     template <typename t_value_type>
     using cmatrix_t = matrix<t_value_type,
         detail::column_major<typename std::allocator_traits<std::allocator<t_value_type>>::size_type>,
@@ -394,8 +390,8 @@ namespace ropufu::aftermath::algebra
         } // matrix(...)
 
         /** @brief Creates a matrix as a copy of another matrix by casting its underlying values. */
-        template <typename t_other_value_type, typename t_other_arrangement_type, typename t_other_allocator_type>
-        explicit matrix(const matrix<t_other_value_type, t_other_arrangement_type, t_other_allocator_type>& other)
+        template <typename t_other_value_type, typename t_other_allocator_type>
+        explicit matrix(const matrix<t_other_value_type, arrangement_type, t_other_allocator_type>& other)
             : matrix(nullptr, other.m_height, other.m_width)
         {
             const t_other_value_type* other_it = other.m_begin_ptr;
@@ -406,7 +402,7 @@ namespace ropufu::aftermath::algebra
             } // for (...)
         } // matrix_cast(...)
 
-        /** Overwrites the matrix with values from \p other. */
+        /** @brief Overwrites the matrix with values from \p other. */
         type& operator =(const type& other) noexcept
         {
             if (this == &other) return *this; // Do nothing if this is self-assignment.
@@ -425,12 +421,10 @@ namespace ropufu::aftermath::algebra
             if constexpr (type::is_trivial) std::memcpy(this->m_begin_ptr, other.m_begin_ptr, static_cast<std::size_t>(this->m_size) * sizeof(value_type));
             else
             {
-                value_type* left_ptr = this->m_begin_ptr;
                 const value_type* right_ptr = other.m_begin_ptr;
-                for (size_type k = 0; k < this->m_size; ++k)
+                for (value_type* left_ptr = this->m_begin_ptr; left_ptr != this->m_end_ptr; ++left_ptr)
                 {
                     (*left_ptr) = (*right_ptr);
-                    ++left_ptr;
                     ++right_ptr;
                 } // for (...)
                 return *this;

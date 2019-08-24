@@ -8,6 +8,8 @@ namespace ropufu::aftermath
     template <typename t_numeric_type>
     struct math_constants
     {
+        /** The number 1/2. */
+        static constexpr t_numeric_type one_half = t_numeric_type(0.5);
         /** The number e. */
         static constexpr t_numeric_type e = t_numeric_type(2.718281828459045235360287471);
         /** √e. */
@@ -22,6 +24,8 @@ namespace ropufu::aftermath
         static constexpr t_numeric_type root_pi_div_two = t_numeric_type(0.88622692545275801364908374167057);
         /** √2. */
         static constexpr t_numeric_type root_two = t_numeric_type(1.4142135623730950488016887242097);
+        /** 1 / √2. */
+        static constexpr t_numeric_type one_div_root_two = t_numeric_type(0.70710678118654752440084436210485);
         /** 1 / √(2 π). */
         static constexpr t_numeric_type one_div_root_two_pi = t_numeric_type(0.39894228040143267793994605993438);
         /** 2 / √π. */
@@ -37,7 +41,7 @@ namespace ropufu::aftermath
         static constexpr t_numeric_type one_over_twelwe = t_numeric_type(0.08333333333333333333333333333333);
     }; // struct math_constants
 
-    /** Checks if \tparam t_number is a power of 2. */
+    /** Checks if \p number is a power of 2. */
     template <typename t_integer_type>
     inline constexpr bool is_power_of_two(t_integer_type number)
     {
@@ -45,23 +49,7 @@ namespace ropufu::aftermath
         return ((number & (number - 1)) == 0);
     } // is_power_of_two(...)
 
-    // /** Checks if \tparam t_number is a power of 2. */
-    // template <std::size_t t_number>
-    // struct is_power_of_two
-    // {
-    //     static constexpr bool value = ((t_number & (t_number - 1)) == 0);
-    //     static constexpr bool is_not_defined = false;
-    // }; // struct is_power_of_two
-    
-    // /** Trivial type with value <false>. */
-    // template <>
-    // struct is_power_of_two<0>
-    // {
-    //     static constexpr bool value = false;
-    //     static constexpr bool is_not_defined = false;
-    // }; // struct is_power_of_two<...>
-
-    /** @breief Finds the largest integer <x> such that 2 to the power <x> is less than or equal to \tparam t_number.
+    /** @breief Finds the largest integer x such that 2 to the power x is less than or equal to \p number.
      *  @remark When \p number is 0 returns 0.
      */
     template <typename t_integer_type>
@@ -77,32 +65,7 @@ namespace ropufu::aftermath
         return result;
     } // log_base_two(...)
     
-    // /** Finds the largest integer <x> such that 2 to the power <x> is less than or equal to \tparam t_number. */
-    // template <std::size_t t_number>
-    // struct log_base_two
-    // {
-    //     static constexpr std::size_t value = 1 + log_base_two<(t_number >> 1)>::value;
-    //     static constexpr bool is_not_defined = false;
-    // }; // struct log_base_two
-
-    // /** Trivial type with value <0>. */
-    // template <>
-    // struct log_base_two<1>
-    // {
-    //     static constexpr std::size_t value = 0;
-    //     static constexpr bool is_not_defined = false;
-    // }; // struct log_base_two<...>
-
-    // /** Trivial type with value <0> and \c is_not_defined flag. */
-    // template <>
-    // struct log_base_two<0>
-    // {
-    //     static constexpr std::size_t value = 0;
-    //     static constexpr bool is_not_defined = true;
-    // }; // struct log_base_two<...>
-    
-
-    /** @brief Finds the largest integer <x> such that \tparam t_base to the power <x> is less than or equal to \tparam t_number.
+    /** @brief Finds the largest integer x such that \p base to the power x is less than or equal to \p number.
      *  @remark When \p number is 0 returns 0.
      */
     template <typename t_integer_type, typename t_base_type>
@@ -118,47 +81,7 @@ namespace ropufu::aftermath
         return result;
     } // log_base_n(...)
 
-    // /** Finds the largest integer <x> such that \tparam t_base to the power <x> is less than or equal to \tparam t_number. */
-    // template <std::size_t t_number, std::size_t t_base = 10>
-    // struct log_base_n
-    // {
-    //     static constexpr std::size_t value = 1 + log_base_n<(t_number / t_base), t_base>::value;
-    //     static constexpr bool is_not_defined = false;
-    // }; // struct log_base_n
-
-    // /** Trivial type with value <0>. */
-    // template <std::size_t t_base>
-    // struct log_base_n<1, t_base>
-    // {
-    //     static constexpr std::size_t value = 0;
-    //     static constexpr bool is_not_defined = false;
-    // }; // struct log_base_n<...>
-
-    // /** Trivial type with value <0> and \c is_not_defined flag. */
-    // template <std::size_t t_base>
-    // struct log_base_n<0, t_base>
-    // {
-    //     static constexpr std::size_t value = 0;
-    //     static constexpr bool is_not_defined = true;
-    // }; // struct log_base_n<...>
-
-    // /** Trivial type with value <0> and \c is_not_defined flag. */
-    // template <std::size_t t_number>
-    // struct log_base_n<t_number, 0>
-    // {
-    //     static constexpr std::size_t value = 0;
-    //     static constexpr bool is_not_defined = true;
-    // }; // struct log_base_n<...>
-
-    // /** Trivial type with value <0> and \c is_not_defined flag. */
-    // template <std::size_t t_number>
-    // struct log_base_n<t_number, 1>
-    // {
-    //     static constexpr std::size_t value = 0;
-    //     static constexpr bool is_not_defined = true;
-    // }; // struct log_base_n<...>
-
-    /** Raises \p t_base to the power \p t_power. */
+    /** Raises \p base to the power \p power. */
     template <typename t_integer_type, typename t_power_type>
     inline constexpr t_integer_type npow(t_integer_type base, t_power_type power)
     {
@@ -166,83 +89,65 @@ namespace ropufu::aftermath
         if (power < 0) return 0;
 
         t_integer_type result = 1;
-        for (std::size_t i = 0; i < power; ++i) result *= base;
+        for (t_power_type i = 0; i < power; ++i) result *= base;
         return result;
     } // npow(...)
 
-    // /** Raises \p t_base to the power \p t_power. */
-    // template <std::size_t t_base, std::size_t t_power>
-    // struct npow
-    // {
-    //     static constexpr std::size_t value = t_base * npow<t_base, t_power - 1>::value;
-    // }; // struct npow
+    /** A number of the form 2 to the power \p power minus 1. */
+    template <typename t_integer_type>
+    inline constexpr t_integer_type mersenne_number(t_integer_type power)
+    {
+        if (power < 1) return 0;
 
-    // /** Trivial type with value <1>. */
-    // template <std::size_t t_base>
-    // struct npow<t_base, 0>
-    // {
-    //     static constexpr std::size_t value = 1;
-    // }; // struct npow<...>
+        t_integer_type result = 1;
+        for (t_integer_type i = 1; i < power; ++i)
+        {
+            result <<= 1;
+            result |= 1;
+        } // for (...)
+        return result;
+    } // mersenne_number(...)
 
-    // /** A number of the form 2 to the power \t t_power minus 1. */
-    // template <std::size_t t_power>
-    // struct mersenne_number
-    // {
-    //     static constexpr std::size_t value = 2 * mersenne_number<t_power - 1>::value + 1;
-    // }; // struct mersenne_number
+    /** If \p number is a Mersenne number returns its power, otherwise returns 0. */
+    template <typename t_integer_type>
+    inline constexpr t_integer_type mersenne_power(t_integer_type number)
+    {
+        if (number < 1) return 0;
 
-    // /** Trivial type with value <0>. */
-    // template <>
-    // struct mersenne_number<0>
-    // {
-    //     static constexpr std::size_t value = 0;
-    // }; // struct mersenne_number<...>
+        t_integer_type result = 0;
+        while (number != 0)
+        {
+            if ((number & 1) == 0) return 0;
+            number >>= 1;
+            ++result;
+        } // while (...)
+        return result;
+    } // mersenne_number(...)
 
-    // /** Calculates the product (\p t_number) · (\p t_number - 1) ··· (\p t_number - \p t_count + 1). */
-    // template <std::size_t t_number, std::size_t t_count>
-    // struct falling_factorial
-    // {
-    //     static constexpr std::size_t value = t_number * falling_factorial<t_number - 1, t_count - 1>::value;
-    // }; // struct falling_factorial
+    /** Calculates the product (\p number) · (\p number - 1) ··· (\p number - \p count + 1). */
+    template <typename t_numeric_type, typename t_integer_type>
+    inline constexpr t_numeric_type falling_factorial(t_numeric_type number, t_integer_type count)
+    {
+        if (count < 1) return 1;
+        t_numeric_type result = number;
+        for (t_integer_type i = 1; i < count; ++i)
+        {
+            --number;
+            result *= number;
+        } // for (...)
+        return result;
+    } // falling_factorial(...)
 
-    // /** Type with value \p t_number. */
-    // template <std::size_t t_number>
-    // struct falling_factorial<t_number, 1>
-    // {
-    //     static constexpr std::size_t value = t_number;
-    // }; // struct falling_factorial<...>
+    /** Calculates the product (\p number) · (\p number - 1) ··· (2) · (1). */
+    template <typename t_integer_type>
+    inline constexpr t_integer_type factorial(t_integer_type number) { return falling_factorial(number, number); }
 
-    // /** Trivial type with value <1>. */
-    // template <std::size_t t_number>
-    // struct falling_factorial<t_number, 0>
-    // {
-    //     static constexpr std::size_t value = 1;
-    // }; // struct falling_factorial<...>
-
-    // /** Calculates the factorial \p t_number! = (\p t_number) · (\p t_number - 1) ··· (2) · (1). */
-    // template <std::size_t t_number>
-    // struct factorial : public falling_factorial<t_number, t_number> { };
-
-    // /** Calculates the binomical coefficient (\p t_total choose \p t_choose). */
-    // template <std::size_t t_total, std::size_t t_choose>
-    // struct nchoosek
-    // {
-    //     static constexpr std::size_t value = (falling_factorial<t_total, t_choose>::value) / (falling_factorial<t_choose, t_choose>::value);
-    // }; // struct nchoosek
-
-    // /** Trivial type with value <1>. */
-    // template <std::size_t t_total>
-    // struct nchoosek<t_total, 0>
-    // {
-    //     static constexpr std::size_t value = 1;
-    // }; // struct nchoosek<...>
-
-    // /** Trivial type with value <1>. */
-    // template <std::size_t t_total>
-    // struct nchoosek<t_total, t_total>
-    // {
-    //     static constexpr std::size_t value = 1;
-    // }; // struct nchoosek<...>
+    /** Calculates the binomical coefficient (\p of_total choose \p to_choose). */
+    template <typename t_integer_type>
+    inline constexpr t_integer_type nchoosek(t_integer_type of_total, t_integer_type to_choose)
+    {
+        return falling_factorial(of_total, to_choose) / falling_factorial(to_choose, to_choose);
+    } // nchoosek(...)
 } // namespace ropufu::aftermath
 
 #endif // ROPUFU_AFTERMATH_MATH_CONSTANTS_HPP_INCLUDED

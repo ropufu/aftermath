@@ -2,18 +2,19 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_EMPIRICAL_MEASURE_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_EMPIRICAL_MEASURE_HPP_INCLUDED
 
-#include "../on_error.hpp"
+#include "../number_traits.hpp"
 #include "../type_traits.hpp"
 
 #include <cmath>     // std::sqrt
 #include <cstddef>   // std::size_t
 #include <iostream>  // std::ostream, std::endl
-#include <limits>    // std::numeric_limits, std::numeric_limits::is_integer
+#include <limits>    // std::numeric_limits
 #include <map>       // std::map
+#include <stdexcept> // std::logic_error
 #include <string>    // std::string
-#include <system_error>  // std::error_code, std::errc
 #include <type_traits>   // ...
 #include <unordered_map> // std::unordered_map
+#include <utility>       // std::declval
 
 namespace ropufu::aftermath::probability
 {
@@ -50,7 +51,7 @@ namespace ropufu::aftermath::probability
             dictionary_type m_data = {};
             count_type m_count_observations = 0;
             count_type m_max_height = 0;
-            key_type m_most_likely_value = { };
+            key_type m_most_likely_value = {};
 
         public:
             void clear() noexcept
@@ -68,7 +69,7 @@ namespace ropufu::aftermath::probability
             {
                 if (repeat == 0) return;
                 count_type new_height = (this->m_data[key] += repeat);
-                ++this->m_count_observations;
+                this->m_count_observations += repeat;
                 if (this->m_max_height < new_height)
                 {
                     this->m_max_height = new_height;
@@ -78,6 +79,13 @@ namespace ropufu::aftermath::probability
                 t_derived_type* that = static_cast<t_derived_type*>(this);
                 that->on_observed(key, repeat, new_height);
             } // observe(...)
+            
+            t_derived_type& operator <<(const key_type& key) noexcept
+            {
+                this->observe(key);
+                t_derived_type* that = static_cast<t_derived_type*>(this);
+                return *that;
+            } // operator <<(...)
 
             /** Indicates if any observation has been made. */
             bool empty() const noexcept { return this->m_count_observations == 0; }
@@ -142,20 +150,20 @@ namespace ropufu::aftermath::probability
 
         protected:
             key_type m_min = limits_type::max();
-            key_type m_max = limits_type::min();
+            key_type m_max = limits_type::lowest();
 
             /** Clears the statistics. */
             void module_clear() noexcept
             {
                 this->m_min = limits_type::max();
-                this->m_max = limits_type::min();
+                this->m_max = limits_type::lowest();
             } // module_clear(...)
 
             /** Observe another element. */
             void module_observe(const key_type& key, count_type /*repeat*/) noexcept
             {
                 if (key < this->m_min) this->m_min = key;
-                else if (this->m_max < key) this->m_max = key;
+                if (this->m_max < key) this->m_max = key;
             } // module_observe(...)
 
         public:
@@ -177,15 +185,17 @@ namespace ropufu::aftermath::probability
                 {
                     if (key < item.first) break;
                     cumulative_count += item.second;
-                }
+                } // for (...)
                 return cumulative_count / static_cast<probability_type>(that->m_count_observations);
             } // cdf(...)
 
             /** Compute empirical percentile. */
-            const t_key_type& percentile(probability_type probability) const noexcept
+            const t_key_type& percentile(probability_type probability) const
             {
-                if (probability <= 0) return this->m_min;
-                if (probability >= 1) return this->m_max;
+                if (!aftermath::is_finite(probability)) throw std::logic_error("Probability must be a finite number.");
+                if (probability < 0 || probability > 1) throw std::logic_error("Probability must be a finite number between 0 and 1.");
+                if (probability == 0) return this->m_min;
+                if (probability == 1) return this->m_max;
 
                 const t_derived_type* that = static_cast<const t_derived_type*>(this);
 
@@ -195,14 +205,14 @@ namespace ropufu::aftermath::probability
                 if constexpr (std::numeric_limits<count_type>::is_integer) // For integer types we need a ceiling, not floor.
                 {
                     if (threshold < probability) ++threshold;
-                } // if constexpr
+                } // if constexpr (...)
 
                 count_type cumulative_count = 0;
                 for (const auto& item : that->m_data)
                 {
                     cumulative_count += item.second;
                     if (cumulative_count >= threshold) return item.first;
-                }
+                } // for (...)
                 return this->m_max;
             } // percentile(...)
         }; // struct empirical_measure_ordering_module<...>
@@ -297,7 +307,7 @@ namespace ropufu::aftermath::probability
                 for (const auto& item : that->m_data)
                 {
                     variance_sum += ((item.first - m) * (item.first - m)) * item.second;
-                }
+                } // for (...)
                 return variance_sum / static_cast<mean_type>(that->m_count_observations);
             } // compute_variance(...)
             
@@ -306,9 +316,7 @@ namespace ropufu::aftermath::probability
         }; // struct empirical_measure_variance_module<...>
     } // namespace detail
 
-    /** @breif A structure to record observations and build statistics.
-     *  @remark The general struct implements the basic functionality meant to be shared amond specializations.
-     */
+    /** @breif A structure to record observations and build up statistics. */
     template <typename t_key_type,
         typename t_count_type = std::size_t,
         typename t_probability_type = double,
@@ -381,9 +389,9 @@ namespace ropufu::aftermath::probability
          *  @param ec Set to \c std::errc::invalid_argument if \p keys and \p values have different size.
          */
         template <typename t_key_container_type, typename t_value_container_type>
-        empirical_measure(const t_key_container_type& keys, const t_value_container_type& values, std::error_code& ec) noexcept
+        empirical_measure(const t_key_container_type& keys, const t_value_container_type& values)
         {
-            if (keys.size() != values.size()) { aftermath::detail::on_error(ec, std::errc::invalid_argument, "Observations size mismatch."); return; }
+            if (keys.size() != values.size()) throw std::logic_error("Keys and values have to be of the same size.");
             auto keys_it = keys.begin();
             auto values_it = values.begin();
 
@@ -398,10 +406,10 @@ namespace ropufu::aftermath::probability
         /** @brief Include observations from another empirical measure into this one. */
         void merge(const type& other) noexcept
         {
-            for (const auto& item : other.m_data) this->m_data[item.first] += item.second;
+            for (const auto& item : other.m_data) this->observe(item.first, item.second);
         } // merge(...)
 
-        friend std::ostream& operator <<(std::ostream& os, const type& self) noexcept
+        friend std::ostream& operator <<(std::ostream& os, const type& self)
         {
             if (self.m_count_observations == 0) return os << "{ }";
 
@@ -420,7 +428,7 @@ namespace ropufu::aftermath::probability
                         os << key << "\t" << std::string(height, '.') << std::string((1 + max_height) - height, ' ') << (100 * p) << '%' << std::endl;
                     } // for (...)
                     return os;
-                } // if constexpr
+                } // if constexpr (...)
                 else
                 {
                     probability_type norm = static_cast<probability_type>(self.m_count_observations);
@@ -430,8 +438,8 @@ namespace ropufu::aftermath::probability
                         os << "{" << item.first << " : " << (100 * p) << "%}" << std::endl;
                     } // for (...)
                     return os;
-                } // if constexpr
-            } // if constexpr
+                } // if constexpr (...)
+            } // if constexpr (...)
 
             return os << "{...}";
         } // operator <<(...)

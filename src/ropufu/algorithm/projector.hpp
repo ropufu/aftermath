@@ -2,14 +2,11 @@
 #ifndef ROPUFU_AFTERMATH_ALGORITHM_PROJECTOR_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_ALGORITHM_PROJECTOR_HPP_INCLUDED
 
-#include "../on_error.hpp"
-
 #include "../algebra/matrix.hpp" // algebra::matrix
 #include "../algebra/matrix_index.hpp" // algebra::matrix_index
 
 #include <cstddef> // std::size_t
-#include <system_error> // std::error_code, std::errc
-#include <type_traits>  // std::is_same_v
+#include <type_traits> // std::is_same_v
 #include <utility> // std::forward
 #include <vector>  // std::vector
 
@@ -133,10 +130,8 @@ namespace ropufu::aftermath::algorithm
 
         cost_type distance(const index_type& a, const index_type& b) const noexcept { return this->distance_override(a, b); }
 
-        void neighbors(const index_type& source, std::vector<pair_type>& projected_neighbors/*, std::error_code& ec*/) const
+        void neighbors(const index_type& source, std::vector<pair_type>& projected_neighbors) const
         {
-            // if (source.row < 0 || source.row >= this->height()) return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Position must be wihin the vertical bounds of the surface.");
-            // if (source.column < 0 || source.column >= this->width()) return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Position must be wihin the horizontal bounds of the surface.");
             this->neighbors_override(this->m_surface, source, projected_neighbors);
         } // neighbors(...)
     }; // struct walker

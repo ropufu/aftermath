@@ -2,20 +2,21 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_BERNOULLI_DISTRIBUTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_BERNOULLI_DISTRIBUTION_HPP_INCLUDED
 
-#include "../on_error.hpp"
+#include "../number_traits.hpp"
 #include "distribution_traits.hpp"
 
-#include <cmath>      // std::isnan, std::isinf, std::sqrt, std::pow
-#include <cstddef>    // std::size_t
-#include <functional> // std::hash
-#include <limits>     // std::numeric_limits::is_integer
-#include <random>     // std::bernoulli_distribution
-#include <system_error> // std::error_code, std::errc
-#include <utility>    // std::declval, std::swap
+#include <cmath>       // std::sqrt
+#include <cstddef>     // std::size_t
+#include <functional>  // std::hash
+#include <limits>      // std::numeric_limits
+#include <random>      // std::bernoulli_distribution
+#include <stdexcept>   // std::logic_error
+#include <type_traits> // std::is_floating_point_v
+#include <utility>     // std::declval
 
 namespace ropufu::aftermath::probability
 {
-    /** Binomial distribution. */
+    /** Bernoulli distribution. */
     template <typename t_probability_type = double, typename t_expectation_type = t_probability_type>
     struct bernoulli_distribution;
 
@@ -26,7 +27,9 @@ namespace ropufu::aftermath::probability
         static constexpr bool value = true;
     }; // struct is_discrete
 
-    /** @brief Binomial distribution. */
+    /** @brief Bernoulli distribution.
+     *  @todo Add tests!!
+     */
     template <typename t_probability_type, typename t_expectation_type>
     struct bernoulli_distribution
     {
@@ -46,58 +49,57 @@ namespace ropufu::aftermath::probability
         expectation_type m_cache_standard_deviation = 0;
         expectation_type m_cache_variance = 0;
 
-        static constexpr void traits_check()
+        static constexpr void traits_check() noexcept
         {
+            static_assert(std::is_floating_point_v<probability_type>, "Probability type has to be a floating point type.");
+            static_assert(std::is_floating_point_v<expectation_type>, "Expectation type has to be a floating point type.");
         } // traits_check(...)
 
-        bool validate(std::error_code& ec) const noexcept
+        void validate() const
         {
-            if (std::isnan(this->m_probability_of_success) || std::isinf(this->m_probability_of_success) || this->m_probability_of_success < 0 || this->m_probability_of_success > 1)
-                return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Probability of success must be in the range from 0 to 1.", false);
-            return true;
+            if (!aftermath::is_finite(this->m_probability_of_success) || this->m_probability_of_success < 0 || this->m_probability_of_success > 1)
+                throw std::logic_error("Probability must be a finite number between 0 and 1.");
         } // validate(...)
 
         void cahce() noexcept
         {
+            expectation_type p = static_cast<expectation_type>(this->m_probability_of_success);
+
             this->m_cache_probability_of_failure = 1 - this->m_probability_of_success;
-            this->m_cache_expected_value = static_cast<expectation_type>(this->m_probability_of_success);
-            this->m_cache_variance = static_cast<expectation_type>(this->m_probability_of_success * this->m_cache_probability_of_failure);
-            this->m_cache_standard_deviation = static_cast<expectation_type>(std::sqrt(this->m_cache_variance));
-        } // reset(...)
+            this->m_cache_expected_value = p;
+            this->m_cache_variance = p * (1 - p);
+            this->m_cache_standard_deviation = std::sqrt(this->m_cache_variance);
+        } // cahce(...)
 
     public:
-        /** Default constructor with one trial and probability of success 1/2. */
+        /** Trivial case when trials always fail. */
         bernoulli_distribution() noexcept { type::traits_check(); }
 
         /** Constructor and implicit conversion from standard distribution. */
-        /*implicit*/ bernoulli_distribution(const std_type& distribution) noexcept
-            : m_probability_of_success(static_cast<probability_type>(distribution.p()))
+        /*implicit*/ bernoulli_distribution(const std_type& distribution)
+            : bernoulli_distribution(static_cast<probability_type>(distribution.p()))
         {
-            type::traits_check();
-            this->cahce();
         } // bernoulli_distribution(...)
 
-        /** @brief Constructs a binomial distribution from the number of trials, \p n, and probability of success.
-         *  @param ec Set to std::errc::invalid_argument if \p probability_of_success is not in the interval [0, 1].
-         *  @param ec Set to std::errc::invalid_argument if \p number_of_trials is not in the interval [0, 1].
-         */
-        explicit bernoulli_distribution(probability_type probability_of_success, std::error_code& ec) noexcept
+        /** @exception std::logic_error \p probability_of_success is not inside the interval [0, 1]. */
+        explicit bernoulli_distribution(probability_type probability_of_success)
             : m_probability_of_success(probability_of_success)
         {
             type::traits_check();
-            if (this->validate(ec)) this->cahce();
-            else
-            {
-                this->m_probability_of_success = 0;
-            } // if (...)
+
+            this->validate();
+            this->cahce();
         } // bernoulli_distribution(...)
 
         /** Converts the distribution to its standard built-in counterpart. */
         std_type to_std() const noexcept
         {
-            return std_type(this->m_number_of_trials, static_cast<typename std_type::param_type>(this->m_probability_of_success));
+            using p_type = decltype(std::declval<std_type>().p());
+            return std_type(static_cast<p_type>(this->m_probability_of_success));
         } // to_std(...)
 
+        /** Probability of success. */
+        probability_type p() const noexcept { return this->m_probability_of_success; }
         /** Probability of success. */
         probability_type probability_of_success() const noexcept { return this->m_probability_of_success; }
         /** Probability of failure. */
@@ -125,7 +127,7 @@ namespace ropufu::aftermath::probability
         probability_type pmf(value_type k) const noexcept
         {
             return k ? this->m_probability_of_success : this->m_cache_probability_of_failure;
-        } // pdf(...)
+        } // pmf(...)
 
         /** Checks if the two distributions are the same. */
         bool operator ==(const type& other) const noexcept
@@ -154,9 +156,8 @@ namespace std
         result_type operator ()(argument_type const& x) const noexcept
         {
             std::hash<typename argument_type::probability_type> probability_hash = {};
-
             return
-                probability_hash(x.probability_of_success());
+                (probability_hash(x.p()));
         } // operator ()(...)
     }; // struct hash
 } // namespace std

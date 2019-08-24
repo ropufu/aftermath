@@ -2,8 +2,6 @@
 #ifndef ROPUFU_AFTERMATH_ALGORITHM_PATHFINDER_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_ALGORITHM_PATHFINDER_HPP_INCLUDED
 
-#include "../on_error.hpp"
-
 #include "../algebra/matrix.hpp" // algebra::matrix
 #include "../algebra/matrix_index.hpp" // algebra::matrix_index
 
@@ -13,6 +11,7 @@
 #include <system_error> // std::error_code, std::errc
 #include <type_traits>  // std::is_base_of_v
 #include <map>          // std::multimap
+#include <stdexcept>    // std::out_of_range
 #include <system_error> // std::error_code, std::errc
 #include <vector>       // std::vector
 
@@ -77,19 +76,12 @@ namespace ropufu::aftermath::algorithm
                 "projector_type has to directly derive from projector<projector_type, ...>.");
         } // traits_check(...)
 
-        bool validate(std::error_code& ec) const noexcept
+        void validate() const
         {
-            if (this->m_source.row < 0 || this->m_source.row >= this->m_traceback.height()) return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Source must be within surface boundary.", false);
-            if (this->m_source.column < 0 || this->m_source.column >= this->m_traceback.width()) return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Source must be within surface boundary.", false);
-            return true;
+            if (this->m_source.row < 0 || this->m_source.row >= this->m_traceback.height()) throw std::out_of_range("Source must be within surface boundary.");
+            if (this->m_source.column < 0 || this->m_source.column >= this->m_traceback.width()) throw std::out_of_range("Source must be within surface boundary.");
         } // validate(...)
-
-        void coerce() noexcept
-        {
-            if (this->m_source.row < 0 || this->m_source.row >= this->m_traceback.height()) this->m_source.row = 0;
-            if (this->m_source.column < 0 || this->m_source.column >= this->m_traceback.width()) this->m_source.column = 0;
-        } // coerce(...)
-
+        
         void enqueue(const index_type& position, const index_type& came_from, const index_type& target, cost_type cost_from_source) noexcept
         {
             if (this->m_traceback[position].closed) return; // Skip nodes that have already been processed.
@@ -165,14 +157,17 @@ namespace ropufu::aftermath::algorithm
             this->m_temp_neighbors.reserve(type::default_neighbor_capacity);
         } // pathfinder(...)
         
-        pathfinder(const projector_type& projector, const index_type& source, std::error_code& ec) noexcept
+        /** @brief Constructs a pathfinder from the \p projector and \p source.
+         *  @exception std::out_of_range Source must be within surface boundary.
+         */
+        pathfinder(const projector_type& projector, const index_type& source)
             : m_projector(projector), m_source(source),
             m_traceback(projector.height(), projector.width())
         {
             type::traits_check();
+            this->validate();
             this->m_temp_neighbors.reserve(type::default_neighbor_capacity);
 
-            if (!this->validate(ec)) this->coerce();
             if (!this->m_traceback.empty()) this->enqueue(source, source, source, 0);
         } // pathfinder(...)
         
@@ -183,13 +178,13 @@ namespace ropufu::aftermath::algorithm
         } // exhaust(...)
 
         /** @brief Tries to trace a path to a particular target. */
-        void trace(const index_type& target, std::vector<index_type>& result, std::error_code& ec) noexcept
+        void trace(const index_type& target, std::vector<index_type>& result, std::error_code& ec)
         {
             const std::size_t m = this->m_traceback.height();
             const std::size_t n = this->m_traceback.width();
 
-            if (target.row < 0 || target.row >= m) return aftermath::detail::on_error(ec, std::errc::argument_out_of_domain, "Target must be within the bounds of the surface projection.");
-            if (target.column < 0 || target.column >= n) return aftermath::detail::on_error(ec, std::errc::argument_out_of_domain, "Target must be within the bounds of the surface projection.");
+            if (target.row < 0 || target.row >= m) throw std::out_of_range("Target must be within the bounds of the surface projection.");
+            if (target.column < 0 || target.column >= n) throw std::out_of_range("Target must be within the bounds of the surface projection.");
 
             while (!this->m_pending.empty())
             {
@@ -197,7 +192,7 @@ namespace ropufu::aftermath::algorithm
                 this->expand(target);
             } // while (...)
 
-            return aftermath::detail::on_error(ec, std::errc::host_unreachable, "Target unreachable.");
+            ec = std::make_error_code(std::errc::host_unreachable); // Target unreachable.
         } // trace(...)
     }; // struct pathfinder
 } // namespace ropufu::aftermath::algorithm

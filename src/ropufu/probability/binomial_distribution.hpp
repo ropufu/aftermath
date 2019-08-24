@@ -2,16 +2,17 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_BINOMIAL_DISTRIBUTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_BINOMIAL_DISTRIBUTION_HPP_INCLUDED
 
-#include "../on_error.hpp"
+#include "../number_traits.hpp"
 #include "distribution_traits.hpp"
 
-#include <cmath>      // std::isnan, std::isinf, std::sqrt, std::pow
-#include <cstddef>    // std::size_t
-#include <functional> // std::hash
-#include <limits>     // std::numeric_limits::is_integer
-#include <random>     // std::binomial_distribution
-#include <system_error> // std::error_code, std::errc
-#include <utility>    // std::declval, std::swap
+#include <cmath>       // std::sqrt, std::pow
+#include <cstddef>     // std::size_t
+#include <functional>  // std::hash
+#include <limits>      // std::numeric_limits
+#include <random>      // std::binomial_distribution
+#include <stdexcept>   // std::logic_error
+#include <type_traits> // std::is_floating_point_v
+#include <utility>     // std::declval, std::swap
 
 namespace ropufu::aftermath::probability
 {
@@ -26,7 +27,9 @@ namespace ropufu::aftermath::probability
         static constexpr bool value = true;
     }; // struct is_discrete
 
-    /** @brief Binomial distribution. */
+    /** @brief Binomial distribution.
+     *  @todo Add tests!!
+     */
     template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
     struct binomial_distribution
     {
@@ -47,63 +50,72 @@ namespace ropufu::aftermath::probability
         expectation_type m_cache_standard_deviation = 0;
         expectation_type m_cache_variance = 0;
 
-        static constexpr void traits_check()
+        static constexpr void traits_check() noexcept
         {
-            static_assert(std::numeric_limits<value_type>::is_integer, "Underlying type has to be an integer type.");
+            static_assert(std::numeric_limits<value_type>::is_integer, "Value type has to be an integer type.");
+            static_assert(std::is_floating_point_v<probability_type>, "Probability type has to be a floating point type.");
+            static_assert(std::is_floating_point_v<expectation_type>, "Expectation type has to be a floating point type.");
         } // traits_check(...)
 
-        bool validate(std::error_code& ec) const noexcept
+        void validate() const
         {
-            if (this->m_number_of_trials < 0) return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Number of trials must be non-negative.", false);
-            if (std::isnan(this->m_probability_of_success) || std::isinf(this->m_probability_of_success) || this->m_probability_of_success < 0 || this->m_probability_of_success > 1)
-                return aftermath::detail::on_error(ec, std::errc::invalid_argument, "Probability of success must be in the range from 0 to 1.", false);
-            return true;
+            if constexpr (std::numeric_limits<value_type>::is_signed)
+            {
+                if (this->m_number_of_trials < 0) throw std::logic_error("Number of trials cannot be negative.");
+            } // if constexpr (...)
+            if (this->m_number_of_trials == 0) throw std::logic_error("Number of trials cannot be zero.");
+
+            if (!aftermath::is_finite(this->m_probability_of_success) || this->m_probability_of_success < 0 || this->m_probability_of_success > 1)
+                throw std::logic_error("Probability must be a finite number between 0 and 1.");
         } // validate(...)
 
         void cahce() noexcept
         {
+            expectation_type p = static_cast<expectation_type>(this->m_probability_of_success);
+
             this->m_cache_probability_of_failure = 1 - this->m_probability_of_success;
-            this->m_cache_expected_value = static_cast<expectation_type>(this->m_number_of_trials * this->m_probability_of_success);
-            this->m_cache_variance = static_cast<expectation_type>(this->m_cache_expected_value * this->m_cache_probability_of_failure);
-            this->m_cache_standard_deviation = static_cast<expectation_type>(std::sqrt(this->m_cache_variance));
-        } // reset(...)
+            this->m_cache_expected_value = static_cast<expectation_type>(this->m_number_of_trials * p);
+            this->m_cache_variance = static_cast<expectation_type>(this->m_number_of_trials * p * (1 - p));
+            this->m_cache_standard_deviation = std::sqrt(this->m_cache_variance);
+        } // cahce(...)
 
     public:
-        /** Default constructor with one trial and probability of success 1/2. */
+        /** Trivial case with one trial that always fails. */
         binomial_distribution() noexcept { type::traits_check(); }
 
         /** Constructor and implicit conversion from standard distribution. */
-        /*implicit*/ binomial_distribution(const std_type& distribution) noexcept
-            : m_number_of_trials(distribution.t()), m_probability_of_success(static_cast<probability_type>(distribution.p()))
+        /*implicit*/ binomial_distribution(const std_type& distribution)
+            : binomial_distribution(static_cast<value_type>(distribution.t()), static_cast<probability_type>(distribution.p()))
         {
-            type::traits_check();
-            this->cahce();
         } // binomial_distribution(...)
 
-        /** @brief Constructs a binomial distribution from the number of trials, \p n, and probability of success.
-         *  @param ec Set to std::errc::invalid_argument if \p probability_of_success is not in the interval [0, 1].
+        /** @brief Constructs a binomial distribution from the number of trials and probability of success.
+         *  @exception std::logic_error \p probability_of_success is not inside the interval [0, 1].
          *  @param ec Set to std::errc::invalid_argument if \p number_of_trials is negative.
          */
-        explicit binomial_distribution(value_type number_of_trials, probability_type probability_of_success, std::error_code& ec) noexcept
+        explicit binomial_distribution(value_type number_of_trials, probability_type probability_of_success)
             : m_number_of_trials(number_of_trials), m_probability_of_success(probability_of_success)
         {
             type::traits_check();
-            if (this->validate(ec)) this->cahce();
-            else
-            {
-                this->m_number_of_trials = 1;
-                this->m_probability_of_success = 0;
-            } // if (...)
+
+            this->validate();
+            this->cahce();
         } // binomial_distribution(...)
 
         /** Converts the distribution to its standard built-in counterpart. */
         std_type to_std() const noexcept
         {
-            return std_type(this->m_number_of_trials, static_cast<typename std_type::param_type>(this->m_probability_of_success));
+            using t_type = decltype(std::declval<std_type>().t());
+            using p_type = decltype(std::declval<std_type>().p());
+            return std_type(static_cast<t_type>(this->m_number_of_trials), static_cast<p_type>(this->m_probability_of_success));
         } // to_std(...)
 
         /** Number of trials in the experiment. */
+        value_type t() const noexcept { return this->m_number_of_trials; }
+        /** Number of trials in the experiment. */
         value_type number_of_trials() const noexcept { return this->m_number_of_trials; }
+        /** Probability of success. */
+        probability_type p() const noexcept { return this->m_probability_of_success; }
         /** Probability of success. */
         probability_type probability_of_success() const noexcept { return this->m_probability_of_success; }
         /** Probability of failure. */
@@ -126,7 +138,6 @@ namespace ropufu::aftermath::probability
         {
             if (k >= this->m_number_of_trials) return 1;
             
-            /** @todo Optimize to avoid \c k calls of \c pmf(...). */
             probability_type p = 0;
             for (value_type j = 0; j <= k; ++j) p += this->pmf(j);
             return p;
@@ -145,14 +156,14 @@ namespace ropufu::aftermath::probability
                 k = n - k;
                 std::swap(p, q);
             } // if (...)
-            if (q == 0) return static_cast<probability_type>(0);
+            if (q == 0) return 0;
 
             expectation_type result = 1;
             expectation_type r = p / q;
             value_type numerator = n - k;
             for (value_type i = 1; i <= k; ++i) result *= (r * static_cast<expectation_type>(++numerator)) / i;
             return static_cast<probability_type>(result * std::pow(q, n));
-        } // pdf(...)
+        } // pmf(...)
 
         /** Checks if the two distributions are the same. */
         bool operator ==(const type& other) const noexcept
@@ -183,10 +194,9 @@ namespace std
         {
             std::hash<typename argument_type::value_type> value_hash = {};
             std::hash<typename argument_type::probability_type> probability_hash = {};
-
             return
-                value_hash(x.number_of_trials()) ^ 
-                probability_hash(x.probability_of_success());
+                (value_hash(x.t()) << 4) ^ 
+                (probability_hash(x.p()));
         } // operator ()(...)
     }; // struct hash
 } // namespace std

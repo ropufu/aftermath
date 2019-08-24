@@ -72,6 +72,16 @@
         "__tree": "cpp",
         "bitset": "cpp",
         "string_view": "cpp",
-        "cctype": "cpp"
+        "cctype": "cpp",
+        "atomic": "cpp",
+        "csignal": "cpp",
+        "mutex": "cpp",
+        "set": "cpp",
+        "thread": "cpp",
+        "filesystem": "cpp",
+        "locale": "cpp",
+        "xlocbuf": "cpp",
+        "xlocmes": "cpp",
+        "optional": "cpp"
     }
 }
