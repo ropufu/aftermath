@@ -6,6 +6,7 @@
 #include "enum_parser.hpp"
 #include "key_value_pair.hpp"
 #include "math_constants.hpp"
+#include "number_traits.hpp"
 
 #include "algebra.hpp"
 #include "algorithm.hpp"
@@ -13,19 +14,9 @@
 #include "probability.hpp"
 #include "random.hpp"
 
-/** Shorthand notation. */
-namespace ropufu::aftm
+namespace ropufu
 {
-    /** @brief An array indexed by \tparam t_enum_type. */
-    template <typename t_enum_type, typename t_value_type>
-    using enum_array_t = aftermath::enum_array<t_enum_type, t_value_type>;
-
-    /** @brief Masks enumerable keys of \tparam t_enum_type. */
-    template <typename t_enum_type>
-    using flags_t = aftermath::flags_t<t_enum_type>;
-
-    template <typename t_numeric_type>
-    using math_constants_t = aftermath::math_constants<t_numeric_type>;
-} // namespace ropufu::aftm
+    namespace aftm = aftermath;
+} // namespace ropufu
 
 #endif // ROPUFU_AFTERMATH_HPP_INCLUDED
