@@ -154,7 +154,7 @@ namespace std
         {
             return 1;
         } // operator ()(...)
-    }; // struct hash
+    }; // struct hash<...>
 } // namespace std
 
 #endif // ROPUFU_AFTERMATH_PROBABILITY_STANDARD_NORMAL_DISTRIBUTION_HPP_INCLUDED

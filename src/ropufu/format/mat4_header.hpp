@@ -41,6 +41,7 @@ namespace ropufu::aftermath::format
     /** Indicates that a .mat file stores \c std::uint8_t. */
     template <> struct mat4_data_type_id<std::uint8_t> { static constexpr std::int32_t value = 50; };
 
+    [[maybe_unused]]
     static std::size_t mat4_data_type_size_by_id(std::int32_t data_type_id) noexcept
     {
         switch (data_type_id)

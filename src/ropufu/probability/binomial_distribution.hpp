@@ -198,7 +198,7 @@ namespace std
                 (value_hash(x.t()) << 4) ^ 
                 (probability_hash(x.p()));
         } // operator ()(...)
-    }; // struct hash
+    }; // struct hash<...>
 } // namespace std
 
 #endif // ROPUFU_AFTERMATH_PROBABILITY_BINOMIAL_DISTRIBUTION_HPP_INCLUDED

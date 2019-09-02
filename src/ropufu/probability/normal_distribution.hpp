@@ -190,7 +190,7 @@ namespace std
                 (expectation_hash(x.mu()) << 4) ^
                 (expectation_hash(x.sigma()));
         } // operator ()(...)
-    }; // struct hash
+    }; // struct hash<...>
 } // namespace std
 
 #endif // ROPUFU_AFTERMATH_PROBABILITY_NORMAL_DISTRIBUTION_HPP_INCLUDED

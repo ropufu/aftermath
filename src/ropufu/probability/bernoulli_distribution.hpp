@@ -159,7 +159,7 @@ namespace std
             return
                 (probability_hash(x.p()));
         } // operator ()(...)
-    }; // struct hash
+    }; // struct hash<...>
 } // namespace std
 
 #endif // ROPUFU_AFTERMATH_PROBABILITY_BERNOULLI_DISTRIBUTION_HPP_INCLUDED

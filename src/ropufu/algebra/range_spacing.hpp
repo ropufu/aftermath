@@ -2,7 +2,9 @@
 #ifndef ROPUFU_AFTERMATH_ALGEBRA_RANGE_SPACING_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_ALGEBRA_RANGE_SPACING_HPP_INCLUDED
 
-#include <cmath>      // std::log10, std::pow
+#include "../math_constants.hpp"
+
+#include <cmath>      // std::log, std::pow
 #include <cstddef>    // std::size_t
 #include <functional> // std::hash
 #include <initializer_list> // std::initializer_list
@@ -36,6 +38,7 @@ namespace ropufu::aftermath::algebra
         } // backward_transform(...)
     }; // struct linear_spacing
 
+    /** @remark When constructing ranges based on log-spacing, the choice of base should not matter. */
     template <typename t_value_type, typename t_intermediate_type = double>
     struct logarithmic_spacing
     {
@@ -44,20 +47,20 @@ namespace ropufu::aftermath::algebra
         using intermediate_type = t_intermediate_type;
 
     private:
-        intermediate_type m_log_base = 10;
-        intermediate_type m_log10_factor = 1;
+        intermediate_type m_log_base = math_constants<intermediate_type>::e;
+        intermediate_type m_log_factor = 1;
 
     public:
         logarithmic_spacing() noexcept { }
 
         explicit logarithmic_spacing(intermediate_type log_base) noexcept
-            : m_log_base(log_base), m_log10_factor(1 / std::log10(log_base))
+            : m_log_base(log_base), m_log_factor(1 / std::log(log_base))
         { }
 
         /** Sends data points to where they are linearly spaced. */
         intermediate_type forward_transform(const value_type& value) const noexcept
         {
-            return this->m_log10_factor * std::log10(static_cast<intermediate_type>(value));
+            return this->m_log_factor * std::log(static_cast<intermediate_type>(value));
         } // forward_transform(...)
 
         /** Sends transformed points back to to where they came from. */
@@ -75,14 +78,14 @@ namespace ropufu::aftermath::algebra
         using intermediate_type = t_intermediate_type;
 
     private:
-        intermediate_type m_log_base = 10;
-        intermediate_type m_log10_factor = 1;
+        intermediate_type m_log_base = math_constants<intermediate_type>::e;
+        intermediate_type m_log_factor = 1;
 
     public:
         exponential_spacing() noexcept { }
 
         explicit exponential_spacing(intermediate_type log_base) noexcept
-            : m_log_base(log_base), m_log10_factor(1 / std::log10(log_base))
+            : m_log_base(log_base), m_log_factor(1 / std::log(log_base))
         { }
 
         /** Sends data points to where they are linearly spaced. */
@@ -94,7 +97,7 @@ namespace ropufu::aftermath::algebra
         /** Sends transformed points back to to where they came from. */
         value_type backward_transform(const intermediate_type& transformed_value) const noexcept
         {
-            return static_cast<value_type>(this->m_log10_factor * std::log10(transformed_value));
+            return static_cast<value_type>(this->m_log_factor * std::log(transformed_value));
         } // backward_transform(...)
     }; // struct exponential_spacing
 } // namespace ropufu::aftermath::algebra

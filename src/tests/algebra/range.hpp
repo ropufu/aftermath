@@ -64,7 +64,7 @@ TEST_CASE_TEMPLATE("testing range explosion", tested_t, ROPUFU_AFTERMATH_TESTS_A
     // Non-linear spacing is where things get a little more complicated.
     constexpr double tolerance = 1e-5;
     std::vector<double> expected_log_seq_x = { 1, 1.49534878122122, 2.23606797749979, 3.34370152488211, 5 };
-    std::vector<double> expected_exp_seq_x = { 1, 4.39807027747726, 4.69901343161288, 4.87507573963316, 5 };
+    std::vector<double> expected_exp_seq_x = { 1, 3.66719608858604, 4.32500274735786, 4.71840457920730, 5 };
 
     std::vector<value_type> expected_log_seq(n);
     std::vector<value_type> expected_exp_seq(n);

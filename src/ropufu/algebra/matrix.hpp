@@ -433,6 +433,13 @@ namespace ropufu::aftermath::algebra
             return *this;
         } // operator =(...)
 
+        /** @brief Overwrites each entry of the matrix with \p value. */
+        type& operator =(const value_type& value) noexcept
+        {
+            this->fill(value);
+            return *this;
+        } // operator =(...)
+
         /** Fills matrix with \p value. */
         void fill(const value_type& value) noexcept
         {
@@ -462,7 +469,7 @@ namespace ropufu::aftermath::algebra
         bool square() const noexcept { return this->m_height == this->m_width; }
 
         /** @brief Re-shape the matrix.
-         *  @remark The behavior of this operation depends on \c arrangement_type of this matrix.
+         *  @remark The behavior of this operation may depend on \c arrangement_type of this matrix.
          */
         bool try_reshape(size_type height, size_type width) noexcept
         {

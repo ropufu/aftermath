@@ -177,7 +177,7 @@ namespace std
             return
                 (value_hash(x.lambda()));
         } // operator ()(...)
-    }; // struct hash
+    }; // struct hash<...>
 } // namespace std
 
 #endif // ROPUFU_AFTERMATH_PROBABILITY_EXPONENTIAL_DISTRIBUTION_HPP_INCLUDED

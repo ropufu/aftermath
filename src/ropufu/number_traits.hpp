@@ -11,21 +11,21 @@ namespace ropufu::aftermath
     template <typename t_value_type>
     struct number_traits
     {
-        static bool is_nan(const t_value_type& value) noexcept
+        static bool is_nan([[maybe_unused]] const t_value_type& value) noexcept
         {
             if constexpr (std::is_floating_point_v<t_value_type>) return std::isnan(value);
             //else if constexpr (std::numeric_limits<t_value_type>::is_integer) return false;
             else return false;
         } // is_nan(...)
 
-        static bool is_infinite(const t_value_type& value) noexcept
+        static bool is_infinite([[maybe_unused]] const t_value_type& value) noexcept
         {
             if constexpr (std::is_floating_point_v<t_value_type>) return std::isinf(value);
             //else if constexpr (std::numeric_limits<t_value_type>::is_integer) return false;
             else return false;
         } // is_infinite(...)
 
-        static bool is_finite(const t_value_type& value) noexcept
+        static bool is_finite([[maybe_unused]] const t_value_type& value) noexcept
         {
             if constexpr (std::is_floating_point_v<t_value_type>) return std::isfinite(value);
             else if constexpr (std::numeric_limits<t_value_type>::is_integer) return true;
