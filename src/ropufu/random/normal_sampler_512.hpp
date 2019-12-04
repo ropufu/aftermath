@@ -47,6 +47,7 @@ namespace ropufu::aftermath::random
         using ziggurat_type = ziggurat_sampler<type, engine_type, distribution_type, 512>;
         using uniform_type = typename engine_type::result_type;
 
+        using result_type = value_type;
         static constexpr std::size_t n_boxes = 512;
         static constexpr uniform_type engine_diameter = engine_type::max() - engine_type::min();
         static constexpr long double scale = static_cast<long double>(engine_diameter) + 1;

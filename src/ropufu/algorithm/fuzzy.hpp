@@ -32,7 +32,7 @@ namespace ropufu::aftermath::algorithm
         using local_coordinate_type = std::int_fast64_t;
         using global_coordinate_type = argument_type;
 
-		static constexpr local_coordinate_type bound_margin = 8; // How far along the same-sign streak you want to move.
+        static constexpr local_coordinate_type bound_margin = 8; // How far along the same-sign streak you want to move.
         static constexpr local_coordinate_type default_grid_resolution = 32;
         static constexpr local_coordinate_type default_tail_length = 2;
         static constexpr std::size_t default_step_limit = 5'000;
@@ -162,7 +162,7 @@ namespace ropufu::aftermath::algorithm
                     } // if (...)
                 } // while (...)
 
-				if (step_abs == 1) break; // while (...)
+                if (step_abs == 1) break; // while (...)
             } // while (...)
             return (b - type::bound_margin * step);
         } // zero_bound(...)

@@ -66,7 +66,7 @@ TEST_CASE_TEMPLATE("testing fuzzy on increasing functions", function_t, ROPUFU_A
     std::mt19937 engine {};
     ropufu::aftermath::tests::seed(engine);
     value_type norm = static_cast<value_type>(std::mt19937::max()) + 1;
-	value_type offset = static_cast<value_type>(std::mt19937::max() / 2);
+    value_type offset = static_cast<value_type>(std::mt19937::max() / 2);
 
     value_type error_magnitude = 0;
     SUBCASE("") { error_magnitude = value_type(0.5); }
@@ -78,7 +78,7 @@ TEST_CASE_TEMPLATE("testing fuzzy on increasing functions", function_t, ROPUFU_A
 
     std::error_code ec {};
     function_t f {};
-	auto e = [&engine, offset, norm, error_magnitude]() { return error_magnitude * (engine() - offset) / norm; };
+    auto e = [&engine, offset, norm, error_magnitude]() { return error_magnitude * (engine() - offset) / norm; };
     auto g = [&f, &e] (argument_type x) { return f(x) + e(); };
     fuzzy_type not_fuzzy {f};
     fuzzy_type fuzzy {g};

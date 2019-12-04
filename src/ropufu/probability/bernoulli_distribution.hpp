@@ -13,6 +13,7 @@
 #include <stdexcept>   // std::logic_error
 #include <type_traits> // std::is_floating_point_v
 #include <utility>     // std::declval
+#include <vector>      // std::vector
 
 namespace ropufu::aftermath::probability
 {
@@ -43,11 +44,6 @@ namespace ropufu::aftermath::probability
 
     private:
         probability_type m_probability_of_success = 0;
-        // ~~ Cached values ~~
-        probability_type m_cache_probability_of_failure = 1;
-        expectation_type m_cache_expected_value = 0;
-        expectation_type m_cache_standard_deviation = 0;
-        expectation_type m_cache_variance = 0;
 
         static constexpr void traits_check() noexcept
         {
@@ -60,16 +56,6 @@ namespace ropufu::aftermath::probability
             if (!aftermath::is_finite(this->m_probability_of_success) || this->m_probability_of_success < 0 || this->m_probability_of_success > 1)
                 throw std::logic_error("Probability must be a finite number between 0 and 1.");
         } // validate(...)
-
-        void cahce() noexcept
-        {
-            expectation_type p = static_cast<expectation_type>(this->m_probability_of_success);
-
-            this->m_cache_probability_of_failure = 1 - this->m_probability_of_success;
-            this->m_cache_expected_value = p;
-            this->m_cache_variance = p * (1 - p);
-            this->m_cache_standard_deviation = std::sqrt(this->m_cache_variance);
-        } // cahce(...)
 
     public:
         /** Trivial case when trials always fail. */
@@ -86,9 +72,7 @@ namespace ropufu::aftermath::probability
             : m_probability_of_success(probability_of_success)
         {
             type::traits_check();
-
             this->validate();
-            this->cahce();
         } // bernoulli_distribution(...)
 
         /** Converts the distribution to its standard built-in counterpart. */
@@ -103,14 +87,18 @@ namespace ropufu::aftermath::probability
         /** Probability of success. */
         probability_type probability_of_success() const noexcept { return this->m_probability_of_success; }
         /** Probability of failure. */
-        probability_type probability_of_failure() const noexcept { return this->m_cache_probability_of_failure; }
+        probability_type probability_of_failure() const noexcept { return (1 - this->m_probability_of_success); }
 
         /** Expected value of the distribution. */
-        expectation_type expected_value() const noexcept { return this->m_cache_expected_value; }
+        expectation_type expected_value() const noexcept { return static_cast<expectation_type>(this->m_probability_of_success); }
         /** Variance of the distribution. */
-        expectation_type variance() const noexcept { return this->m_cache_variance; }
+        expectation_type variance() const noexcept
+        {
+            expectation_type p = static_cast<expectation_type>(this->m_probability_of_success);
+            return p * (1 - p);
+        } // variance(...)
         /** Standard deviation of the distribution. */
-        expectation_type standard_deviation() const noexcept { return this->m_cache_standard_deviation; }
+        expectation_type standard_deviation() const noexcept { return std::sqrt(this->variance()); }
 
         /** Expected value of the distribution. */
         expectation_type mean() const noexcept { return this->expected_value(); }
@@ -120,14 +108,22 @@ namespace ropufu::aftermath::probability
         /** Cumulative distribution function (c.d.f.) of the distribution. */
         probability_type cdf(value_type k) const noexcept
         {
-            return k ? 1 : this->m_cache_probability_of_failure;
+            return k ? 1 : (1 - this->m_probability_of_success);
         } // cdf(...)
 
         /** Point mass function (p.m.f.) of the distribution. */
-        probability_type pmf(value_type k) const noexcept
+        probability_type pmf(value_type k, probability_type scale = 1) const noexcept
         {
-            return k ? this->m_probability_of_success : this->m_cache_probability_of_failure;
+            return k ?
+                (scale * this->m_probability_of_success) :
+                (scale - scale * this->m_probability_of_success);
         } // pmf(...)
+
+        /** Support of the distribution. */
+        std::vector<value_type> support() const noexcept
+        {
+            return {false, true};
+        } // support(...)
 
         /** Checks if the two distributions are the same. */
         bool operator ==(const type& other) const noexcept

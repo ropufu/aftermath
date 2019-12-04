@@ -82,6 +82,7 @@
         "locale": "cpp",
         "xlocbuf": "cpp",
         "xlocmes": "cpp",
-        "optional": "cpp"
+        "optional": "cpp",
+        "concepts": "cpp"
     }
 }

@@ -16,7 +16,10 @@
 #include "probability/normal_distribution.hpp"
 #include "probability/standard_exponential_distribution.hpp"
 #include "probability/standard_normal_distribution.hpp"
+#include "random/bernoulli_sampler.hpp"
+#include "random/binomial_sampler.hpp"
 #include "random/normal_sampler_512.hpp"
+#include "random/uniform_int_sampler.hpp"
 #include "ropufu/enum_array.hpp"
 
 //#include "random_engines.hpp"
@@ -30,6 +33,7 @@ REGISTER_REPORTER("benchmark", 1, ropufu::aftermath::tests::benchmark_reporter);
 int main(int argc, char** argv, char** /*envp*/)
 {
     doctest::Context context {};
+    std::cout << "For benchmarks launch with --reporters=bench" << std::endl;
     try
     {
         context.applyCommandLine(argc, argv);

@@ -24,8 +24,9 @@ namespace ropufu::aftermath::random
         using expectation_type = typename distribution_type::expectation_type;
         using uniform_type = typename t_engine_type::result_type;
 
+        using result_type = value_type;
         static constexpr std::size_t n_boxes = t_n_boxes;
-        static constexpr uniform_type diameter = engine_type::max() - engine_type::min();
+        static constexpr uniform_type engine_diameter = engine_type::max() - engine_type::min();
 
         static constexpr bool has_left_tail = aftermath::probability::has_left_tail_v<distribution_type>;
         static constexpr bool has_right_tail = aftermath::probability::has_right_tail_v<distribution_type>;
@@ -79,6 +80,7 @@ namespace ropufu::aftermath::random
 
         const distribution_type& distribution() const noexcept { return this->m_distribution; }
 
+        /** @todo Think about inequalities (strict vs. non-strict) in the \c u2 comparisons. */
         value_type sample(engine_type& uniform_generator) noexcept
         {
             constexpr uniform_type layer_mask = static_cast<uniform_type>(n_boxes - 1);
@@ -97,7 +99,7 @@ namespace ropufu::aftermath::random
                     } // if constexpr (...)
                     if constexpr (type::has_right_tail)
                     {
-                        if (u2 >= derived_type::upscaled_high_probabilities[0]) return this->sample_right_tail(uniform_generator);
+                        if (u2 > derived_type::upscaled_high_probabilities[0]) return this->sample_right_tail(uniform_generator);
                     } // if constexpr (...)
                     return derived_type::layer_left_endpoints[0] + u2 * derived_type::downscaled_layer_widths[0];
                 } // if (...)
@@ -107,7 +109,7 @@ namespace ropufu::aftermath::random
                     bool is_interior = true;
                     if constexpr (type::has_left_tail)
                     {
-                        if (u2 < derived_type::upscaled_low_probabilities[layer_index]) is_interior = false;
+                        if (u2 <= derived_type::upscaled_low_probabilities[layer_index]) is_interior = false;
                     } // if constexpr (...)
                     if constexpr (type::has_right_tail)
                     {

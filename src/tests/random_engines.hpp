@@ -2,6 +2,8 @@
 #ifndef ROPUFU_AFTERMATH_TESTS_RANDOM_ENGINES_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_TESTS_RANDOM_ENGINES_HPP_INCLUDED
 
+#include "../ropufu/math_constants.hpp"
+
 #include <cstddef>  // std::size_t
 #include <iostream> // std::cout, std::endl
 #include <random>   // ...
@@ -10,7 +12,7 @@
 namespace ropufu::aftermath::tests
 {
     template <typename t_engine_type>
-    std::size_t diameter() { return static_cast<std::size_t>(t_engine_type::max() - t_engine_type::min()); }
+    std::size_t diameter_of() { return static_cast<std::size_t>(t_engine_type::max() - t_engine_type::min()); }
 
     static void print_random_engine_diameters() noexcept
     {
@@ -28,15 +30,15 @@ namespace ropufu::aftermath::tests
 
         std::set<std::size_t> diameters {};
 
-        diameters.insert(diameter<std::mt19937>());
-        diameters.insert(diameter<std::mt19937_64>());
-        diameters.insert(diameter<std::minstd_rand>());
-        diameters.insert(diameter<std::minstd_rand0>());
-        diameters.insert(diameter<std::ranlux24_base>());
-        diameters.insert(diameter<std::ranlux48_base>());
-        diameters.insert(diameter<std::ranlux24>());
-        diameters.insert(diameter<std::ranlux48>());
-        diameters.insert(diameter<std::knuth_b>());
+        diameters.insert(diameter_of<std::mt19937>());
+        diameters.insert(diameter_of<std::mt19937_64>());
+        diameters.insert(diameter_of<std::minstd_rand>());
+        diameters.insert(diameter_of<std::minstd_rand0>());
+        diameters.insert(diameter_of<std::ranlux24_base>());
+        diameters.insert(diameter_of<std::ranlux48_base>());
+        diameters.insert(diameter_of<std::ranlux24>());
+        diameters.insert(diameter_of<std::ranlux48>());
+        diameters.insert(diameter_of<std::knuth_b>());
 
         std::cout << std::endl << "Diameters:" << std::endl;
         for (const std::size_t& x : diameters)

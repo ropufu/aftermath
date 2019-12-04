@@ -10,6 +10,7 @@
 #include "probability/normal_distribution.hpp"
 #include "probability/standard_exponential_distribution.hpp"
 #include "probability/standard_normal_distribution.hpp"
+#include "probability/uniform_int_distribution.hpp"
 
 #include "probability/empirical_measure.hpp"
 

@@ -5,7 +5,7 @@
 #include "../number_traits.hpp"
 #include "distribution_traits.hpp"
 
-#include <cmath>       // std::sqrt, std::pow
+#include <cmath>       // std::sqrt
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <limits>      // std::numeric_limits
@@ -44,11 +44,6 @@ namespace ropufu::aftermath::probability
     private:
         value_type m_number_of_trials = 1;
         probability_type m_probability_of_success = 0;
-        // ~~ Cached values ~~
-        probability_type m_cache_probability_of_failure = 1;
-        expectation_type m_cache_expected_value = 0;
-        expectation_type m_cache_standard_deviation = 0;
-        expectation_type m_cache_variance = 0;
 
         static constexpr void traits_check() noexcept
         {
@@ -69,16 +64,6 @@ namespace ropufu::aftermath::probability
                 throw std::logic_error("Probability must be a finite number between 0 and 1.");
         } // validate(...)
 
-        void cahce() noexcept
-        {
-            expectation_type p = static_cast<expectation_type>(this->m_probability_of_success);
-
-            this->m_cache_probability_of_failure = 1 - this->m_probability_of_success;
-            this->m_cache_expected_value = static_cast<expectation_type>(this->m_number_of_trials * p);
-            this->m_cache_variance = static_cast<expectation_type>(this->m_number_of_trials * p * (1 - p));
-            this->m_cache_standard_deviation = std::sqrt(this->m_cache_variance);
-        } // cahce(...)
-
     public:
         /** Trivial case with one trial that always fails. */
         binomial_distribution() noexcept { type::traits_check(); }
@@ -91,15 +76,12 @@ namespace ropufu::aftermath::probability
 
         /** @brief Constructs a binomial distribution from the number of trials and probability of success.
          *  @exception std::logic_error \p probability_of_success is not inside the interval [0, 1].
-         *  @param ec Set to std::errc::invalid_argument if \p number_of_trials is negative.
          */
         explicit binomial_distribution(value_type number_of_trials, probability_type probability_of_success)
             : m_number_of_trials(number_of_trials), m_probability_of_success(probability_of_success)
         {
             type::traits_check();
-
             this->validate();
-            this->cahce();
         } // binomial_distribution(...)
 
         /** Converts the distribution to its standard built-in counterpart. */
@@ -119,19 +101,33 @@ namespace ropufu::aftermath::probability
         /** Probability of success. */
         probability_type probability_of_success() const noexcept { return this->m_probability_of_success; }
         /** Probability of failure. */
-        probability_type probability_of_failure() const noexcept { return this->m_cache_probability_of_failure; }
+        probability_type probability_of_failure() const noexcept { return (1 - this->m_probability_of_success); }
 
         /** Expected value of the distribution. */
-        expectation_type expected_value() const noexcept { return this->m_cache_expected_value; }
+        expectation_type expected_value() const noexcept
+        {
+            expectation_type n = static_cast<expectation_type>(this->m_number_of_trials);
+            expectation_type p = static_cast<expectation_type>(this->m_probability_of_success);
+            return n * p;
+        } // expected_value(...)
         /** Variance of the distribution. */
-        expectation_type variance() const noexcept { return this->m_cache_variance; }
+        expectation_type variance() const noexcept
+        {
+            expectation_type n = static_cast<expectation_type>(this->m_number_of_trials);
+            expectation_type p = static_cast<expectation_type>(this->m_probability_of_success);
+            return n * p * (1 - p);
+        } // variance(...)
         /** Standard deviation of the distribution. */
-        expectation_type standard_deviation() const noexcept { return this->m_cache_standard_deviation; }
+        expectation_type standard_deviation() const noexcept { return std::sqrt(this->variance()); }
 
         /** Expected value of the distribution. */
         expectation_type mean() const noexcept { return this->expected_value(); }
         /** Standard deviation of the distribution. */
         expectation_type stddev() const noexcept { return this->standard_deviation(); }
+        /** Smallest value in the distribution. */
+        constexpr value_type min() const noexcept { return 0; }
+        /** Largest value in the distribution. */
+        value_type max() const noexcept { return this->m_number_of_trials; }
 
         /** Cumulative distribution function (c.d.f.) of the distribution. */
         probability_type cdf(value_type k) const noexcept
@@ -144,10 +140,10 @@ namespace ropufu::aftermath::probability
         } // cdf(...)
 
         /** Point mass function (p.m.f.) of the distribution. */
-        probability_type pmf(value_type k) const noexcept
+        probability_type pmf(value_type k, probability_type scale = 1) const noexcept
         {
             expectation_type p = static_cast<expectation_type>(this->m_probability_of_success);
-            expectation_type q = static_cast<expectation_type>(this->m_cache_probability_of_failure);
+            expectation_type q = 1 - p;
             value_type n = this->m_number_of_trials;
 
             if (k > n || k < 0) return 0;
@@ -157,13 +153,24 @@ namespace ropufu::aftermath::probability
                 std::swap(p, q);
             } // if (...)
             if (q == 0) return 0;
+            value_type m = n - 2 * k;
 
-            expectation_type result = 1;
-            expectation_type r = p / q;
-            value_type numerator = n - k;
-            for (value_type i = 1; i <= k; ++i) result *= (r * static_cast<expectation_type>(++numerator)) / i;
-            return static_cast<probability_type>(result * std::pow(q, n));
+            expectation_type result = static_cast<expectation_type>(scale);
+            expectation_type v = p * q;
+            expectation_type numerator = static_cast<expectation_type>(n - k);
+            for (expectation_type i = 1; i <= k; ++i) result *= (++numerator) * v / i;
+            for (value_type j = 0; j < m; ++j) result *= q;
+            return static_cast<probability_type>(result);
         } // pmf(...)
+
+        /** Support of the distribution. */
+        std::vector<value_type> support() const
+        {
+            std::vector<value_type> result {};
+            result.reserve(static_cast<std::size_t>(this->m_number_of_trials) + 1);
+            for (value_type k = 0; k <= this->m_number_of_trials; ++k) result.push_back(k);
+            return result;
+        } // support(...)
 
         /** Checks if the two distributions are the same. */
         bool operator ==(const type& other) const noexcept

@@ -415,10 +415,11 @@ namespace ropufu::aftermath::probability
 
             if constexpr (type_traits::has_left_shift_binary_v<decltype(os), key_type>)
             {
-                if constexpr (type_traits::is_one_by_one_iterable_v<t_key_type>)
+                // @todo Replace with is_integral_v check: floating point increments might result in unexpected behavior.
+                if constexpr (type_traits::is_one_by_one_iterable_v<key_type>)
                 {
-                    constexpr std::size_t min_height = 5;
-                    constexpr std::size_t max_height = 5;
+                    constexpr std::size_t min_height = 1;
+                    constexpr std::size_t max_height = 25;
 
                     probability_type scale = self.max_probability();
                     for (key_type key = self.min(); key <= self.max(); ++key)

@@ -17,32 +17,6 @@
 #include <set>        // std::multiset
 #include <stdexcept>  // std::logic_error
 
-namespace ropufu::aftermath::tests
-{
-    template <typename t_engine_type, typename t_sampler_type>
-    void timing_vs_builtin(std::size_t sample_size, double& aftermath_ms, double& builtin_ms) noexcept
-    {
-        using distribution_type = typename t_sampler_type::distribution_type;
-
-        t_engine_type engine {};
-        ropufu::aftermath::tests::seed(engine);
-
-        aftermath_ms = ropufu::aftermath::tests::benchmark(
-            [&engine, sample_size] () {
-                long double sum = 0;
-                t_sampler_type sampler {};
-                for (std::size_t k = 0; k < sample_size; ++k) sum += sampler(engine);
-            });
-
-        builtin_ms = ropufu::aftermath::tests::benchmark(
-            [&engine, sample_size] () {
-                long double sum = 0;
-                typename distribution_type::std_type distribution {};
-                for (std::size_t k = 0; k < sample_size; ++k) sum += distribution(engine);
-            });
-    } // timing_vs_builtin(...)
-} // namespace ropufu::aftermath::tests
-
 #define ROPUFU_AFTERMATH_TESTS_RANDOM_NORMAL_SAMPLER_512_ALL_TYPES                                 \
     ropufu::aftermath::tests::engine_distribution_tuple<std::ranlux24, float, float, float>,       \
     ropufu::aftermath::tests::engine_distribution_tuple<std::ranlux24, float, float, double>,      \
@@ -75,11 +49,14 @@ TEST_CASE_TEMPLATE("testing (randomized) normal_sampler_512 Anderson-Darling", t
     using sampler_type = ropufu::aftermath::random::normal_sampler_512<engine_type, value_type, probability_type, expectation_type>;
     using distribution_type = typename sampler_type::distribution_type;
 
+    std::string engine_name = tested_t::engine_name();
+    CAPTURE(engine_name);
+
     engine_type engine {};
     ropufu::aftermath::tests::seed(engine);
 
-    sampler_type sampler {};
     distribution_type distribution {};
+    sampler_type sampler { distribution };
 
     double count_reps = 16;
     double count_bad = 0;
@@ -114,28 +91,39 @@ TEST_CASE_TEMPLATE("testing (randomized) normal_sampler_512 Anderson-Darling", t
         if (a >= significance_0_01_threshold) ++count_bad;
     } // for (...) 
 
-     CHECK(count_bad / count_reps < doctest::Approx(chance_of_failure_0_01));
+    CHECK(count_bad / count_reps < doctest::Approx(chance_of_failure_0_01));
 } // TEST_CASE_TEMPLATE(...)
 
 TEST_SUITE("Benchmarks")
 {
-    TEST_CASE_TEMPLATE("benchmarking (randomized) normal_sampler_512 vs STL", tested_t, ROPUFU_AFTERMATH_TESTS_RANDOM_NORMAL_SAMPLER_512_ALL_TYPES)
+    TEST_CASE_TEMPLATE("normal_sampler_512 vs STL", tested_t, ROPUFU_AFTERMATH_TESTS_RANDOM_NORMAL_SAMPLER_512_ALL_TYPES)
     {
         using engine_type = typename tested_t::engine_type;
         using value_type = typename tested_t::value_type;
         using probability_type = typename tested_t::probability_type;
         using expectation_type = typename tested_t::expectation_type;
         using sampler_type = ropufu::aftermath::random::normal_sampler_512<engine_type, value_type, probability_type, expectation_type>;
+        using distribution_type = typename sampler_type::distribution_type;
+        using builtin_sampler_type = typename distribution_type::std_type;
         
         if (!ropufu::aftermath::tests::g_do_benchmarks) return;
 
-        constexpr std::size_t sample_size = 1'048'576;
+        std::string engine_name = tested_t::engine_name();
+        CAPTURE(engine_name);
 
-        double aftermath_ms = std::numeric_limits<double>::infinity();
-        double builtin_ms = std::numeric_limits<double>::infinity();
-        ropufu::aftermath::tests::timing_vs_builtin<engine_type, sampler_type>(sample_size, aftermath_ms, builtin_ms);
+        engine_type engine {};
+        ropufu::aftermath::tests::seed(engine);
 
-        BENCH_COMPARE_TIMING(aftermath_ms, builtin_ms);
+        distribution_type distribution {};
+        sampler_type sampler { distribution };
+        builtin_sampler_type builtin_sampler = distribution.to_std();
+
+        constexpr std::size_t sample_size = 10'000'000 / ropufu::aftermath::tests::template engine_slowdown_factor<engine_type>(5);
+
+        double seconds_fast = ropufu::aftermath::tests::sample_timing(sample_size, engine, sampler);
+        double seconds_slow = ropufu::aftermath::tests::sample_timing(sample_size, engine, builtin_sampler);
+
+        BENCH_COMPARE_TIMING(engine_name, "aftermath", "builtin", seconds_fast, seconds_slow);
     } // TEST_CASE_TEMPLATE(...)
 } // TEST_SUITE(..)
 
