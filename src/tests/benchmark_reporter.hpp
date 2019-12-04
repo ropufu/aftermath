@@ -99,6 +99,8 @@ namespace ropufu::aftermath::tests
         } // log_message(...)
 
         void test_case_skipped(const doctest::TestCaseData& /*in*/) override { }
+        
+        void test_case_reenter(const doctest::TestCaseData& /*in*/) override { }
     }; // struct benchmark_reporter
 } // namespace ropufu::aftermath::tests
 
