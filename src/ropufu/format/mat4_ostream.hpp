@@ -37,17 +37,18 @@ namespace ropufu::aftermath::format
         /** @brief Writes the matrix \p mat to \p filestream.
          *  @return Number of bytes written.
          */
-        template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
+        template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
         std::size_t write_to(std::ofstream& filestream,
-            const aftermath::algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>& mat) noexcept
+            const aftermath::algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>& mat) noexcept
         {
             using data_type = t_value_type;
-                
+
             std::size_t height = mat.height();
             std::size_t width = mat.width();
             std::size_t count = height * width;
             if (count == 0) return 0;
 
+            arrangement_type arrangement { height, width };
             std::size_t first_position = filestream.tellp();
             std::size_t last_position = first_position + (count - 1) * sizeof(data_type);
 
@@ -62,7 +63,7 @@ namespace ropufu::aftermath::format
             {
                 std::size_t column_index = 0;
                 std::size_t row_index = 0;
-                arrangement_type::reconstruct(blocks_processed, height, width, row_index, column_index);
+                arrangement.reconstruct(blocks_processed, row_index, column_index);
 
                 current_value = mat(row_index, column_index);
                 filestream.write(reinterpret_cast<const char*>(&current_value), sizeof(data_type));
@@ -106,8 +107,8 @@ namespace ropufu::aftermath::format
         } // operator <<(...)
 
         /** @brief Writes the matrix \p mat to the end of the .mat file. */
-        template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
-        type& operator <<(const aftermath::algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>& mat)
+        template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
+        type& operator <<(const aftermath::algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>& mat)
         {
             if (this->fail()) return *this;
             
@@ -116,8 +117,8 @@ namespace ropufu::aftermath::format
         } // operator <<(...)
 
         /** @brief Writes the matrix \p mat to the end of the .mat file. */
-        template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
-        void write(const std::string& variable_name, const aftermath::algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>& mat)
+        template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
+        void write(const std::string& variable_name, const aftermath::algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>& mat)
         {
             if (this->fail()) return;
 

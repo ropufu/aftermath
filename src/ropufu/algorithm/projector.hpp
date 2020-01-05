@@ -157,22 +157,23 @@ namespace ropufu::aftermath::algorithm
         }; // struct inequality_comparer
     } // namespace detail
 
-    template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
+    template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
     struct matrix_projector;
 
     template <typename t_matrix_type>
     using matrix_projector_t = matrix_projector<typename t_matrix_type::value_type,
-        typename t_matrix_type::arrangement_type,
-        typename t_matrix_type::allocator_type>;
+        typename t_matrix_type::allocator_type,
+        typename t_matrix_type::arrangement_type>;
 
-    template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
+    template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
     struct matrix_projector : public projector<
-        matrix_projector<t_value_type, t_arrangement_type, t_allocator_type>,
-        algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>,
-        typename algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>::size_type>
+        matrix_projector<t_value_type, t_allocator_type, t_arrangement_type>,
+        algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>,
+        typename algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>::size_type>
     {
-        using type = matrix_projector<t_value_type, t_arrangement_type, t_allocator_type>;
-        using surface_type = algebra::matrix<bool, t_arrangement_type, t_allocator_type>;
+        using type = matrix_projector<t_value_type, t_allocator_type, t_arrangement_type>;
+        /** @todo Consider using \c algebra::matrix_mask instead. */
+        using surface_type = algebra::matrix<bool, t_allocator_type, t_arrangement_type>;
         using cost_type = typename surface_type::size_type;
 
         using base_type = projector<type, surface_type, cost_type>;
@@ -254,11 +255,11 @@ namespace ropufu::aftermath::algorithm
         void set_blocked_indicator(const value_type& value) noexcept { this->m_blocked_indicator = value; }
     }; // struct matrix_projector
 
-    template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
+    template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
     static auto make_matrix_projector(
-        const algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>& surface,
+        const algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>& surface,
         const t_value_type& blocked_indicator = {}) noexcept
-        -> matrix_projector<t_value_type, t_arrangement_type, t_allocator_type>
+        -> matrix_projector<t_value_type, t_allocator_type, t_arrangement_type>
     {
         return {blocked_indicator, surface};
     } // make_matrix_projector(...)

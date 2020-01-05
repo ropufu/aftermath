@@ -38,9 +38,9 @@ namespace ropufu::aftermath::format
         /** @brief Reads the matrix \p mat from \p filestream.
          *  @return Number of bytes read.
          */
-        template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
+        template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
         std::size_t read_from(std::ifstream& filestream,
-            aftermath::algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>& mat) noexcept
+            aftermath::algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>& mat) noexcept
         {
             using data_type = t_value_type;
 
@@ -49,12 +49,13 @@ namespace ropufu::aftermath::format
             std::size_t count = height * width;
             if (count == 0) return 0;
 
+            arrangement_type arrangement { height, width };
             data_type current_value = 0;
             for (std::size_t blocks_processed = 0; blocks_processed < count; ++blocks_processed)
             {
                 std::size_t column_index = 0;
                 std::size_t row_index = 0;
-                arrangement_type::reconstruct(blocks_processed, height, width, row_index, column_index);
+                arrangement.reconstruct(blocks_processed, row_index, column_index);
                 
                 filestream.read(reinterpret_cast<char*>(&current_value), sizeof(data_type));
                 if (filestream.fail())
@@ -145,8 +146,8 @@ namespace ropufu::aftermath::format
         } // operator >>(...)
 
         /** @brief Writes the matrix \p mat to the end of the .mat file. */
-        template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
-        type& operator >>(aftermath::algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>& mat)
+        template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
+        type& operator >>(aftermath::algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>& mat)
         {
             if (this->fail()) return *this;
             
@@ -156,11 +157,11 @@ namespace ropufu::aftermath::format
         } // operator >>(...)
 
         /** @brief Reads a matrix from the current position file and stores it in \p mat. */
-        template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
-        void read(std::string& variable_name, aftermath::algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>& mat) noexcept
+        template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
+        void read(std::string& variable_name, aftermath::algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>& mat) noexcept
         {
             using data_type = t_value_type;
-            using matrix_type = aftermath::algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>;
+            using matrix_type = aftermath::algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>;
 
             if (this->fail()) return;
 

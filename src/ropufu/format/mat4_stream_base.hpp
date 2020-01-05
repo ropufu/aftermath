@@ -42,7 +42,7 @@ namespace ropufu::aftermath::format
     {
         using type = mat4_stream_base;
         using header_type = mat4_header;
-        using arrangement_type = aftermath::algebra::detail::column_major<std::size_t>;
+        using arrangement_type = aftermath::algebra::column_major<std::size_t>;
         
         static constexpr std::int32_t mat_level = 4;
 

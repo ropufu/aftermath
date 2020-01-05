@@ -2,268 +2,236 @@
 #ifndef ROPUFU_AFTERMATH_ALGEBRA_MATRIX_ARRANGEMENT_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_ALGEBRA_MATRIX_ARRANGEMENT_HPP_INCLUDED
 
-#include <algorithm>   // std::copy
-#include <cstddef>     // std::size_t
-#include <cstring>     // std::memcpy
-#include <iterator>    // std::cbegin, std::cend
-#include <stdexcept>   // std::logic_error
+#include "iterator_stride.hpp"
+#include "matrix_slice.hpp"
+
+#include <cstddef> // std::size_t, std::ptrdiff_t
 #include <type_traits> // ...
+#include <utility>     // std::move
 
 namespace ropufu::aftermath::algebra
 {
     namespace detail
     {
-        template <typename t_derived_type, typename t_value_type>
-        struct matrix_slice_copy_module
+        /** @brief Describes how a matrix is stored in memory. */
+        template <typename t_derived_type, typename t_size_type,
+            typename t_row_stride_type,
+            typename t_column_stride_type,
+            typename t_diagonal_stride_type>
+        struct matrix_arrangement_core
         {
-            void copy(t_value_type* destination) const
-            {
-                const t_derived_type& self = static_cast<const t_derived_type&>(*this);
-                if constexpr (!std::is_trivially_copyable_v<t_value_type>) std::copy(self.begin(), self.end(), destination);
-                else
-                {
-                    if (self.contiguous()) std::memcpy(destination, self.m_begin_ptr, static_cast<std::size_t>(self.m_count) * sizeof(t_value_type));
-                    else std::copy(self.begin(), self.end(), destination);
-                } // if constexpr (...)
-            } // copy(...)
-
-            template <typename t_container_type>
-            void copy(t_container_type& destination) const
-            {
-                const t_derived_type& self = static_cast<const t_derived_type&>(*this);
-                std::copy(self.begin(), self.end(), destination.begin());
-            } // copy(...)
-        }; // struct matrix_slice_copy_module
-        
-        template <typename t_derived_type, typename t_value_type>
-        struct matrix_slice_paste_module
-        {
-            void paste(const t_value_type* source, std::size_t count)
-            {
-                const t_derived_type& self = static_cast<const t_derived_type&>(*this);
-                if constexpr (!std::is_trivially_copyable_v<t_value_type>) std::copy(std::cbegin(source), std::cend(source), self.begin());
-                else
-                {
-                    if (self.contiguous()) std::memcpy(self.m_begin_ptr, source, count * sizeof(t_value_type));
-                    else std::copy(std::cbegin(source), std::cend(source), self.begin());
-                } // if constexpr (...)
-            } // paste(...)
-
-            template <typename t_container_type>
-            void paste(const t_container_type& source)
-            {
-                const t_derived_type& self = static_cast<const t_derived_type&>(*this);
-                std::copy(source.begin(), source.end(), self.begin());
-            } // paste(...)
-        }; // struct matrix_slice_paste_module
-
-        template <typename t_value_type, typename t_size_type, bool t_is_const>
-        struct matrix_slice_iterator
-        {
-            using type = matrix_slice_iterator<t_value_type, t_size_type, t_is_const>;
+            using derived_type = t_derived_type;
             using size_type = t_size_type;
-            using pointer_type = std::conditional_t<t_is_const, const t_value_type*, t_value_type*>;
-            using iterator_result_type = std::conditional_t<t_is_const, const t_value_type&, t_value_type&>;
-            using const_iterator_result_type = const t_value_type&;
+            using row_stride_type = t_row_stride_type;
+            using column_stride_type = t_column_stride_type;
+            using diagonal_stride_type = t_diagonal_stride_type;
 
-        private:
-            pointer_type m_current_ptr = nullptr;
-            size_type m_stride = 0;
+            using signed_size_type = std::make_signed_t<size_type>;
+
+        protected:
+            size_type m_height = 0;
+            size_type m_width = 0;
 
         public:
-            matrix_slice_iterator(pointer_type current_ptr, size_type stride) noexcept : m_current_ptr(current_ptr), m_stride(stride) { }
+            constexpr matrix_arrangement_core() noexcept { }
 
-            /** Inequality operator, used as termination condition. */
-            bool operator !=(const type& other) const noexcept { return this->m_current_ptr != other.m_current_ptr; }
-            /** Equality operator. */
-            bool operator ==(const type& other) const noexcept { return this->m_current_ptr == other.m_current_ptr; }
-
-            /** Returns the value at current position. */
-            const_iterator_result_type operator *() const noexcept { return *this->m_current_ptr; }
-            /** Returns the value at current position. */
-            iterator_result_type operator *() noexcept { return *this->m_current_ptr; }
-
-            /** Move to the next element. No boundary checks are performed! */
-            type& operator ++() noexcept
+            constexpr matrix_arrangement_core(size_type height, size_type width) noexcept
+                : m_height(height), m_width(width)
             {
-                this->m_current_ptr += this->m_stride;
-                return *this;
-            } // operator ++(...)
-        }; // struct matrix_slice_iterator
-        
-        template <typename t_value_type, typename t_size_type>
-        struct matrix_slice;
+            } // matrix_arrangement_core(...)
 
-        template <typename t_value_type, typename t_size_type>
-        struct const_matrix_slice : public matrix_slice_copy_module<const_matrix_slice<t_value_type, t_size_type>, t_value_type>
-        {
-            using type = const_matrix_slice<t_value_type, t_size_type>;
-            using size_type = t_size_type;
-            using pointer_type = const t_value_type*;
-            using const_iterator_type = matrix_slice_iterator<t_value_type, t_size_type, true>;
+            /** Height of the matrix. */
+            constexpr size_type height() const noexcept { return this->m_height; }
 
-            friend matrix_slice_copy_module<type, t_value_type>;
-            template <typename, typename> friend struct matrix_slice;
-
-        private:
-            pointer_type m_begin_ptr = nullptr;
-            pointer_type m_end_ptr = nullptr;
-            size_type m_stride = 0;
-            size_type m_count = 0;
-
-        public:
-            const_matrix_slice(pointer_type begin_ptr, pointer_type end_ptr, size_type stride, size_type count) noexcept : m_begin_ptr(begin_ptr), m_end_ptr(end_ptr), m_stride(stride), m_count(count) { }
-            const_matrix_slice(const type& other) = default;
-            const_matrix_slice(type&& other) = default;
-            type& operator =(const type& other) = delete;
-            type& operator =(type&& other) = delete;
-
-            size_type size() const noexcept { return this->m_count; }
-            bool contiguous() const noexcept { return this->m_stride == 1; }
-            
-            const_iterator_type cbegin() const noexcept { return const_iterator_type(this->m_begin_ptr, this->m_stride); }
-            const_iterator_type cend() const noexcept { return const_iterator_type(this->m_end_ptr, this->m_stride); }
-
-            const_iterator_type begin() const noexcept { return const_iterator_type(this->m_begin_ptr, this->m_stride); }
-            const_iterator_type end() const noexcept { return const_iterator_type(this->m_end_ptr, this->m_stride); }
-        }; // struct const_matrix_slice
-        
-        template <typename t_value_type, typename t_size_type>
-        struct matrix_slice
-            : public matrix_slice_copy_module<const_matrix_slice<t_value_type, t_size_type>, t_value_type>,
-            public matrix_slice_paste_module<const_matrix_slice<t_value_type, t_size_type>, t_value_type>
-        {
-            using type = matrix_slice<t_value_type, t_size_type>;
-            using size_type = t_size_type;
-            using pointer_type = t_value_type*;
-            using iterator_type = matrix_slice_iterator<t_value_type, t_size_type, false>;
-            using const_iterator_type = matrix_slice_iterator<t_value_type, t_size_type, true>;
-
-            using const_type = const_matrix_slice<t_value_type, t_size_type>;
-            friend matrix_slice_copy_module<type, t_value_type>;
-            friend matrix_slice_paste_module<type, t_value_type>;
-
-        private:
-            pointer_type m_begin_ptr = nullptr;
-            pointer_type m_end_ptr = nullptr;
-            size_type m_stride = 0;
-            size_type m_count = 0;
-
-            template <typename t_other_type>
-            type& overwrite_with(const t_other_type& other) noexcept
+            /** Width of the matrix. */
+            constexpr size_type width() const noexcept { return this->m_width; }
+                
+            /** Number of elements in the matrix. */
+            constexpr size_type size() const noexcept { return this->m_height * this->m_width; }
+                
+            /** Smallest of the width and height of the matrix. */
+            constexpr size_type square_size() const noexcept
             {
-                iterator_type left_it = this->begin();
-                const_iterator_type right_it = other.cbegin();
-                for (size_type k = 0; k < this->m_count; ++k)
+                return this->m_height < this->m_width ? this->m_height : this->m_width;
+            } // square_size(...)
+
+            /** Checks if the matrix is empty. */
+            constexpr bool empty() const noexcept { return this->size() == 0; }
+
+            /** Checks if the matrix is a square matrix. */
+            constexpr bool square() const noexcept { return this->m_height == this->m_width; }
+
+            /** @brief Re-shape the matrix.
+             *  @remark The behavior of this operation may depend on \c arrangement_type of this matrix.
+             */
+            bool try_reshape(size_type height, size_type width) noexcept
+            {
+                if (height * width != this->size()) return false;
+                this->m_height = height;
+                this->m_width = width;
+                return true;
+            } // reshape(...)
+
+            template <typename t_value_ptr_type>
+            auto row_slice(size_type row_index, t_value_ptr_type begin_ptr) const
+                -> matrix_slice_t<t_value_ptr_type, row_stride_type>
+            {
+                if (row_index >= this->m_height) throw std::out_of_range("Row index must be less than the height of the matrix.");                
+                const derived_type* that = static_cast<const derived_type*>(this);
+
+                size_type first_index = that->flatten(row_index, 0);
+                size_type past_the_last_index = that->flatten(row_index, this->m_width);
+                row_stride_type stride = that->row_iterator_stride();
+                return { begin_ptr + first_index, begin_ptr + past_the_last_index, std::move(stride), this->m_width };
+            } // column_slice(...)
+
+            template <typename t_value_ptr_type>
+            auto column_slice(size_type column_index, t_value_ptr_type begin_ptr) const
+                -> matrix_slice_t<t_value_ptr_type, column_stride_type>
+            {
+                if (column_index >= this->m_width) throw std::out_of_range("Column index must be less than the width of the matrix.");
+                const derived_type* that = static_cast<const derived_type*>(this);
+
+                size_type first_index = that->flatten(0, column_index);
+                size_type past_the_last_index = that->flatten(this->m_height, column_index);
+                column_stride_type stride = that->column_iterator_stride();
+                return { begin_ptr + first_index, begin_ptr + past_the_last_index, std::move(stride), this->m_height };
+            } // column_slice(...)
+
+            template <typename t_value_ptr_type>
+            auto diagonal_slice(signed_size_type diagonal_index, t_value_ptr_type begin_ptr) const
+                -> matrix_slice_t<t_value_ptr_type, diagonal_stride_type>
+            {
+                size_type first_row_index = 0;
+                size_type first_column_index = 0;
+                size_type count = 0;
+                if (diagonal_index >= 0) // Upper triangle.
                 {
-                    (*left_it) = (*right_it);
-                    ++left_it;
-                    ++right_it;
-                } // for (...)
-                return *this;
-            } // overwrite(...)
+                    first_column_index = static_cast<size_type>(diagonal_index);
+                    count = this->m_width - first_column_index;
+                } // if (...)
+                else // Lower triangle.
+                {
+                    first_row_index = static_cast<size_type>(-diagonal_index);
+                    count = this->m_height - first_row_index;
+                } // else (...)
 
-        public:
-            matrix_slice(pointer_type begin_ptr, pointer_type end_ptr, size_type stride, size_type count) noexcept : m_begin_ptr(begin_ptr), m_end_ptr(end_ptr), m_stride(stride), m_count(count) { }
-            matrix_slice(const type& other) = default;
-            matrix_slice(type&& other) = default;
+                if (first_row_index > this->m_height) throw std::out_of_range("Diagonal index cannot be less than the negative height of the matrix.");
+                if (first_column_index > this->m_width) throw std::out_of_range("Diagonal index cannot be greater than the width of the matrix.");
+                const derived_type* that = static_cast<const derived_type*>(this);
 
-            /** Overwrites the matrix slice with values from \p other. */
-            type& operator =(const type& other)
-            {
-                if (this == &other) return *this; // Do nothing if this is self-assignment.
-                if (this->m_count != other.m_count) throw std::logic_error("Matrix slices incompatible.");
-                return this->overwrite_with(other);
-            } // operator =(...)
+                if (count > this->square_size()) count = this->square_size();
+                size_type first_index = that->flatten(first_row_index, first_column_index);
+                size_type past_the_last_index = that->flatten(first_row_index + count, first_column_index + count);
+                diagonal_stride_type stride = that->diagonal_iterator_stride();
+                return { begin_ptr + first_index, begin_ptr + past_the_last_index, std::move(stride), count };
+            } // column_slice(...)
+        }; // struct matrix_arrangement_core
+    } // namespace detail
 
-            /** Overwrites the matrix slice with values from \p other. */
-            type& operator =(const const_type& other)
-            {
-                if (this->m_count != other.m_count) throw std::logic_error("Matrix slices incompatible.");
-                return this->overwrite_with(other);
-            } // operator =(...)
-
-            size_type size() const noexcept { return this->m_count; }
-            bool contiguous() const noexcept { return this->m_stride == 1; }
-            
-            const_iterator_type cbegin() const noexcept { return const_iterator_type(this->m_begin_ptr, this->m_stride); }
-            const_iterator_type cend() const noexcept { return const_iterator_type(this->m_end_ptr, this->m_stride); }
-
-            const_iterator_type begin() const noexcept { return const_iterator_type(this->m_begin_ptr, this->m_stride); }
-            const_iterator_type end() const noexcept { return const_iterator_type(this->m_end_ptr, this->m_stride); }
-
-            iterator_type begin() noexcept { return iterator_type(this->m_begin_ptr, this->m_stride); }
-            iterator_type end() noexcept { return iterator_type(this->m_end_ptr, this->m_stride); }
-        }; // struct matrix_slice
-
-        /** @brief Describes how a matrix is stored in memory.
-          *  @example Consider the following matrix:
-          *      || a b c ||
-          *      || d e f ||
-          *    In row-major format it will be stored as (a b c d e f).
-          */
-        template <typename t_size_type = std::size_t>
-        struct row_major
-        {
-            using type = row_major<t_size_type>;
-            using size_type = t_size_type;
-            using signed_size_type = std::make_unsigned_t<t_size_type>;
-
-            /** Translates a 2-dimensional index into a 1-dimentional index. Does not perform range validation. */
-            static size_type flatten(size_type row_index, size_type column_index, size_type /*height*/, size_type width) noexcept
-            {
-                return row_index * width + column_index;
-            } // flatten(...)
-
-            /** Translates a 1-dimensional index into a 2-dimentional index. Does not perform range validation. */
-            static void reconstruct(size_type flat_index, size_type /*height*/, size_type width, size_type& row_index, size_type& column_index) noexcept
-            {
-                column_index = flat_index % width;
-                row_index = (flat_index - column_index) / width;
-            } // reconstruct(...)
-
-            /** Slice stride used when iterating over a given column. */
-            static size_type column_iterator_stride(size_type /*height*/, size_type width) noexcept { return width; }
-            /** Slice stride used when iterating over a given row. */
-            static constexpr size_type row_iterator_stride(size_type /*height*/, size_type /*width*/) noexcept { return 1; }
-            /** Slice stride used when iterating over a given diagonal. */
-            static size_type diagonal_iterator_stride(size_type /*height*/, size_type width) noexcept { return width + 1; }
-        }; // struct row_major
-
-        /** @brief Describes how a matrix is stored in memory.
+    /** @brief Describes how a matrix is stored in memory.
          *  @example Consider the following matrix:
          *      || a b c ||
          *      || d e f ||
-         *    In column-major format it will be stored as (a d b e c f).
+         *    In row-major format it will be stored as (a b c d e f).
          */
-        template <typename t_size_type = std::size_t>
-        struct column_major
+    template <typename t_size_type = std::size_t>
+    struct row_major : public detail::matrix_arrangement_core<row_major<t_size_type>, t_size_type,
+        detail::iterator_fixed_stride,
+        detail::iterator_fixed_stride,
+        detail::iterator_fixed_stride>
+    {
+        using type = row_major<t_size_type>;
+        using size_type = t_size_type;
+        
+        using row_stride_type = detail::iterator_fixed_stride;
+        using column_stride_type = detail::iterator_fixed_stride;
+        using diagonal_stride_type = detail::iterator_fixed_stride;
+
+        using base_type = detail::matrix_arrangement_core<type, size_type,
+            row_stride_type,
+            column_stride_type,
+            diagonal_stride_type>;
+
+        template <typename, typename, typename, typename, typename>
+        friend struct detail::matrix_arrangement_core;
+
+    protected:
+        /** Slice stride used when iterating over a given row. */
+        constexpr row_stride_type row_iterator_stride() const noexcept { return 1; }
+        /** Slice stride used when iterating over a given column. */
+        column_stride_type column_iterator_stride() const noexcept { return this->m_width; }
+        /** Slice stride used when iterating over a given diagonal. */
+        diagonal_stride_type diagonal_iterator_stride() const noexcept { return this->m_width + 1; }
+
+    public:
+        using base_type::matrix_arrangement_core; // Inherit constructors.
+
+        /** Translates a 2-dimensional index into a 1-dimentional index. Does not perform range validation. */
+        size_type flatten(size_type row_index, size_type column_index) const noexcept
         {
-            using type = column_major<t_size_type>;
-            using size_type = t_size_type;
-            using signed_size_type = std::make_unsigned_t<t_size_type>;
+            return row_index * this->m_width + column_index;
+        } // flatten(...)
 
-            /** Translates a 2-dimensional index into a 1-dimentional index. Does not perform range validation. */
-            static size_type flatten(size_type row_index, size_type column_index, size_type height, size_type /*width*/) noexcept
-            {
-                return column_index * height + row_index;
-            } // flatten(...)
+        /** Translates a 1-dimensional index into a 2-dimentional index. Does not perform range validation. */
+        void reconstruct(size_type flat_index, size_type& row_index, size_type& column_index) const noexcept
+        {
+            column_index = flat_index % this->m_width;
+            row_index = (flat_index - column_index) / this->m_width;
+        } // reconstruct(...)
+    }; // struct row_major
 
-            /** Translates a 1-dimensional index into a 2-dimentional index. Does not perform range validation. */
-            static void reconstruct(size_type flat_index, size_type height, size_type /*width*/, size_type& row_index, size_type& column_index) noexcept
-            {
-                row_index = flat_index % height;
-                column_index = (flat_index - row_index) / height;
-            } // reconstruct(...)
+    /** @brief Describes how a matrix is stored in memory.
+     *  @example Consider the following matrix:
+     *      || a b c ||
+     *      || d e f ||
+     *    In column-major format it will be stored as (a d b e c f).
+     */
+    template <typename t_size_type = std::size_t>
+    struct column_major : public detail::matrix_arrangement_core<column_major<t_size_type>, t_size_type,
+        detail::iterator_fixed_stride,
+        detail::iterator_fixed_stride,
+        detail::iterator_fixed_stride>
+    {
+        using type = column_major<t_size_type>;
+        using size_type = t_size_type;
+        
+        using row_stride_type = detail::iterator_fixed_stride;
+        using column_stride_type = detail::iterator_fixed_stride;
+        using diagonal_stride_type = detail::iterator_fixed_stride;
 
-            /** Slice stride used when iterating over a given column. */
-            static constexpr size_type column_iterator_stride(size_type /*height*/, size_type /*width*/) noexcept { return 1; }
-            /** Slice stride used when iterating over a given row. */
-            static size_type row_iterator_stride(size_type height, size_type /*width*/) noexcept { return height; }
-            /** Slice stride used when iterating over a given diagonal. */
-            static size_type diagonal_iterator_stride(size_type height, size_type /*width*/) noexcept { return height + 1; }
-        }; // struct column_major
-    } // namespace detail
+        using base_type = detail::matrix_arrangement_core<type, size_type,
+            row_stride_type,
+            column_stride_type,
+            diagonal_stride_type>;
+
+        template <typename, typename, typename, typename, typename>
+        friend struct detail::matrix_arrangement_core;
+
+    protected:
+        /** Slice stride used when iterating over a given row. */
+        row_stride_type row_iterator_stride() const noexcept { return this->m_height; }
+        /** Slice stride used when iterating over a given column. */
+        constexpr column_stride_type column_iterator_stride() const noexcept { return 1; }
+        /** Slice stride used when iterating over a given diagonal. */
+        diagonal_stride_type diagonal_iterator_stride() const noexcept { return this->m_height + 1; }
+
+    public:
+        using base_type::matrix_arrangement_core; // Inherit constructors.
+
+        /** Translates a 2-dimensional index into a 1-dimentional index. Does not perform range validation. */
+        size_type flatten(size_type row_index, size_type column_index) const noexcept
+        {
+            return column_index * this->m_height + row_index;
+        } // flatten(...)
+
+        /** Translates a 1-dimensional index into a 2-dimentional index. Does not perform range validation. */
+        void reconstruct(size_type flat_index, size_type& row_index, size_type& column_index) const noexcept
+        {
+            row_index = flat_index % this->m_height;
+            column_index = (flat_index - row_index) / this->m_height;
+        } // reconstruct(...)
+    }; // struct column_major
 } // namespace ropufu::aftermath::algebra
 
 #endif // ROPUFU_AFTERMATH_ALGEBRA_MATRIX_ARRANGEMENT_HPP_INCLUDED

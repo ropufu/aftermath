@@ -83,6 +83,10 @@
         "xlocbuf": "cpp",
         "xlocmes": "cpp",
         "optional": "cpp",
-        "concepts": "cpp"
+        "concepts": "cpp",
+        "bit": "cpp",
+        "codecvt": "cpp",
+        "condition_variable": "cpp",
+        "memory_resource": "cpp"
     }
 }

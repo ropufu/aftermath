@@ -206,10 +206,10 @@ namespace ropufu::aftermath::format
         } // write(...)
 
         /** Initializes the header for a given matrix. */
-        template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
+        template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
         void initialize(
             const std::string& variable_name,
-            const aftermath::algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>& mat,
+            const aftermath::algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>& mat,
             mat4_data_format data_format = mat4_data_format::ieee_little_endian, 
             mat4_matrix_type_id matrix_type_id = mat4_matrix_type_id::full) noexcept
         {

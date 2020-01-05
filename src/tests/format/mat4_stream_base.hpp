@@ -19,8 +19,8 @@
 
 namespace ropufu::aftermath::tests
 {
-    template <typename t_value_type, typename t_arrangement_type, typename t_allocator_type>
-    void randomize_matrix(aftermath::algebra::matrix<t_value_type, t_arrangement_type, t_allocator_type>& mat) noexcept
+    template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
+    void randomize_matrix(aftermath::algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>& mat) noexcept
     {
         std::mt19937 engine {};
         ropufu::aftermath::tests::seed(engine);

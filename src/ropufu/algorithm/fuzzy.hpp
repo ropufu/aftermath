@@ -13,7 +13,7 @@
 #include <string>       // std::string, std::to_string
 #include <system_error> // std::error_code, std::errc, std::make_error_code
 #include <type_traits>  // std::is_floating_point_v
-#include <utility>      // std::forward
+#include <utility>      // std::move
 
 namespace ropufu::aftermath::algorithm
 {
@@ -169,7 +169,7 @@ namespace ropufu::aftermath::algorithm
 
     public:
         /*implicit*/ fuzzy(function_type&& noisy_function) noexcept
-            : m_noisy_function(std::forward<function_type>(noisy_function))
+            : m_noisy_function(std::move(noisy_function))
         {
             type::traits_check();
         } // fuzzy(...)

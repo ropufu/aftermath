@@ -13,6 +13,7 @@
 #include "format/mat4_stream_base.hpp"
 #include "probability/empirical_measure.hpp"
 #include "probability/exponential_distribution.hpp"
+#include "probability/moment_statistic.hpp"
 #include "probability/normal_distribution.hpp"
 #include "probability/standard_exponential_distribution.hpp"
 #include "probability/standard_normal_distribution.hpp"
@@ -21,6 +22,8 @@
 #include "random/normal_sampler_512.hpp"
 #include "random/uniform_int_sampler.hpp"
 #include "ropufu/enum_array.hpp"
+#include "ropufu/simple_vector.hpp"
+#include "ropufu/sliding_array.hpp"
 
 //#include "random_engines.hpp"
 
