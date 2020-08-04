@@ -7,9 +7,9 @@
 
 #include "projector.hpp"
 
+#include <concepts>     // std::derived_from
 #include <cstddef>      // std::size_t
 #include <system_error> // std::error_code, std::errc
-#include <type_traits>  // std::is_base_of_v
 #include <map>          // std::multimap
 #include <stdexcept>    // std::out_of_range
 #include <system_error> // std::error_code, std::errc
@@ -34,9 +34,11 @@ namespace ropufu::aftermath::algorithm
     } // namespace detail
 
     template <typename t_projector_type>
+        requires std::derived_from<t_projector_type, projector_t<t_projector_type>>
     struct pathfinder;
 
     template <typename t_projector_type>
+        requires std::derived_from<t_projector_type, projector_t<t_projector_type>>
     static void trace(const algebra::matrix_index<std::size_t>& from, const algebra::matrix_index<std::size_t>& to,
         const t_projector_type& projector,
         std::vector<algebra::matrix_index<std::size_t>>& path, std::error_code& ec) noexcept
@@ -50,6 +52,7 @@ namespace ropufu::aftermath::algorithm
      *  @reference https://en.wikipedia.org/wiki/A*_search_algorithm.
      */
     template <typename t_projector_type>
+        requires std::derived_from<t_projector_type, projector_t<t_projector_type>>
     struct pathfinder
     {
         using type = pathfinder<t_projector_type>;
@@ -69,12 +72,6 @@ namespace ropufu::aftermath::algorithm
         algebra::matrix<node_type> m_traceback = {}; // Information about the nodes allowing to optimally travel from \c m_source.
         std::multimap<cost_type, index_type> m_pending = {}; // The set of currently discovered nodes that are not completely evaluated yet, a.k.a. "open set".
         std::vector<pair_type> m_temp_neighbors = {};
-
-        static constexpr void traits_check()
-        {
-            static_assert(std::is_base_of_v<projector_t<projector_type>, projector_type>,
-                "projector_type has to directly derive from projector<projector_type, ...>.");
-        } // traits_check(...)
 
         void validate() const
         {
@@ -153,7 +150,6 @@ namespace ropufu::aftermath::algorithm
     public:
         pathfinder() noexcept
         {
-            type::traits_check();
             this->m_temp_neighbors.reserve(type::default_neighbor_capacity);
         } // pathfinder(...)
         
@@ -164,7 +160,6 @@ namespace ropufu::aftermath::algorithm
             : m_projector(projector), m_source(source),
             m_traceback(projector.height(), projector.width())
         {
-            type::traits_check();
             this->validate();
             this->m_temp_neighbors.reserve(type::default_neighbor_capacity);
 

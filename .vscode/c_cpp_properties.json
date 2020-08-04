@@ -3,16 +3,16 @@
         {
             "name": "Mac",
             "includePath": [
-                "/usr/local/Cellar/gcc/9.2.0/include/c++/9.2.0",
+                "/usr/local/Cellar/gcc/10.1.0/include/**",
                 "${workspaceRoot}",
                 "${workspaceRoot}/../../include"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
-            "cppStandard": "c++17",
+            "cppStandard": "c++20",
             "browse": {
                 "path": [
-                    "/usr/local/Cellar/gcc/9.2.0/include/c++/9.2.0",
+                    "/usr/local/Cellar/gcc/10.1.0/include/**",
                     "${workspaceRoot}",
                     "${workspaceRoot}/../../include"
                 ],
@@ -27,7 +27,7 @@
         {
             "name": "Linux",
             "includePath": [
-                "/usr/include/c++/9",
+                "/usr/include/c++/10",
                 "/usr/local/include",
                 "/usr/include",
                 "${workspaceRoot}",
@@ -35,11 +35,11 @@
             ],
             "defines": [],
             "intelliSenseMode": "gcc-x64",
-            "compilerPath": "/usr/bin/g++-9",
-            "cppStandard": "c++17",
+            "compilerPath": "/usr/bin/g++-10",
+            "cppStandard": "c++20",
             "browse": {
                 "path": [
-                    "/usr/include/c++/9",
+                    "/usr/include/c++/10",
                     "/usr/local/include",
                     "/usr/include",
                     "${workspaceRoot}",
@@ -52,7 +52,7 @@
         {
             "name": "Win32",
             "includePath": [
-                "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.23.28105/include",
+                "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.26.28801/include",
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.18362.0/ucrt",
                 "${workspaceRoot}",
                 "${workspaceRoot}/../../include"
@@ -62,10 +62,10 @@
                 "UNICODE"
             ],
             "intelliSenseMode": "msvc-x64",
-            "cppStandard": "c++17",
+            "cppStandard": "c++20",
             "browse": {
                 "path": [
-                    "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.23.28105/include/*",
+                    "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.26.28801/include/*",
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.18362.0/ucrt/*",
                     "${workspaceRoot}",
                     "${workspaceRoot}/../../include"

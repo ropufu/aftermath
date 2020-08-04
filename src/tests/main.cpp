@@ -1,4 +1,8 @@
 
+#ifndef __cpp_concepts
+#define __cpp_concepts 201907L
+#endif
+
 #define DOCTEST_CONFIG_IMPLEMENT
 #include <doctest/doctest.h>
 #include "benchmark_reporter.hpp"
@@ -7,7 +11,7 @@
 #include "algebra/elementwise.hpp"
 #include "algebra/fraction.hpp"
 #include "algebra/matrix.hpp"
-#include "algebra/range.hpp"
+#include "algebra/interval.hpp"
 #include "algorithm/fuzzy.hpp"
 #include "algorithm/pathfinder.hpp"
 #include "format/mat4_stream_base.hpp"

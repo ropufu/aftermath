@@ -2,17 +2,19 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_EMPIRICAL_MEASURE_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_EMPIRICAL_MEASURE_HPP_INCLUDED
 
+#include "../concepts.hpp"
 #include "../number_traits.hpp"
-#include "../type_traits.hpp"
 
-#include <cmath>     // std::sqrt
+#include <array>     // std::array
+#include <cmath>     // std::sqrt, std::round
+#include <concepts>  // std::totally_ordered
 #include <cstddef>   // std::size_t
 #include <iostream>  // std::ostream, std::endl
 #include <limits>    // std::numeric_limits
 #include <map>       // std::map
 #include <stdexcept> // std::logic_error
 #include <string>    // std::string
-#include <type_traits>   // ...
+#include <type_traits>   // std::void_t, std::conditional_t
 #include <unordered_map> // std::unordered_map
 #include <utility>       // std::declval
 
@@ -36,6 +38,20 @@ namespace ropufu::aftermath::probability
 
         template <typename t_left_type, typename t_right_type>
         using product_result_t = typename product_result_type<t_left_type, t_right_type>::type;
+            
+        template <typename t_key_type, typename t_count_type, typename t_sum_type, typename t_mean_type>
+        concept linear_space = ropufu::closed_under_division<t_mean_type> &&
+            ropufu::zero_assignable<t_sum_type> && ropufu::zero_assignable<t_mean_type> && 
+            std::convertible_to<t_count_type, t_mean_type> && std::convertible_to<t_sum_type, t_mean_type> &&
+            requires(const t_key_type& x, const t_count_type& repeat, const t_sum_type& sum)
+            {
+                {sum + static_cast<t_sum_type>(x)} -> std::same_as<t_sum_type>;
+                {sum + static_cast<t_sum_type>(repeat * x)} -> std::same_as<t_sum_type>;
+            }; // concept linear_space
+            
+        template <typename t_key_type, typename t_count_type, typename t_sum_type, typename t_mean_type>
+        concept quadratic_space = linear_space<t_key_type, t_count_type, t_sum_type, t_mean_type> &&
+            ropufu::closed_under_subtraction<t_mean_type> && ropufu::closed_under_multiplication<t_mean_type>;
 
         template <typename t_derived_type, typename t_key_type, typename t_count_type, typename t_probability_type>
         struct empirical_measure_core
@@ -43,7 +59,7 @@ namespace ropufu::aftermath::probability
             using key_type = t_key_type;
             using count_type = t_count_type;
             using probability_type = t_probability_type;
-            using dictionary_type = std::conditional_t<type_traits::has_less_binary_v<t_key_type, t_key_type>,
+            using dictionary_type = std::conditional_t<std::totally_ordered<t_key_type>,
                 std::map<t_key_type, t_count_type>,
                 std::unordered_map<t_key_type, t_count_type>>;
 
@@ -121,16 +137,120 @@ namespace ropufu::aftermath::probability
             const dictionary_type& data() const noexcept { return this->m_data; }
         }; // struct empirical_measure_core
 
+        /** @brief Streaming module for \c empirical_measure. */
+        template <typename t_derived_type, typename t_key_type, typename t_count_type, typename t_probability_type, typename t_mean_type>
+        struct empirical_measure_streaming_module
+        {
+            using type = empirical_measure_streaming_module<t_derived_type, t_key_type, t_count_type, t_probability_type, t_mean_type>;
+            using derived_type = t_derived_type;
+            using key_type = t_key_type;
+            using count_type = t_count_type;
+            using probability_type = t_probability_type;
+
+            static constexpr bool is_enabled = false;
+
+            friend std::ostream& operator <<(std::ostream& os, const derived_type& self)
+            {
+                return os << '{' << self.count() << " observations" << '}';
+            } // operator <<(...)
+        }; // struct empirical_measure_streaming_module
+
+        /** @brief Streaming module for \c empirical_measure. */
+        template <typename t_derived_type, ropufu::streamable t_key_type, typename t_count_type, typename t_probability_type, typename t_mean_type>
+        struct empirical_measure_streaming_module<t_derived_type, t_key_type, t_count_type, t_probability_type, t_mean_type>
+        {
+            using type = empirical_measure_streaming_module<t_derived_type, t_key_type, t_count_type, t_probability_type, t_mean_type>;
+            using derived_type = t_derived_type;
+            using key_type = t_key_type;
+            using count_type = t_count_type;
+            using probability_type = t_probability_type;
+            using mean_type = t_mean_type;
+
+            static constexpr bool is_enabled = true;
+
+            friend std::ostream& operator <<(std::ostream& os, const derived_type& self)
+            {
+                constexpr std::size_t min_height = 1;
+                constexpr std::size_t max_height = 25;
+                constexpr std::size_t count_bins = 10;
+
+                if (self.empty()) return os << "{no observations}";
+                if (self.data().size() == 1) return os << '{' << self.data().cbegin()->first << ": all " << self.count() << " observations}";
+
+                if constexpr (ropufu::integer<key_type>)
+                {
+                    probability_type scale = self.max_probability();
+                    for (key_type key = self.min(); key <= self.max(); ++key)
+                    {
+                        probability_type p = self.pmf(key);
+                        std::size_t height = min_height + static_cast<std::size_t>((p / scale) * (max_height - min_height));
+
+                        os << std::string(height, '.') << std::string((1 + max_height) - height, ' ') <<
+                            std::round(1000 * p) / 10 << '%' <<
+                            '\t' << key << std::endl;
+                    } // for (...)
+                    return os;
+                } // if constexpr (...)
+                else if constexpr (std::totally_ordered<key_type> && ropufu::field<mean_type>)
+                {
+                    std::array<probability_type, count_bins> bars {};
+
+                    mean_type from = self.min();
+                    mean_type to = self.max();
+                    mean_type step = (to - from) / static_cast<mean_type>(count_bins);
+                    if (step == 0) os << '{' << from << " : 100%}" << std::endl;
+                    else
+                    {
+                        for (const auto& item : self.data())
+                        {
+                            std::size_t bar_index = static_cast<std::size_t>((static_cast<mean_type>(item.first) - from) / step);
+                            if (bar_index >= count_bins) bar_index = count_bins - 1;
+                            probability_type p = self.pmf(item.first);
+                            bars[bar_index] += p;
+                        } // for (...)
+
+                        probability_type scale = 0;
+                        for (probability_type p : bars) if (p > scale) scale = p;
+
+                        for (std::size_t i = 0; i < count_bins; ++i)
+                        {
+                            probability_type p = bars[i];
+                            key_type label_a = static_cast<key_type>(from + i * step);
+                            key_type label_b = static_cast<key_type>(from + (i + 1) * step);
+                            std::size_t height = min_height + static_cast<std::size_t>((p / scale) * (max_height - min_height));
+
+                            os << std::string(height, '.') << std::string((1 + max_height) - height, ' ') <<
+                                std::round(1000 * p) / 10 << '%' <<
+                                '\t' << label_a << "--" << label_b << std::endl;
+                        } // for (...)
+                    } // else (...)
+                    return os;
+                } // if constexpr (...)
+                else
+                {
+                    probability_type norm = static_cast<probability_type>(self.count());
+                    for (const auto& item : self.data())
+                    {
+                        probability_type p = static_cast<probability_type>(item.second) / norm;
+                        os << '{' << item.first << " : " << (100 * p) << "%}" << std::endl;
+                    } // for (...)
+                    return os;
+                } // if constexpr (...)
+            } // operator <<(...)
+        }; // struct empirical_measure_streaming_module
+
         /** @brief Ordering module for \c empirical_measure. */
-        template <bool t_is_enabled, typename t_derived_type, typename t_key_type, typename t_count_type, typename t_probability_type>
+        template <typename t_derived_type, typename t_key_type, typename t_count_type, typename t_probability_type>
         struct empirical_measure_ordering_module
         {
-            using type = empirical_measure_ordering_module<t_is_enabled, t_derived_type, t_key_type, t_count_type, t_probability_type>;
+            using type = empirical_measure_ordering_module<t_derived_type, t_key_type, t_count_type, t_probability_type>;
             using derived_type = t_derived_type;
             using key_type = t_key_type;
             using count_type = t_count_type;
             using probability_type = t_probability_type;
             using limits_type = std::numeric_limits<t_key_type>;
+
+            static constexpr bool is_enabled = false;
 
         protected:
             void module_clear() noexcept { }
@@ -138,15 +258,17 @@ namespace ropufu::aftermath::probability
         }; // struct empirical_measure_ordering_module
 
         /** @brief Ordering module for \c empirical_measure when \tparam t_key_type supports ordering. */
-        template <typename t_derived_type, typename t_key_type, typename t_count_type, typename t_probability_type>
-        struct empirical_measure_ordering_module<true, t_derived_type, t_key_type, t_count_type, t_probability_type>
+        template <typename t_derived_type, std::totally_ordered t_key_type, typename t_count_type, typename t_probability_type>
+        struct empirical_measure_ordering_module<t_derived_type, t_key_type, t_count_type, t_probability_type>
         {
-            using type = empirical_measure_ordering_module<true, t_derived_type, t_key_type, t_count_type, t_probability_type>;
+            using type = empirical_measure_ordering_module<t_derived_type, t_key_type, t_count_type, t_probability_type>;
             using derived_type = t_derived_type;
             using key_type = t_key_type;
             using count_type = t_count_type;
             using probability_type = t_probability_type;
             using limits_type = std::numeric_limits<t_key_type>;
+
+            static constexpr bool is_enabled = true;
 
         protected:
             key_type m_min = limits_type::max();
@@ -163,7 +285,7 @@ namespace ropufu::aftermath::probability
             void module_observe(const key_type& key, count_type /*repeat*/) noexcept
             {
                 if (key < this->m_min) this->m_min = key;
-                if (this->m_max < key) this->m_max = key;
+                if (key > this->m_max) this->m_max = key;
             } // module_observe(...)
 
         public:
@@ -218,15 +340,17 @@ namespace ropufu::aftermath::probability
         }; // struct empirical_measure_ordering_module<...>
 
         /** @brief Linear module for \c empirical_measure. */
-        template <bool t_is_enabled, typename t_derived_type, typename t_key_type, typename t_count_type, typename t_sum_type, typename t_mean_type>
+        template <typename t_derived_type, typename t_key_type, typename t_count_type, typename t_sum_type, typename t_mean_type>
         struct empirical_measure_linear_module
         {
-            using type = empirical_measure_linear_module<t_is_enabled, t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
+            using type = empirical_measure_linear_module<t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
             using derived_type = t_derived_type;
             using key_type = t_key_type;
             using count_type = t_count_type;
             using sum_type = t_sum_type;
             using mean_type = t_mean_type;
+
+            static constexpr bool is_enabled = false;
 
         protected:
             void module_clear() noexcept { }
@@ -235,14 +359,17 @@ namespace ropufu::aftermath::probability
         
         /** @brief Linear module for \c empirical_measure when \tparam t_key_type supports linear operations (addition / subtraction / scaling). */
         template <typename t_derived_type, typename t_key_type, typename t_count_type, typename t_sum_type, typename t_mean_type>
-        struct empirical_measure_linear_module<true, t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>
+            requires detail::linear_space<t_key_type, t_count_type, t_sum_type, t_mean_type>
+        struct empirical_measure_linear_module<t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>
         {
-            using type = empirical_measure_linear_module<true, t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
+            using type = empirical_measure_linear_module<t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
             using derived_type = t_derived_type;
             using key_type = t_key_type;
             using count_type = t_count_type;
             using sum_type = t_sum_type;
             using mean_type = t_mean_type;
+
+            static constexpr bool is_enabled = true;
 
         protected:
             sum_type m_sum = 0;
@@ -250,7 +377,7 @@ namespace ropufu::aftermath::probability
             void module_clear() noexcept { this->m_sum = 0; }
             void module_observe(const key_type& key, count_type repeat) noexcept
             {
-                this->m_sum += static_cast<sum_type>(key * repeat);
+                this->m_sum += static_cast<sum_type>(repeat * key);
             } // module_observe(...)
 
         public:
@@ -266,15 +393,17 @@ namespace ropufu::aftermath::probability
         }; // struct empirical_measure_linear_module<...>
 
         /** @brief Variance module for \c empirical_measure. */
-        template <bool t_is_enabled, typename t_derived_type, typename t_key_type, typename t_count_type, typename t_sum_type, typename t_mean_type>
+        template <typename t_derived_type, typename t_key_type, typename t_count_type, typename t_sum_type, typename t_mean_type>
         struct empirical_measure_variance_module
         {
-            using type = empirical_measure_variance_module<t_is_enabled, t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
+            using type = empirical_measure_variance_module<t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
             using derived_type = t_derived_type;
             using key_type = t_key_type;
             using count_type = t_count_type;
             using sum_type = t_sum_type;
             using mean_type = t_mean_type;
+
+            static constexpr bool is_enabled = false;
 
         protected:
             void module_clear() noexcept { }
@@ -283,14 +412,17 @@ namespace ropufu::aftermath::probability
         
         /** @brief Variance module for \c empirical_measure when \tparam t_key_type supports quadratic operations (multiplication). */
         template <typename t_derived_type, typename t_key_type, typename t_count_type, typename t_sum_type, typename t_mean_type>
-        struct empirical_measure_variance_module<true, t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>
+            requires detail::quadratic_space<t_key_type, t_count_type, t_sum_type, t_mean_type>
+        struct empirical_measure_variance_module<t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>
         {
-            using type = empirical_measure_variance_module<true, t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
+            using type = empirical_measure_variance_module<t_derived_type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
             using derived_type = t_derived_type;
             using key_type = t_key_type;
             using count_type = t_count_type;
             using sum_type = t_sum_type;
             using mean_type = t_mean_type;
+
+            static constexpr bool is_enabled = true;
 
         protected:
             void module_clear() noexcept { }
@@ -306,7 +438,9 @@ namespace ropufu::aftermath::probability
                 mean_type variance_sum = 0;
                 for (const auto& item : that->m_data)
                 {
-                    variance_sum += ((item.first - m) * (item.first - m)) * item.second;
+                    mean_type x = static_cast<mean_type>(item.first) - m;
+                    x *= x;
+                    variance_sum += item.second * x;
                 } // for (...)
                 return variance_sum / static_cast<mean_type>(that->m_count_observations);
             } // compute_variance(...)
@@ -317,23 +451,25 @@ namespace ropufu::aftermath::probability
     } // namespace detail
 
     /** @breif A structure to record observations and build up statistics. */
-    template <typename t_key_type,
+    template <ropufu::hashable t_key_type,
         typename t_count_type = std::size_t,
         typename t_probability_type = double,
         typename t_sum_type = detail::product_result_t<t_key_type, t_count_type>,
         typename t_mean_type = detail::product_result_t<t_key_type, t_probability_type>>
     struct empirical_measure
-        : public detail::empirical_measure_core<empirical_measure<t_key_type, t_count_type, t_probability_type, t_sum_type, t_mean_type>, t_key_type, t_count_type, t_probability_type>,
+        : public detail::empirical_measure_core<
+            empirical_measure<t_key_type, t_count_type, t_probability_type, t_sum_type, t_mean_type>,
+            t_key_type, t_count_type, t_probability_type>,
+        public detail::empirical_measure_streaming_module<
+            empirical_measure<t_key_type, t_count_type, t_probability_type, t_sum_type, t_mean_type>,
+            t_key_type, t_count_type, t_probability_type, t_mean_type>,
         public detail::empirical_measure_ordering_module<
-            type_traits::has_less_binary_v<t_key_type, t_key_type>,
             empirical_measure<t_key_type, t_count_type, t_probability_type, t_sum_type, t_mean_type>,
             t_key_type, t_count_type, t_probability_type>,
         public detail::empirical_measure_linear_module<
-            type_traits::has_multiply_binary_v<t_key_type, t_count_type>,
             empirical_measure<t_key_type, t_count_type, t_probability_type, t_sum_type, t_mean_type>,
             t_key_type, t_count_type, t_sum_type, t_mean_type>,
         public detail::empirical_measure_variance_module<
-            type_traits::has_multiply_binary_v<t_key_type, t_key_type> && type_traits::has_multiply_binary_v<t_key_type, t_count_type>,
             empirical_measure<t_key_type, t_count_type, t_probability_type, t_sum_type, t_mean_type>,
             t_key_type, t_count_type, t_sum_type, t_mean_type>
     {
@@ -345,19 +481,19 @@ namespace ropufu::aftermath::probability
         using sum_type = t_sum_type;
         using mean_type = t_mean_type;
 
-        using ordering_module = detail::empirical_measure_ordering_module<type_traits::has_less_binary_v<t_key_type, t_key_type>, type, t_key_type, t_count_type, t_probability_type>;
-        using linear_module = detail::empirical_measure_linear_module<type_traits::has_multiply_binary_v<t_key_type, t_count_type>, type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
-        using variance_module = detail::empirical_measure_variance_module<type_traits::has_multiply_binary_v<t_key_type, t_key_type> && type_traits::has_multiply_binary_v<t_key_type, t_count_type>, type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
+        using ordering_module = detail::empirical_measure_ordering_module<type, t_key_type, t_count_type, t_probability_type>;
+        using linear_module = detail::empirical_measure_linear_module<type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
+        using variance_module = detail::empirical_measure_variance_module<type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
 
-        template <typename, typename, typename, typename, typename>
+        template <ropufu::hashable, typename, typename, typename, typename>
         friend struct empirical_measure;
 
         template <typename, typename, typename, typename>
         friend struct detail::empirical_measure_core;
 
-        template <bool, typename, typename, typename, typename> friend struct detail::empirical_measure_ordering_module;
-        template <bool, typename, typename, typename, typename, typename> friend struct detail::empirical_measure_linear_module;
-        template <bool, typename, typename, typename, typename, typename> friend struct detail::empirical_measure_variance_module;
+        template <typename, typename, typename, typename> friend struct detail::empirical_measure_ordering_module;
+        template <typename, typename, typename, typename, typename> friend struct detail::empirical_measure_linear_module;
+        template <typename, typename, typename, typename, typename> friend struct detail::empirical_measure_variance_module;
 
     private:
         void on_observed(const key_type& key, count_type repeat, count_type /*new_height*/) noexcept
@@ -408,42 +544,6 @@ namespace ropufu::aftermath::probability
         {
             for (const auto& item : other.m_data) this->observe(item.first, item.second);
         } // merge(...)
-
-        friend std::ostream& operator <<(std::ostream& os, const type& self)
-        {
-            if (self.m_count_observations == 0) return os << "{ }";
-
-            if constexpr (type_traits::has_left_shift_binary_v<decltype(os), key_type>)
-            {
-                // @todo Replace with is_integral_v check: floating point increments might result in unexpected behavior.
-                if constexpr (type_traits::is_one_by_one_iterable_v<key_type>)
-                {
-                    constexpr std::size_t min_height = 1;
-                    constexpr std::size_t max_height = 25;
-
-                    probability_type scale = self.max_probability();
-                    for (key_type key = self.min(); key <= self.max(); ++key)
-                    {
-                        probability_type p = self.pmf(key);
-                        std::size_t height = min_height + static_cast<std::size_t>((p / scale) * (max_height - min_height));
-                        os << key << "\t" << std::string(height, '.') << std::string((1 + max_height) - height, ' ') << (100 * p) << '%' << std::endl;
-                    } // for (...)
-                    return os;
-                } // if constexpr (...)
-                else
-                {
-                    probability_type norm = static_cast<probability_type>(self.m_count_observations);
-                    for (const auto& item : self.m_data)
-                    {
-                        probability_type p = static_cast<probability_type>(item.second) / norm;
-                        os << "{" << item.first << " : " << (100 * p) << "%}" << std::endl;
-                    } // for (...)
-                    return os;
-                } // if constexpr (...)
-            } // if constexpr (...)
-
-            return os << "{...}";
-        } // operator <<(...)
     }; // struct empirical_measure
 } // namespace ropufu::aftermath::probability
 

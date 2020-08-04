@@ -64,17 +64,14 @@ namespace ropufu::aftermath::tests
     } // initialize_matrix_one(...)
 } // namespace ropufu::aftermath::tests
 
+// Note: std::int16_t and std::uint16_t are not closed under addition.
 #define ROPUFU_AFTERMATH_TESTS_ALGEBRA_MATRIX_ARITHMETIC_TYPES \
     ropufu::aftermath::algebra::rmatrix_t<std::size_t>,        \
-    ropufu::aftermath::algebra::rmatrix_t<std::uint16_t>,      \
-    ropufu::aftermath::algebra::rmatrix_t<std::int16_t>,       \
     ropufu::aftermath::algebra::rmatrix_t<std::int32_t>,       \
     ropufu::aftermath::algebra::rmatrix_t<std::int64_t>,       \
     ropufu::aftermath::algebra::rmatrix_t<float>,              \
     ropufu::aftermath::algebra::rmatrix_t<double>,             \
     ropufu::aftermath::algebra::cmatrix_t<std::size_t>,        \
-    ropufu::aftermath::algebra::cmatrix_t<std::uint16_t>,      \
-    ropufu::aftermath::algebra::cmatrix_t<std::int16_t>,       \
     ropufu::aftermath::algebra::cmatrix_t<std::int32_t>,       \
     ropufu::aftermath::algebra::cmatrix_t<std::int64_t>,       \
     ropufu::aftermath::algebra::cmatrix_t<float>,              \

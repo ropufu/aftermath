@@ -2,12 +2,12 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_EXPONENTIAL_DISTRIBUTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_EXPONENTIAL_DISTRIBUTION_HPP_INCLUDED
 
-#include "../math_constants.hpp"
 #include "../number_traits.hpp"
-#include "distribution_traits.hpp"
+#include "concepts.hpp"
 #include "standard_exponential_distribution.hpp"
 
 #include <cmath>       // std::sqrt, std::pow, std::erfc
+#include <concepts>    // std::floating_point
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <limits>      // std::numeric_limits
@@ -16,31 +16,38 @@
 #include <type_traits> // std::is_floating_point_v
 #include <utility>     // std::declval
 
+#ifdef ROPUFU_TMP_TYPENAME
+#undef ROPUFU_TMP_TYPENAME
+#endif
+#define ROPUFU_TMP_TYPENAME exponential_distribution<t_value_type, t_probability_type, t_expectation_type>
+
 namespace ropufu::aftermath::probability
 {
     /** @brief Exponential distribution. */
-    template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    template <std::floating_point t_value_type = double,
+        std::floating_point t_probability_type = t_value_type,
+        std::floating_point t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
     struct exponential_distribution;
 
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct is_continuous<exponential_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct is_continuous<ROPUFU_TMP_TYPENAME>
     {
-        using distribution_type = exponential_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using distribution_type = ROPUFU_TMP_TYPENAME;
         static constexpr bool value = true;
     }; // struct is_continuous
 
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct has_right_tail<exponential_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct has_right_tail<ROPUFU_TMP_TYPENAME>
     {
-        using distribution_type = exponential_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using distribution_type = ROPUFU_TMP_TYPENAME;
         static constexpr bool value = true;
     }; // struct has_right_tail
 
     /** @brief Exponential distribution. */
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct exponential_distribution
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct exponential_distribution : distribution_base<ROPUFU_TMP_TYPENAME>
     {
-        using type = exponential_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using type = ROPUFU_TMP_TYPENAME;
         using fundamental_type = standard_exponential_distribution<t_value_type, t_probability_type, t_expectation_type>;
         using value_type = t_value_type;
         using probability_type = t_probability_type;
@@ -57,13 +64,6 @@ namespace ropufu::aftermath::probability
         expectation_type m_cache_variance = 1;
         expectation_type m_cache_pdf_scale = 1;
 
-        static constexpr void traits_check() noexcept
-        {
-            static_assert(std::is_floating_point_v<value_type>, "Value type has to be a floating point type.");
-            static_assert(std::is_floating_point_v<probability_type>, "Probability type has to be a floating point type.");
-            static_assert(std::is_floating_point_v<expectation_type>, "Expectation type has to be a floating point type.");
-        } // traits_check(...)
-
         void validate() const
         {
             if (!aftermath::is_finite(this->m_lambda) || this->m_lambda <= 0) throw std::logic_error("Lambda must be positive.");
@@ -78,7 +78,7 @@ namespace ropufu::aftermath::probability
 
     public:
         /** Default constructor with with unit mean / rate. */
-        exponential_distribution() noexcept { type::traits_check(); }
+        exponential_distribution() noexcept { }
 
         /** Constructor and implicit conversion from standard distribution. */
         /*implicit*/ exponential_distribution(const std_type& distribution)
@@ -92,8 +92,6 @@ namespace ropufu::aftermath::probability
         exponential_distribution(value_type lambda)
             : m_lambda(lambda)
         {
-            type::traits_check();
-            
             this->validate();
             this->cahce();
         } // exponential_distribution(...)
@@ -159,16 +157,16 @@ namespace ropufu::aftermath::probability
     }; // struct exponential_distribution
 
     // ~~ Definitions ~~
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    constexpr char exponential_distribution<t_value_type, t_probability_type, t_expectation_type>::name[];
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std
 {
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct hash<ropufu::aftermath::probability::exponential_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct hash<ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME>
     {
-        using argument_type = ropufu::aftermath::probability::exponential_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using argument_type = ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME;
         using result_type = std::size_t;
 
         result_type operator ()(argument_type const& x) const noexcept

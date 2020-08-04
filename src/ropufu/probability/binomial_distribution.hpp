@@ -3,9 +3,10 @@
 #define ROPUFU_AFTERMATH_PROBABILITY_BINOMIAL_DISTRIBUTION_HPP_INCLUDED
 
 #include "../number_traits.hpp"
-#include "distribution_traits.hpp"
+#include "concepts.hpp"
 
 #include <cmath>       // std::sqrt
+#include <concepts>    // std::floating_point
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <limits>      // std::numeric_limits
@@ -14,26 +15,33 @@
 #include <type_traits> // std::is_floating_point_v
 #include <utility>     // std::declval, std::swap
 
+#ifdef ROPUFU_TMP_TYPENAME
+#undef ROPUFU_TMP_TYPENAME
+#endif
+#define ROPUFU_TMP_TYPENAME binomial_distribution<t_value_type, t_probability_type, t_expectation_type>
+
 namespace ropufu::aftermath::probability
 {
     /** Binomial distribution. */
-    template <typename t_value_type = std::size_t, typename t_probability_type = double, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    template <ropufu::integer t_value_type = std::size_t,
+        std::floating_point t_probability_type = double,
+        std::floating_point t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
     struct binomial_distribution;
 
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct is_discrete<binomial_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <ropufu::integer t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct is_discrete<ROPUFU_TMP_TYPENAME>
     {
-        using distribution_type = binomial_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using distribution_type = ROPUFU_TMP_TYPENAME;
         static constexpr bool value = true;
     }; // struct is_discrete
 
     /** @brief Binomial distribution.
      *  @todo Add tests!!
      */
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct binomial_distribution
+    template <ropufu::integer t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct binomial_distribution : distribution_base<ROPUFU_TMP_TYPENAME>
     {
-        using type = binomial_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using type = ROPUFU_TMP_TYPENAME;
         using value_type = t_value_type;
         using probability_type = t_probability_type;
         using expectation_type = t_expectation_type;
@@ -44,13 +52,6 @@ namespace ropufu::aftermath::probability
     private:
         value_type m_number_of_trials = 1;
         probability_type m_probability_of_success = 0;
-
-        static constexpr void traits_check() noexcept
-        {
-            static_assert(std::numeric_limits<value_type>::is_integer, "Value type has to be an integer type.");
-            static_assert(std::is_floating_point_v<probability_type>, "Probability type has to be a floating point type.");
-            static_assert(std::is_floating_point_v<expectation_type>, "Expectation type has to be a floating point type.");
-        } // traits_check(...)
 
         void validate() const
         {
@@ -66,7 +67,7 @@ namespace ropufu::aftermath::probability
 
     public:
         /** Trivial case with one trial that always fails. */
-        binomial_distribution() noexcept { type::traits_check(); }
+        binomial_distribution() noexcept { }
 
         /** Constructor and implicit conversion from standard distribution. */
         /*implicit*/ binomial_distribution(const std_type& distribution)
@@ -80,7 +81,6 @@ namespace ropufu::aftermath::probability
         explicit binomial_distribution(value_type number_of_trials, probability_type probability_of_success)
             : m_number_of_trials(number_of_trials), m_probability_of_success(probability_of_success)
         {
-            type::traits_check();
             this->validate();
         } // binomial_distribution(...)
 
@@ -185,16 +185,16 @@ namespace ropufu::aftermath::probability
     }; // struct binomial_distribution
 
     // ~~ Definitions ~~
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    constexpr char binomial_distribution<t_value_type, t_probability_type, t_expectation_type>::name[];
+    template <ropufu::integer t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std
 {
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct hash<ropufu::aftermath::probability::binomial_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <ropufu::integer t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct hash<ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME>
     {
-        using argument_type = ropufu::aftermath::probability::binomial_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using argument_type = ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME;
         using result_type = std::size_t;
 
         result_type operator ()(argument_type const& x) const noexcept

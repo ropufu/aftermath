@@ -6,7 +6,7 @@
 #include "matrix_slice.hpp"
 
 #include <cstddef> // std::size_t, std::ptrdiff_t
-#include <type_traits> // ...
+#include <type_traits> // std::make_signed_t
 #include <utility>     // std::move
 
 namespace ropufu::aftermath::algebra

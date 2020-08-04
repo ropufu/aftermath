@@ -94,13 +94,13 @@ TEST_CASE_TEMPLATE("testing standard_normal_distribution quantiles", tested_t, R
     answer_type tolerance = answer_type(1e-6);
 
     tested_t tested {};
-    CHECK(std::abs(tested.quantile(levels[0]) - answers[0]) < tolerance);
-    CHECK(std::abs(tested.quantile(levels[1]) - answers[1]) < tolerance);
-    CHECK(std::abs(tested.quantile(levels[2]) - answers[2]) < tolerance);
-    CHECK(std::abs(tested.quantile(levels[3]) - answers[3]) < tolerance);
-    CHECK(std::abs(tested.quantile(levels[4]) - answers[4]) < tolerance);
-    CHECK(std::abs(tested.quantile(levels[5]) - answers[5]) < tolerance);
-    CHECK(std::abs(tested.quantile(levels[6]) - answers[6]) < tolerance);
+    CHECK(std::abs(tested.numerical_quantile(levels[0]) - answers[0]) < tolerance);
+    CHECK(std::abs(tested.numerical_quantile(levels[1]) - answers[1]) < tolerance);
+    CHECK(std::abs(tested.numerical_quantile(levels[2]) - answers[2]) < tolerance);
+    CHECK(std::abs(tested.numerical_quantile(levels[3]) - answers[3]) < tolerance);
+    CHECK(std::abs(tested.numerical_quantile(levels[4]) - answers[4]) < tolerance);
+    CHECK(std::abs(tested.numerical_quantile(levels[5]) - answers[5]) < tolerance);
+    CHECK(std::abs(tested.numerical_quantile(levels[6]) - answers[6]) < tolerance);
 } // TEST_CASE_TEMPLATE(...)
 
 TEST_CASE_TEMPLATE("testing standard_normal_distribution exception handling", tested_t, ROPUFU_AFTERMATH_TESTS_PROBABILITY_STANDARD_NORMAL_DISTRIBUTION_ALL_TYPES)
@@ -108,12 +108,12 @@ TEST_CASE_TEMPLATE("testing standard_normal_distribution exception handling", te
     using argument_type = typename tested_t::probability_type;
     tested_t tested {};
 
-    CHECK_NOTHROW(tested.quantile(0));
-    CHECK_NOTHROW(tested.quantile(1));
-    CHECK_THROWS_AS(tested.quantile(-1), const std::logic_error&);
-    CHECK_THROWS_AS(tested.quantile(2), const std::logic_error&);
-    CHECK_THROWS_AS(tested.quantile(std::numeric_limits<argument_type>::infinity()), const std::logic_error&);
-    CHECK_THROWS_AS(tested.quantile(std::numeric_limits<argument_type>::quiet_NaN()), const std::logic_error&);
+    CHECK_NOTHROW(tested.numerical_quantile(0));
+    CHECK_NOTHROW(tested.numerical_quantile(1));
+    CHECK_THROWS_AS(tested.numerical_quantile(-1), const std::logic_error&);
+    CHECK_THROWS_AS(tested.numerical_quantile(2), const std::logic_error&);
+    CHECK_THROWS_AS(tested.numerical_quantile(std::numeric_limits<argument_type>::infinity()), const std::logic_error&);
+    CHECK_THROWS_AS(tested.numerical_quantile(std::numeric_limits<argument_type>::quiet_NaN()), const std::logic_error&);
 } // TEST_CASE_TEMPLATE(...)
 
 #endif // ROPUFU_AFTERMATH_TESTS_PROBABILITY_STANDARD_NORMAL_DISTRIBUTION_HPP_INCLUDED

@@ -2,8 +2,9 @@
 #ifndef ROPUFU_AFTERMATH_RANDOM_ZIGGURAT_SAMPLER_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_RANDOM_ZIGGURAT_SAMPLER_HPP_INCLUDED
 
+#include "../concepts.hpp"
 #include "../math_constants.hpp"
-#include "../probability/distribution_traits.hpp"
+#include "../probability/concepts.hpp"
 
 #include <cstddef>     // std:size_t
 #include <limits>      // std::numeric_limits
@@ -11,8 +12,16 @@
 
 namespace ropufu::aftermath::random
 {
+    template <typename t_engine_type, std::size_t t_n_boxes>
+    concept ziggurat = (t_n_boxes > 1) && aftermath::is_power_of_two(t_n_boxes) && requires
+    {
+        typename t_engine_type::result_type;
+        ropufu::integer<typename t_engine_type::result_type>;
+    }; // concept ziggurat
+
     /** @brief Base class for ziggurat pseudo-random number generators. */
-    template <typename t_derived_type, typename t_engine_type, typename t_distribution_type, std::size_t t_n_boxes>
+    template <typename t_derived_type, typename t_engine_type, ropufu::distribution t_distribution_type, std::size_t t_n_boxes>
+        requires ziggurat<t_engine_type, t_n_boxes>
     struct ziggurat_sampler
     {
         using type = ziggurat_sampler<t_derived_type, t_engine_type, t_distribution_type, t_n_boxes>;
@@ -33,13 +42,6 @@ namespace ropufu::aftermath::random
 
     private:
         distribution_type m_distribution = {};
-
-        static constexpr void traits_check() noexcept
-        {
-            static_assert(n_boxes > 1, "Number of boxes has to be at least two.");
-            static_assert(aftermath::is_power_of_two(n_boxes), "Number of boxes has to be a power of two.");
-            static_assert(std::numeric_limits<uniform_type>::is_integer, "Engine result type has to be an integer type.");
-        } // traits_check(...)
 
     protected:
         // static const uniform_type upscaled_low_probabilities[n_boxes];
@@ -70,12 +72,11 @@ namespace ropufu::aftermath::random
         } // sample_right_tail(...)
 
     public:
-        ziggurat_sampler() noexcept { type::traits_check(); }
+        ziggurat_sampler() noexcept { }
 
         /*implicit*/ ziggurat_sampler(const distribution_type& distribution) noexcept
             : m_distribution(distribution)
         {
-            type::traits_check();
         } // ziggurat_sampler(...)
 
         const distribution_type& distribution() const noexcept { return this->m_distribution; }

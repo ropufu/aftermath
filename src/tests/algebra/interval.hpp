@@ -5,7 +5,7 @@
 #include <doctest/doctest.h>
 
 #include "../core.hpp"
-#include "../../ropufu/algebra/range.hpp"
+#include "../../ropufu/algebra/interval.hpp"
 
 #include <cstddef>    // std::size_t
 #include <cstdint>    // std::int16_t, std::int32_t, std::int64_t
@@ -13,20 +13,20 @@
 #include <vector>     // std::vector
 
 #define ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_XLL_TYPES   \
-    ropufu::aftermath::algebra::range<float>,            \
-    ropufu::aftermath::algebra::range<double>            \
+    ropufu::aftermath::algebra::interval<float>,            \
+    ropufu::aftermath::algebra::interval<double>            \
 
 #define ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES   \
-    ropufu::aftermath::algebra::range<std::size_t>,      \
-    ropufu::aftermath::algebra::range<std::uint16_t>,    \
-    ropufu::aftermath::algebra::range<std::int16_t>,     \
-    ropufu::aftermath::algebra::range<std::int32_t>,     \
-    ropufu::aftermath::algebra::range<std::int64_t>,     \
-    ropufu::aftermath::algebra::range<float>,            \
-    ropufu::aftermath::algebra::range<double>            \
+    ropufu::aftermath::algebra::interval<std::size_t>,      \
+    ropufu::aftermath::algebra::interval<std::uint16_t>,    \
+    ropufu::aftermath::algebra::interval<std::int16_t>,     \
+    ropufu::aftermath::algebra::interval<std::int32_t>,     \
+    ropufu::aftermath::algebra::interval<std::int64_t>,     \
+    ropufu::aftermath::algebra::interval<float>,            \
+    ropufu::aftermath::algebra::interval<double>            \
 
 
-TEST_CASE_TEMPLATE("testing range json", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
+TEST_CASE_TEMPLATE("testing interval json", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {
     tested_t a = tested_t(1, 1729);
     tested_t b = tested_t(13, 2);
@@ -37,7 +37,7 @@ TEST_CASE_TEMPLATE("testing range json", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBR
     CHECK(ropufu::aftermath::tests::does_json_round_trip(c));
 } // TEST_CASE_TEMPLATE(...)
 
-TEST_CASE_TEMPLATE("testing range explosion", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
+TEST_CASE_TEMPLATE("testing interval explosion", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {
     using value_type = typename tested_t::value_type;
     constexpr std::size_t n = 5;
@@ -49,9 +49,9 @@ TEST_CASE_TEMPLATE("testing range explosion", tested_t, ROPUFU_AFTERMATH_TESTS_A
     std::vector<value_type> a_log_seq {};
     std::vector<value_type> a_exp_seq {};
 
-    a.explode(a_lin_seq, n);
-    a.explode(a_log_seq, n, ropufu::aftermath::algebra::logarithmic_spacing<value_type>());
-    a.explode(a_exp_seq, n, ropufu::aftermath::algebra::exponential_spacing<value_type>());
+    ropufu::aftermath::algebra::explode(a, a_lin_seq, n, ropufu::aftermath::algebra::linear_spacing<value_type>());
+    ropufu::aftermath::algebra::explode(a, a_log_seq, n, ropufu::aftermath::algebra::logarithmic_spacing<value_type>());
+    ropufu::aftermath::algebra::explode(a, a_exp_seq, n, ropufu::aftermath::algebra::exponential_spacing<value_type>());
 
     REQUIRE(a_lin_seq.size() == n);
     REQUIRE(a_log_seq.size() == n);
@@ -86,7 +86,7 @@ TEST_CASE_TEMPLATE("testing range explosion", tested_t, ROPUFU_AFTERMATH_TESTS_A
     for (std::size_t i = 0; i < n; ++i) CHECK(error_exp_seq[i] < tolerance);
 } // TEST_CASE_TEMPLATE(...)
 
-TEST_CASE_TEMPLATE("testing range hash", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
+TEST_CASE_TEMPLATE("testing interval hash", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {
     std::hash<tested_t> tested_hash {};
     std::size_t h1 = tested_hash(tested_t(1, 1729));

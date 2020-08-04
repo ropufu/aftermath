@@ -87,6 +87,10 @@
         "bit": "cpp",
         "codecvt": "cpp",
         "condition_variable": "cpp",
-        "memory_resource": "cpp"
+        "memory_resource": "cpp",
+        "compare": "cpp",
+        "ranges": "cpp",
+        "stop_token": "cpp",
+        "numbers": "cpp"
     }
 }

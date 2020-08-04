@@ -2,12 +2,12 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_NORMAL_DISTRIBUTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_NORMAL_DISTRIBUTION_HPP_INCLUDED
 
-#include "../math_constants.hpp"
 #include "../number_traits.hpp"
-#include "distribution_traits.hpp"
+#include "concepts.hpp"
 #include "standard_normal_distribution.hpp"
 
 #include <cmath>       // std::sqrt, std::pow, std::erfc
+#include <concepts>    // std::floating_point
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <limits>      // std::numeric_limits
@@ -16,38 +16,45 @@
 #include <type_traits> // std::is_floating_point_v
 #include <utility>     // std::declval
 
+#ifdef ROPUFU_TMP_TYPENAME
+#undef ROPUFU_TMP_TYPENAME
+#endif
+#define ROPUFU_TMP_TYPENAME normal_distribution<t_value_type, t_probability_type, t_expectation_type>
+
 namespace ropufu::aftermath::probability
 {
     /** Normal (Gaussian) distribution. */
-    template <typename t_value_type = double, typename t_probability_type = t_value_type, typename t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
+    template <std::floating_point t_value_type = double,
+        std::floating_point t_probability_type = t_value_type,
+        std::floating_point t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
     struct normal_distribution;
 
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct is_continuous<normal_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct is_continuous<ROPUFU_TMP_TYPENAME>
     {
-        using distribution_type = normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using distribution_type = ROPUFU_TMP_TYPENAME;
         static constexpr bool value = true;
     }; // struct is_continuous
 
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct has_right_tail<normal_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct has_right_tail<ROPUFU_TMP_TYPENAME>
     {
-        using distribution_type = normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using distribution_type = ROPUFU_TMP_TYPENAME;
         static constexpr bool value = true;
     }; // struct has_right_tail
 
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct has_left_tail<normal_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct has_left_tail<ROPUFU_TMP_TYPENAME>
     {
-        using distribution_type = normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using distribution_type = ROPUFU_TMP_TYPENAME;
         static constexpr bool value = true;
     }; // struct has_left_tail
 
     /** @brief Normal (Gaussian) distribution. */
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct normal_distribution
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct normal_distribution : distribution_base<ROPUFU_TMP_TYPENAME>
     {
-        using type = normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using type = ROPUFU_TMP_TYPENAME;
         using fundamental_type = standard_normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
         using value_type = t_value_type;
         using probability_type = t_probability_type;
@@ -66,13 +73,6 @@ namespace ropufu::aftermath::probability
         value_type m_cache_one_div_sigma = 1;
         value_type m_cache_mu_div_sigma = 0;
 
-        static constexpr void traits_check() noexcept
-        {
-            static_assert(std::is_floating_point_v<value_type>, "Value type has to be a floating point type.");
-            static_assert(std::is_floating_point_v<probability_type>, "Probability type has to be a floating point type.");
-            static_assert(std::is_floating_point_v<expectation_type>, "Expectation type has to be a floating point type.");
-        } // traits_check(...)
-
         void validate() const
         {
             if (!aftermath::is_finite(this->m_mu)) throw std::logic_error("Mu must be finite.");
@@ -89,7 +89,7 @@ namespace ropufu::aftermath::probability
 
     public:
         /** Default constructor with zero mean and unit variance. */
-        normal_distribution() noexcept { type::traits_check(); }
+        normal_distribution() noexcept { }
 
         /** Constructor and implicit conversion from standard distribution. */
         /*implicit*/ normal_distribution(const std_type& distribution)
@@ -103,8 +103,6 @@ namespace ropufu::aftermath::probability
         normal_distribution(expectation_type mu, expectation_type sigma)
             : m_mu(mu), m_sigma(sigma)
         {
-            type::traits_check();
-
             this->validate();
             this->cahce();
         } // normal_distribution(...)
@@ -150,10 +148,10 @@ namespace ropufu::aftermath::probability
          *  @exception std::logic_error \p p is not inside the interval [0, 1].
          *  @warning If \p tolerance is set too low the procedure might never terminate.
          */
-        expectation_type quantile(probability_type p, expectation_type tolerance = default_quantile_tolerance<expectation_type>) const
+        expectation_type numerical_quantile(probability_type p, expectation_type tolerance = default_quantile_tolerance<expectation_type>) const
         {
-            return this->m_sigma * this->m_fundamental_distribution.quantile(p, tolerance) + this->m_mu;
-        } // quantile(...)
+            return this->m_sigma * this->m_fundamental_distribution.numerical_quantile(p, tolerance) + this->m_mu;
+        } // numerical_quantile(...)
 
         /** Checks if the two distributions are the same. */
         bool operator ==(const type& other) const noexcept
@@ -171,16 +169,16 @@ namespace ropufu::aftermath::probability
     }; // struct normal_distribution
 
     // ~~ Definitions ~~
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    constexpr char normal_distribution<t_value_type, t_probability_type, t_expectation_type>::name[];
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std
 {
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct hash<ropufu::aftermath::probability::normal_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct hash<ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME>
     {
-        using argument_type = ropufu::aftermath::probability::normal_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using argument_type = ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME;
         using result_type = std::size_t;
 
         result_type operator ()(argument_type const& x) const noexcept

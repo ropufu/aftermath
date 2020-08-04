@@ -2,6 +2,7 @@
 #ifndef ROPUFU_AFTERMATH_RANDOM_ALIAS_MULTISAMPLER_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_RANDOM_ALIAS_MULTISAMPLER_HPP_INCLUDED
 
+#include "../probability/concepts.hpp"
 #include "alias_sampler.hpp"
 #include "uniform_int_sampler.hpp"
 
@@ -13,15 +14,17 @@
 namespace ropufu::aftermath::random
 {
     template <typename t_engine_type,
-        typename t_distribution_type,
+        ropufu::distribution t_distribution_type,
         typename t_index_sampler_type = uniform_int_sampler<
             t_engine_type,
             std::size_t,
             typename t_distribution_type::probability_type,
             typename t_distribution_type::expectation_type>>
+        requires probability::is_discrete_v<t_distribution_type> && probability::has_bounded_support_v<t_distribution_type>
     struct alias_multisampler;
     
-    template <typename t_engine_type, typename t_distribution_type, typename t_index_sampler_type>
+    template <typename t_engine_type, ropufu::distribution t_distribution_type, typename t_index_sampler_type>
+        requires probability::is_discrete_v<t_distribution_type> && probability::has_bounded_support_v<t_distribution_type>
     struct alias_multisampler
     {
         using type = alias_multisampler<t_engine_type, t_distribution_type, t_index_sampler_type>;
@@ -51,14 +54,8 @@ namespace ropufu::aftermath::random
         // ~~ Offset indices for each of the distributions. ~~
         std::vector<std::size_t> m_offset_indices = {};
 
-        static constexpr void traits_check() noexcept
-        {
-            static_assert(probability::is_discrete_v<distribution_type>, "Distribution has to be discrete.");
-            static_assert(probability::has_bounded_support_v<distribution_type>, "Distribution must have bounded support.");
-        } // traits_check(...)
-
     public:
-        alias_multisampler() noexcept { type::traits_check(); }
+        alias_multisampler() noexcept { }
 
         void reserve(std::size_t count_distributions, std::size_t count_total_support_size)
         {

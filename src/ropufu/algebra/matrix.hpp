@@ -6,25 +6,24 @@
 #include "matrix_index.hpp"
 #include "matrix_mask.hpp"
 #include "matrix_slice.hpp"
+#include "../concepts.hpp"
 #include "../simple_vector.hpp"
-#include "../type_traits.hpp"
 
-#include <array>     // std::array
+#include <concepts>  // std::same_as, std::default_initializable, std::equality_comparable
 #include <cstddef>   // std::size_t, std::nullptr_t
-#include <cstring>   // std::memset, std::memcpy
-#include <initializer_list> // std::initializer_list
 #include <memory>    // std::allocator, std::allocator_traits
+#include <ranges>    // std::ranges:range
 #include <stdexcept> // std::out_of_range, std::logic_error
-#include <type_traits> // ...
+#include <type_traits> // std::void_t, std::is_convertible_v
 #include <utility>   // std::move
 #include <vector>    // std::vector
 
 #define ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(BINOP, OPNAME)                                        \
-template <bool t_is_enabled, typename t_derived_type, typename t_value_type>                            \
-struct matrix_##OPNAME##_assign_op_module { };                                                          \
-                                                                                                        \
 template <typename t_derived_type, typename t_value_type>                                               \
-struct matrix_##OPNAME##_assign_op_module<true, t_derived_type, t_value_type>                           \
+struct matrix_##OPNAME##_op_module { };                                                                 \
+                                                                                                        \
+template <typename t_derived_type, ropufu::closed_under_##OPNAME t_value_type>                          \
+struct matrix_##OPNAME##_op_module<t_derived_type, t_value_type>                                        \
 {                                                                                                       \
 private:                                                                                                \
     using matrix_type = t_derived_type;                                                                 \
@@ -71,10 +70,13 @@ public:                                                                         
 };                                                                                                      \
 
 #define ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(OPNAME) \
-matrix_##OPNAME##_assign_op_module<                               \
-    type_traits::has_add_assign_v<t_value_type>,                  \
+matrix_##OPNAME##_op_module<                                      \
     matrix<t_value_type, t_allocator_type, t_arrangement_type>,   \
     t_value_type>                                                 \
+
+
+#define ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(OPNAME)                 \
+template <typename, typename> friend struct detail::matrix_##OPNAME##_op_module; \
 
 
 namespace ropufu::aftermath::algebra
@@ -90,7 +92,7 @@ namespace ropufu::aftermath::algebra
         template <typename t_type, typename t_value_type, typename t_size_type>
         inline constexpr bool has_two_dimensional_indexer_v = has_two_dimensional_indexer<t_type, t_value_type, t_size_type>::value;
         
-        template <bool t_is_enabled, typename t_derived_type, typename t_container_type, typename t_arrangement_type>
+        template <typename t_derived_type, typename t_container_type, typename t_arrangement_type>
         struct matrix_wipe_module
         {
             using derived_type = t_derived_type;
@@ -98,16 +100,20 @@ namespace ropufu::aftermath::algebra
             using arrangement_type = t_arrangement_type;
             using value_type = typename container_type::value_type;
             using size_type = typename container_type::size_type;
+
+            static constexpr bool is_enabled = false;
         }; // struct matrix_wipe_module
 
-        template <typename t_derived_type, typename t_container_type, typename t_arrangement_type>
-        struct matrix_wipe_module<true, t_derived_type, t_container_type, t_arrangement_type>
+        template <typename t_derived_type, ropufu::wipeable t_container_type, typename t_arrangement_type>
+        struct matrix_wipe_module<t_derived_type, t_container_type, t_arrangement_type>
         {
             using derived_type = t_derived_type;
             using container_type = t_container_type;
             using arrangement_type = t_arrangement_type;
             using value_type = typename container_type::value_type;
             using size_type = typename container_type::size_type;
+
+            static constexpr bool is_enabled = true;
 
             /** @brief Overwrites allocated memory with zeros. */
             void wipe() noexcept
@@ -126,36 +132,41 @@ namespace ropufu::aftermath::algebra
             } // uninitialized(...)
         }; // struct matrix_wipe_module<...>
         
-        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(+, add)
-        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(-, subtract)
-        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(*, multiply)
-        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(/, divide)
-        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(|, binor)
-        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(&, binand)
-        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(^, binxor)
-        
-        template <bool t_is_enabled, typename t_derived_type, typename t_value_type>
+        template <typename t_derived_type, typename t_value_type>
         struct matrix_inequality_op_module { };
 
-        template <typename t_derived_type, typename t_value_type>
-        struct matrix_inequality_op_module<true, t_derived_type, t_value_type>
+        template <typename t_derived_type, std::equality_comparable t_value_type>
+        struct matrix_inequality_op_module<t_derived_type, t_value_type>
         {
+        private:
             using matrix_type = t_derived_type;
             using scalar_type = t_value_type;
-            
+        
+        public:
             bool operator ==(const matrix_type& other) const noexcept
             {
                 const matrix_type& self = static_cast<const matrix_type&>(*this);
                 // Check dimensions.
                 if (!matrix_type::compatible(self, other)) return false;
-                // Check values.
 
                 const scalar_type* right_ptr = other.cbegin();
                 const scalar_type* left_end_ptr = self.cend();
-                for (const scalar_type* left_ptr = self.begin(); left_ptr != left_end_ptr; ++left_ptr)
+                for (const scalar_type* left_ptr = self.cbegin(); left_ptr != left_end_ptr; ++left_ptr)
                 {
                     if (*(left_ptr) != *(right_ptr)) return false;
                     ++right_ptr;
+                } // for (...)
+                return true;
+            } // operator /=(...)
+
+            bool operator ==(const scalar_type& other) const noexcept
+            {
+                const matrix_type& self = static_cast<const matrix_type&>(*this);
+
+                const scalar_type* left_end_ptr = self.cend();
+                for (const scalar_type* left_ptr = self.cbegin(); left_ptr != left_end_ptr; ++left_ptr)
+                {
+                    if (*(left_ptr) != other) return false;
                 } // for (...)
                 return true;
             } // operator /=(...)
@@ -165,48 +176,67 @@ namespace ropufu::aftermath::algebra
             {
                 return !(this->operator ==(other));
             } // operator !=(...)
+
+            /** Checks if all entries of the matrix equal the constant. */
+            bool operator !=(const scalar_type& other) const noexcept
+            {
+                return !(this->operator ==(other));
+            } // operator !=(...)
         }; // struct equality_op_module
+        
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(+, addition)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(-, subtraction)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(*, multiplication)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(/, division)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(&, binary_and)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(|, binary_or)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(^, binary_xor)
     } // namespace detail
 
     /** @brief A rectangular array. */
-    template <typename t_value_type,
+    template <std::default_initializable t_value_type,
         typename t_allocator_type = std::allocator<t_value_type>,
         typename t_arrangement_type = row_major<typename std::allocator_traits<t_allocator_type>::size_type>>
+        requires std::same_as<typename std::allocator_traits<t_allocator_type>::size_type, typename t_arrangement_type::size_type>
     struct matrix;
 
     /** @brief Row major matrix with default allocator. */
-    template <typename t_value_type>
+    template <std::default_initializable t_value_type>
     using rmatrix_t = matrix<t_value_type,
         std::allocator<t_value_type>,
         row_major<typename std::allocator_traits<std::allocator<t_value_type>>::size_type>>;
 
     /** @brief Column major matrix with default allocator. */
-    template <typename t_value_type>
+    template <std::default_initializable t_value_type>
     using cmatrix_t = matrix<t_value_type,
         std::allocator<t_value_type>,
         column_major<typename std::allocator_traits<std::allocator<t_value_type>>::size_type>>;
 
     /** @brief A rectangular array. */
-    template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
+    template <std::default_initializable t_value_type, typename t_allocator_type, typename t_arrangement_type>
+        requires std::same_as<typename std::allocator_traits<t_allocator_type>::size_type, typename t_arrangement_type::size_type>
     struct matrix
-        : public detail::matrix_wipe_module<std::is_arithmetic_v<t_value_type>,
+        : public detail::matrix_wipe_module<
             matrix<t_value_type, t_allocator_type, t_arrangement_type>,
-            simple_vector<t_value_type, t_allocator_type>, t_arrangement_type>,
-        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(add),
-        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(subtract),
-        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(multiply),
-        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(divide),
-        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(binor),
-        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(binand),
-        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(binxor),
-        public detail::matrix_inequality_op_module<type_traits::has_inequality_binary_v<t_value_type>, matrix<t_value_type, t_allocator_type, t_arrangement_type>, t_value_type>
+            simple_vector<t_value_type, t_allocator_type>,
+            t_arrangement_type>,
+        public detail::matrix_inequality_op_module<
+            matrix<t_value_type, t_allocator_type, t_arrangement_type>,
+            t_value_type>,
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(addition),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(subtraction),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(multiplication),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(division),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(binary_and),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(binary_or),
+        public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(binary_xor)
     {
         using type = matrix<t_value_type, t_allocator_type, t_arrangement_type>;
         using value_type = t_value_type;
         using allocator_type = t_allocator_type;
         using arrangement_type = t_arrangement_type;
 
-        template <typename t_other_value_type = value_type, typename t_other_allocator_type = allocator_type>
+        template <std::default_initializable t_other_value_type = value_type, typename t_other_allocator_type = allocator_type>
         using container_t = simple_vector<t_other_value_type, t_other_allocator_type>;
 
         using size_type = typename container_t<>::size_type;
@@ -217,28 +247,24 @@ namespace ropufu::aftermath::algebra
         using iterator_type = typename container_t<>::iterator_type;
         using const_iterator_type = typename container_t<>::const_iterator_type;
 
-        template <typename, typename, typename> friend struct matrix;
-        template <bool, typename, typename, typename> friend struct detail::matrix_wipe_module;
-        template <bool, typename, typename> friend struct detail::matrix_add_assign_op_module;
-        template <bool, typename, typename> friend struct detail::matrix_subtract_assign_op_module;
-        template <bool, typename, typename> friend struct detail::matrix_multiply_assign_op_module;
-        template <bool, typename, typename> friend struct detail::matrix_divide_assign_op_module;
-        template <bool, typename, typename> friend struct detail::matrix_binor_assign_op_module;
-        template <bool, typename, typename> friend struct detail::matrix_binand_assign_op_module;
-        template <bool, typename, typename> friend struct detail::matrix_binxor_assign_op_module;
+        template <std::default_initializable, typename, typename> friend struct matrix;
+        template <typename, typename, typename> friend struct detail::matrix_wipe_module;
+
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(addition)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(subtraction)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(multiplication)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(division)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(binary_and)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(binary_or)
+        ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(binary_xor)
+
         template <bool, typename, typename> friend struct detail::matrix_inequality_op_module;
+
+        using wipe_module = detail::matrix_wipe_module<type, container_t<>, arrangement_type>;
 
     private:
         container_t<> m_container = {}; // Flat data.
         arrangement_type m_arrangement = {}; // Dimensions and structure of the matrix.
-
-        static constexpr void traits_check() noexcept
-        {
-            static_assert(std::is_same_v<
-                typename container_t<>::size_type,
-                typename arrangement_type::size_type>, "size_type mismatch between arrangement_type and allocator_type.");
-            static_assert(std::is_default_constructible_v<value_type>, "value_type has to be default constructible.");
-        } // traits_check(...)
 
     public:
         /** @brief Creates a matrix by stealing from \p other. */
@@ -246,7 +272,6 @@ namespace ropufu::aftermath::algebra
             : m_container(std::move(other.m_container)),
             m_arrangement(other.m_arrangement)
         {
-            type::traits_check();
         } // matrix(...)
 
         /** @brief Copies a matrix by stealing from \p other. */
@@ -264,21 +289,19 @@ namespace ropufu::aftermath::algebra
         matrix(size_type height, size_type width)
             : m_container(height * width), m_arrangement(height, width)
         {
-            type::traits_check();
         } // matrix(...)
 
         /** @brief Creates a matrix with all entries set to \p value. */
         matrix(size_type height, size_type width, const value_type& value)
             : m_container(height * width, value), m_arrangement(height, width)
         {
-            type::traits_check();
         } // matrix(...)
 
         /** @brief Creates a matrix of a given size with values generatred by \c generator: (row_index, column_index) -> value. */
         template <typename t_generator_type>
+            requires detail::has_two_dimensional_indexer_v<t_generator_type&&, value_type, size_type>
         static type generate(size_type height, size_type width, t_generator_type&& generator)
         {
-            static_assert(detail::has_two_dimensional_indexer_v<t_generator_type&&, value_type, size_type>, "generator must allow for (size_type, size_type) -> value_type call.");
             type result { height, width };
             for (size_type i = 0; i < height; ++i)
                 for (size_type j = 0; j < width; ++j)
@@ -287,32 +310,31 @@ namespace ropufu::aftermath::algebra
         } // generate(...)
 
         /** @brief Creates a matrix from another sequence. */
-        template <typename t_container_type, typename t_void_type = std::enable_if_t<
-            aftermath::type_traits::is_iterable_v<t_container_type> &&
-            std::is_same_v<typename t_container_type::value_type, value_type>>>
+        template <std::ranges::range t_container_type>
+            requires std::same_as<typename t_container_type::value_type, value_type>
         static type column_vector(const t_container_type& container)
         {
             type result {};
             result.m_container = container_t<>(container);
             result.m_arrangement = arrangement_type(container.size(), 1);
+            return result;
         } // column_vector(...)
 
         /** @brief Creates a matrix from another sequence. */
-        template <typename t_container_type, typename t_void_type = std::enable_if_t<
-            aftermath::type_traits::is_iterable_v<t_container_type> &&
-            std::is_same_v<typename t_container_type::value_type, value_type>>>
+        template <std::ranges::range t_container_type>
+            requires std::same_as<typename t_container_type::value_type, value_type>
         static type row_vector(const t_container_type& container)
         {
             type result {};
             result.m_container = container_t<>(container);
             result.m_arrangement = arrangement_type(1, container.size());
+            return result;
         } // column_vector(...)
 
         /** @brief Creates a matrix as a copy of another matrix. */
         /*implicit*/ matrix(const type& other)
             : m_container(other.m_container), m_arrangement(other.m_arrangement)
         {
-            type::traits_check();
         } // matrix(...)
 
         /** @brief Creates a matrix as a copy of another matrix by casting its underlying values. */
@@ -348,8 +370,11 @@ namespace ropufu::aftermath::algebra
             this->m_container.fill(value);
         } // fill(...)
 
-        /** Transforms every element of the matrix by applying \p action : (value_type&) -> void to it. */
+        /** @brief Transforms every element of the matrix by applying \p action to it.
+         *  @param action Has to implement (value_type&) -> void.
+         */
         template <typename t_action_type>
+            requires ropufu::action_one<t_action_type, value_type&>
         void transform(t_action_type&& action) noexcept
         {
             for (value_type& x : this->m_container) action(x);

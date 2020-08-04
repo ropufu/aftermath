@@ -4,9 +4,10 @@
 
 #include "../number_traits.hpp"
 #include "../math_constants.hpp"
-#include "distribution_traits.hpp"
+#include "concepts.hpp"
 
 #include <cmath>       // std::sqrt
+#include <concepts>    // std::floating_point
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <limits>      // std::numeric_limits
@@ -16,26 +17,33 @@
 #include <utility>     // std::declval
 #include <vector>      // std::vector
 
+#ifdef ROPUFU_TMP_TYPENAME
+#undef ROPUFU_TMP_TYPENAME
+#endif
+#define ROPUFU_TMP_TYPENAME uniform_int_distribution<t_value_type, t_probability_type, t_expectation_type>
+
 namespace ropufu::aftermath::probability
 {
     /** Discrete uniform distribution. */
-    template <typename t_value_type = std::size_t, typename t_probability_type = double, typename t_expectation_type = t_probability_type>
+    template <ropufu::integer t_value_type = std::size_t,
+        std::floating_point t_probability_type = double,
+        std::floating_point t_expectation_type = t_probability_type>
     struct uniform_int_distribution;
 
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct is_discrete<uniform_int_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <ropufu::integer t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct is_discrete<ROPUFU_TMP_TYPENAME>
     {
-        using distribution_type = uniform_int_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using distribution_type = ROPUFU_TMP_TYPENAME;
         static constexpr bool value = true;
     }; // struct is_discrete
 
     /** @brief Discrete uniform distribution.
      *  @todo Add tests!!
      */
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct uniform_int_distribution
+    template <ropufu::integer t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct uniform_int_distribution : distribution_base<ROPUFU_TMP_TYPENAME>
     {
-        using type = uniform_int_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using type = ROPUFU_TMP_TYPENAME;
         using value_type = t_value_type;
         using probability_type = t_probability_type;
         using expectation_type = t_expectation_type;
@@ -47,13 +55,6 @@ namespace ropufu::aftermath::probability
         value_type m_min = 0;
         value_type m_max = 1;
 
-        static constexpr void traits_check() noexcept
-        {
-            static_assert(std::numeric_limits<value_type>::is_integer, "Value type has to be an integer type.");
-            static_assert(std::is_floating_point_v<probability_type>, "Probability type has to be a floating point type.");
-            static_assert(std::is_floating_point_v<expectation_type>, "Expectation type has to be a floating point type.");
-        } // traits_check(...)
-
         void validate() const
         {
             if (this->m_min > this->m_max)
@@ -62,7 +63,7 @@ namespace ropufu::aftermath::probability
 
     public:
         /** Trivial case when trials always fail. */
-        uniform_int_distribution() noexcept { type::traits_check(); }
+        uniform_int_distribution() noexcept { }
 
         /** Constructor and implicit conversion from standard distribution. */
         /*implicit*/ uniform_int_distribution(const std_type& distribution)
@@ -74,7 +75,6 @@ namespace ropufu::aftermath::probability
         explicit uniform_int_distribution(value_type min, value_type max)
             : m_min(min), m_max(max)
         {
-            type::traits_check();
             this->validate();
         } // uniform_int_distribution(...)
 
@@ -159,16 +159,16 @@ namespace ropufu::aftermath::probability
     }; // struct uniform_int_distribution
 
     // ~~ Definitions ~~
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    constexpr char uniform_int_distribution<t_value_type, t_probability_type, t_expectation_type>::name[];
+    template <ropufu::integer t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std
 {
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    struct hash<ropufu::aftermath::probability::uniform_int_distribution<t_value_type, t_probability_type, t_expectation_type>>
+    template <ropufu::integer t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct hash<ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME>
     {
-        using argument_type = ropufu::aftermath::probability::uniform_int_distribution<t_value_type, t_probability_type, t_expectation_type>;
+        using argument_type = ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME;
         using result_type = std::size_t;
 
         result_type operator ()(argument_type const& x) const noexcept

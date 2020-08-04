@@ -4,6 +4,7 @@
 
 #include "../number_traits.hpp"
 
+#include <concepts>     // std::floating_point
 #include <cstddef>      // std::size_t
 #include <cstdint>      // std::int_fast64_t
 #include <functional>   // std::function
@@ -12,7 +13,6 @@
 #include <stdexcept>    // std::logic_error, std::runtime_error
 #include <string>       // std::string, std::to_string
 #include <system_error> // std::error_code, std::errc, std::make_error_code
-#include <type_traits>  // std::is_floating_point_v
 #include <utility>      // std::move
 
 namespace ropufu::aftermath::algorithm
@@ -21,7 +21,7 @@ namespace ropufu::aftermath::algorithm
      *  empirically (e.g., via simulations). If \c f is the unknown function,
      *  then one observes f + e, where \c e are random errors with mean zero.
      */
-    template <typename t_argument_type, typename t_value_type>
+    template <std::floating_point t_argument_type, std::floating_point t_value_type>
     struct fuzzy
     {
         using type = fuzzy<t_argument_type, t_value_type>;
@@ -53,12 +53,6 @@ namespace ropufu::aftermath::algorithm
         std::size_t m_max_steps = type::default_step_limit;
         // Cached values.
         std::map<local_coordinate_type, value_type> m_observations = {}; // Observed key-value pairs. Keys correspond to local grid coordinates.
-
-        static constexpr void traits_check() noexcept
-        {
-            static_assert(std::is_floating_point_v<argument_type>, "Function argument has to be a floating point type.");
-            static_assert(std::is_floating_point_v<value_type>, "Function value has to be a floating point type.");
-        } // traits_check(...)
 
         /** Translates local coordinates to global. */
         global_coordinate_type local_to_global(local_coordinate_type local_coordinate) const noexcept
@@ -171,7 +165,6 @@ namespace ropufu::aftermath::algorithm
         /*implicit*/ fuzzy(function_type&& noisy_function) noexcept
             : m_noisy_function(std::move(noisy_function))
         {
-            type::traits_check();
         } // fuzzy(...)
 
         /** @brief Initialize the grid for searching for zero.

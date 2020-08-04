@@ -7,7 +7,7 @@
 #include <cstring>     // std::memcpy
 #include <iterator>    // std::cbegin, std::cend
 #include <stdexcept>   // std::logic_error
-#include <type_traits> // ...
+#include <type_traits> // std::is_trivially_copyable_v, std::conditional_t
 #include <utility>     // std::move
 #include <vector>      // std::vector
 

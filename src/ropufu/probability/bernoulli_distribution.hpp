@@ -3,9 +3,10 @@
 #define ROPUFU_AFTERMATH_PROBABILITY_BERNOULLI_DISTRIBUTION_HPP_INCLUDED
 
 #include "../number_traits.hpp"
-#include "distribution_traits.hpp"
+#include "concepts.hpp"
 
 #include <cmath>       // std::sqrt
+#include <concepts>    // std::floating_point
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <limits>      // std::numeric_limits
@@ -15,26 +16,32 @@
 #include <utility>     // std::declval
 #include <vector>      // std::vector
 
+#ifdef ROPUFU_TMP_TYPENAME
+#undef ROPUFU_TMP_TYPENAME
+#endif
+#define ROPUFU_TMP_TYPENAME bernoulli_distribution<t_probability_type, t_expectation_type>
+
 namespace ropufu::aftermath::probability
 {
     /** Bernoulli distribution. */
-    template <typename t_probability_type = double, typename t_expectation_type = t_probability_type>
+    template <std::floating_point t_probability_type = double,
+        std::floating_point t_expectation_type = t_probability_type>
     struct bernoulli_distribution;
 
-    template <typename t_probability_type, typename t_expectation_type>
-    struct is_discrete<bernoulli_distribution<t_probability_type, t_expectation_type>>
+    template <std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct is_discrete<ROPUFU_TMP_TYPENAME>
     {
-        using distribution_type = bernoulli_distribution<t_probability_type, t_expectation_type>;
+        using distribution_type = ROPUFU_TMP_TYPENAME;
         static constexpr bool value = true;
     }; // struct is_discrete
 
     /** @brief Bernoulli distribution.
      *  @todo Add tests!!
      */
-    template <typename t_probability_type, typename t_expectation_type>
-    struct bernoulli_distribution
+    template <std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct bernoulli_distribution : distribution_base<ROPUFU_TMP_TYPENAME>
     {
-        using type = bernoulli_distribution<t_probability_type, t_expectation_type>;
+        using type = ROPUFU_TMP_TYPENAME;
         using value_type = bool;
         using probability_type = t_probability_type;
         using expectation_type = t_expectation_type;
@@ -45,12 +52,6 @@ namespace ropufu::aftermath::probability
     private:
         probability_type m_probability_of_success = 0;
 
-        static constexpr void traits_check() noexcept
-        {
-            static_assert(std::is_floating_point_v<probability_type>, "Probability type has to be a floating point type.");
-            static_assert(std::is_floating_point_v<expectation_type>, "Expectation type has to be a floating point type.");
-        } // traits_check(...)
-
         void validate() const
         {
             if (!aftermath::is_finite(this->m_probability_of_success) || this->m_probability_of_success < 0 || this->m_probability_of_success > 1)
@@ -59,7 +60,7 @@ namespace ropufu::aftermath::probability
 
     public:
         /** Trivial case when trials always fail. */
-        bernoulli_distribution() noexcept { type::traits_check(); }
+        bernoulli_distribution() noexcept { }
 
         /** Constructor and implicit conversion from standard distribution. */
         /*implicit*/ bernoulli_distribution(const std_type& distribution)
@@ -71,7 +72,6 @@ namespace ropufu::aftermath::probability
         explicit bernoulli_distribution(probability_type probability_of_success)
             : m_probability_of_success(probability_of_success)
         {
-            type::traits_check();
             this->validate();
         } // bernoulli_distribution(...)
 
@@ -137,16 +137,16 @@ namespace ropufu::aftermath::probability
     }; // struct bernoulli_distribution
 
     // ~~ Definitions ~~
-    template <typename t_probability_type, typename t_expectation_type>
-    constexpr char bernoulli_distribution<t_probability_type, t_expectation_type>::name[];
+    template <std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std
 {
-    template <typename t_probability_type, typename t_expectation_type>
-    struct hash<ropufu::aftermath::probability::bernoulli_distribution<t_probability_type, t_expectation_type>>
+    template <std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    struct hash<ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME>
     {
-        using argument_type = ropufu::aftermath::probability::bernoulli_distribution<t_probability_type, t_expectation_type>;
+        using argument_type = ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME;
         using result_type = std::size_t;
 
         result_type operator ()(argument_type const& x) const noexcept

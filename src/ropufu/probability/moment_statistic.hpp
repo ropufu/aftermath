@@ -2,7 +2,8 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_MOMENT_STATISTIC_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_MOMENT_STATISTIC_HPP_INCLUDED
 
-#include "../type_traits.hpp"
+#include "../concepts.hpp"
+#include "../number_traits.hpp"
 
 #include <array>   // std::array
 #include <cstddef> // std::size_t
@@ -26,28 +27,12 @@ namespace ropufu::aftermath::probability
 
         template <typename t_type>
         using vector_to_scalar_t = typename vector_to_scalar<t_type>::scalar_type;
-
-        template <typename t_value_type, bool t_iterable_flag = aftermath::type_traits::is_iterable_v<t_value_type>>
-        struct positive_part
-        {
-            static void make(t_value_type& scalar) { if (scalar < 0) scalar = 0; }
-        }; // struct positive_part
-
-        template <typename t_value_type>
-        inline void make_non_negative(t_value_type& value) { positive_part<t_value_type>::make(value); }
-
-        template <typename t_value_type>
-        struct positive_part<t_value_type, true>
-        {
-            static void make(t_value_type& vector)
-            {
-                for (auto& scalar : vector) make_non_negative(scalar);
-            } // make(...)
-        }; // struct positive_part<...>
     } // namespace detail
     
-    /** @brief A fast statistic builder to keep track of means and variances. */
-    template <typename t_observation_type, typename t_statistic_type = t_observation_type, std::size_t t_order = 3>
+    /** @brief A fast statistic builder to keep track of means and variances.
+     *  @todo Constraint types based on required arithmetic/scalar operations.
+     */
+    template <ropufu::ring t_observation_type, typename t_statistic_type = t_observation_type, std::size_t t_order = 3>
     struct moment_statistic
     {
         using type = moment_statistic<t_observation_type, t_statistic_type, t_order>;
@@ -164,7 +149,7 @@ namespace ropufu::aftermath::probability
 
             variance_sa *= variance_sb;
             variance -= variance_sa;
-            detail::make_non_negative(variance);
+            aftermath::make_non_negative(variance);
             return variance;
         } // variance(...)
     }; // struct moment_statistic

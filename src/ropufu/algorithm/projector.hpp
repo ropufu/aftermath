@@ -54,10 +54,6 @@ namespace ropufu::aftermath::algorithm
     private:
         surface_type m_surface = {}; // Surface to walk on.
 
-        static constexpr void traits_check()
-        {
-        } // traits_check(...)
-
     protected:
         std::size_t height_override(const surface_type& surface) const noexcept
         {
@@ -106,20 +102,17 @@ namespace ropufu::aftermath::algorithm
     public:
         projector() noexcept
         {
-            type::traits_check();
         } // projector(...)
 
         /*implicit*/ projector(const surface_type& surface) noexcept
             : m_surface(surface)
         {
-            type::traits_check();
         } // projector(...)
 
         template <typename... t_arg_types>
         explicit projector(t_arg_types&&... args) noexcept
             : m_surface(std::forward<t_arg_types>(args)...)
         {
-            type::traits_check();
         } // projector(...)
 
         const surface_type& surface() const noexcept { return this->m_surface; }

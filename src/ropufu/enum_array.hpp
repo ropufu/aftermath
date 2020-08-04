@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 #include "noexcept_json.hpp"
 
+#include "concepts.hpp"
 #include "enum_parser.hpp"
 #include "key_value_pair.hpp"
 
@@ -14,7 +15,7 @@
 #include <ostream>   // std::ostream
 #include <stdexcept> // std::out_of_range, std::logic_error
 #include <string>    // std::string, std::to_string
-#include <type_traits>  // ...
+#include <type_traits>  // std::underlying_type_t
 #include <system_error> // std::error_code, std::errc
 
 namespace ropufu::aftermath
@@ -22,7 +23,7 @@ namespace ropufu::aftermath
     namespace detail
     {
         /** @brief Auxiliary structure to be specialized for usage in \c enum_array. */
-        template <typename t_enum_type>
+        template <ropufu::enumeration t_enum_type>
         struct enum_array_keys
         {
             using underlying_type = std::underlying_type_t<t_enum_type>;
@@ -31,7 +32,7 @@ namespace ropufu::aftermath
             static constexpr underlying_type past_the_last_index = 0;
         }; // struct enum_array_keys
 
-        template <typename t_enum_type, typename t_value_type>
+        template <ropufu::enumeration t_enum_type, typename t_value_type>
         struct enum_array_core
         {
             using type = enum_array_core<t_enum_type, t_value_type>;
@@ -68,7 +69,6 @@ namespace ropufu::aftermath
         public:
             enum_array_core() noexcept
             {
-                static_assert(std::is_enum_v<enum_type>, "enum_type must be an enumeration.");
             } // enum_array_core(...)
 
             constexpr std::size_t size() const noexcept { return type::capacity; }
@@ -117,7 +117,7 @@ namespace ropufu::aftermath
     } // namespace detail
     
     /** @brief An iterator for \c enum_array usage in range-based for loops. */
-    template <typename t_enum_type, typename t_value_type, typename t_value_pointer_type>
+    template <ropufu::enumeration t_enum_type, typename t_value_type, typename t_value_pointer_type>
     struct enum_array_iterator
     {
         using type = enum_array_iterator<t_enum_type, t_value_type, t_value_pointer_type>;
@@ -168,7 +168,7 @@ namespace ropufu::aftermath
     }; // struct enum_array_iterator
     
     /** @brief A specialized iterator for Boolean-valued \c enum_array usage in range-based for loops. */
-    template <typename t_enum_type, typename t_value_pointer_type>
+    template <ropufu::enumeration t_enum_type, typename t_value_pointer_type>
     struct enum_array_iterator<t_enum_type, bool, t_value_pointer_type>
     {
         using type = enum_array_iterator<t_enum_type, bool, t_value_pointer_type>;
@@ -228,7 +228,7 @@ namespace ropufu::aftermath
     }; // struct enum_array_iterator<...>
     
     /** @brief An array indexed by \tparam t_enum_type. */
-    template <typename t_enum_type, typename t_value_type>
+    template <ropufu::enumeration t_enum_type, typename t_value_type>
     struct enum_array : public detail::enum_array_core<t_enum_type, t_value_type>
     {
         using type = enum_array<t_enum_type, t_value_type>;
@@ -276,11 +276,11 @@ namespace ropufu::aftermath
     }; // struct enum_array
 
     /** @brief Masks enumerable keys of \tparam t_enum_type. */
-    template <typename t_enum_type>
+    template <ropufu::enumeration t_enum_type>
     using flags_t = enum_array<t_enum_type, bool>;
 
     /** @brief Masks enumerable keys of \tparam t_enum_type. */
-    template <typename t_enum_type>
+    template <ropufu::enumeration t_enum_type>
     struct enum_array<t_enum_type, bool> : public detail::enum_array_core<t_enum_type, bool>
     {
         using type = enum_array<t_enum_type, bool>;
@@ -383,7 +383,7 @@ namespace ropufu::aftermath
     }; // struct enum_array<...>
 
     /** @brief Lists enumerable keys of \tparam t_enum_type. */
-    template <typename t_enum_type>
+    template <ropufu::enumeration t_enum_type>
     struct enum_array<t_enum_type, void>
     {
         using type = enum_array<t_enum_type, void>;
@@ -453,7 +453,7 @@ namespace ropufu::aftermath
     }; // struct enum_array<...>
 
     /** Store as an object { ..., "<enum key>": value, ... }. */
-    template <typename t_enum_type, typename t_value_type>
+    template <ropufu::enumeration t_enum_type, typename t_value_type>
     void to_json(nlohmann::json& j, const enum_array<t_enum_type, t_value_type>& x) noexcept
     {
         j = { };
@@ -466,7 +466,7 @@ namespace ropufu::aftermath
     } // to_json(...)
 
     /** Store as an array [ ..., "<enum key>", ... ]. */
-    template <typename t_enum_type>
+    template <ropufu::enumeration t_enum_type>
     void to_json(nlohmann::json& j, const enum_array<t_enum_type, bool>& x) noexcept
     {
         std::vector<std::string> y { };
@@ -476,7 +476,7 @@ namespace ropufu::aftermath
     } // to_json(...)
 
     /** Store as an array [ ..., "<enum key>", ... ]. */
-    template <typename t_enum_type>
+    template <ropufu::enumeration t_enum_type>
     void to_json(nlohmann::json& j, const enum_array<t_enum_type, void>& x) noexcept
     {
         std::vector<std::string> y { };
@@ -486,7 +486,7 @@ namespace ropufu::aftermath
     } // to_json(...)
 
     /** Unpack object { ..., "<enum key>": value, ... }. */
-    template <typename t_enum_type, typename t_value_type>
+    template <ropufu::enumeration t_enum_type, typename t_value_type>
     void from_json(const nlohmann::json& j, enum_array<t_enum_type, t_value_type>& x)
     {
         using type = enum_array<t_enum_type, t_value_type>;
@@ -496,7 +496,7 @@ namespace ropufu::aftermath
     } // from_json(...)
 
     /** Unpack array [ ..., "<enum key>", ... ]. */
-    template <typename t_enum_type>
+    template <ropufu::enumeration t_enum_type>
     void from_json(const nlohmann::json& j, enum_array<t_enum_type, bool>& x)
     {
         using type = enum_array<t_enum_type, bool>;
@@ -506,7 +506,7 @@ namespace ropufu::aftermath
     } // from_json(...)
 
     /** Unpack array [ ..., "<enum key>", ... ]. */
-    template <typename t_enum_type>
+    template <ropufu::enumeration t_enum_type>
     void from_json(const nlohmann::json& j, enum_array<t_enum_type, void>& x)
     {
         using type = enum_array<t_enum_type, void>;
@@ -518,7 +518,7 @@ namespace ropufu::aftermath
 
 namespace std
 {
-    template <typename t_enum_type, typename t_value_type>
+    template <ropufu::enumeration t_enum_type, typename t_value_type>
     std::string to_string(const ropufu::aftermath::enum_array<t_enum_type, t_value_type>& value) noexcept
     {
         nlohmann::json j = value;

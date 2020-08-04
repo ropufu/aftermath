@@ -2,7 +2,10 @@
 #ifndef ROPUFU_AFTERMATH_ALGEBRA_FRACTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_ALGEBRA_FRACTION_HPP_INCLUDED
 
+#include "../concepts.hpp"
+
 #include <cmath>       // std::round
+#include <concepts>    // std::floating_point
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <limits>      // std::numeric_limits
@@ -10,27 +13,30 @@
 #include <ostream>     // std::ostream
 #include <stdexcept>   // std::logic_error
 #include <string>      // std::string
-#include <type_traits> // ...
 #include <utility>     // std::swap
 
 namespace ropufu::aftermath::algebra
 {
     /** @brief Represents a rational number (fraction of two integers). */
-    template <typename t_integer_type>
+    template <ropufu::integer t_integer_type>
     struct fraction;
 
     namespace detail
     {
-        template <bool t_is_enabled, typename t_derived_type>
+        template <typename t_derived_type, typename t_integer_type>
         struct fraction_negate_module
         {
+            static constexpr bool is_enabled = false;
+
         protected:
-            void regularize() noexcept { }
+            constexpr void regularize() noexcept { }
         }; // struct fraction_negate_module
 
-        template <typename t_derived_type>
-        struct fraction_negate_module<true, t_derived_type>
+        template <typename t_derived_type, ropufu::signed_integer t_integer_type>
+        struct fraction_negate_module<t_derived_type, t_integer_type>
         {
+            static constexpr bool is_enabled = true;
+
         protected:
             void regularize() noexcept
             {
@@ -60,10 +66,10 @@ namespace ropufu::aftermath::algebra
     } // namespace detail
 
     /** Approximates the floating point number with a nearest fraction, keeping its denominator. */
-    template <typename t_float_type, typename t_integer_type>
+    template <std::floating_point t_float_type, ropufu::integer t_integer_type>
     static void nearest_fraction(const t_float_type& value, fraction<t_integer_type>& nearest)
     {
-        if constexpr (!std::is_signed_v<t_integer_type>)
+        if constexpr (!std::numeric_limits<t_integer_type>::is_signed)
         {
             if (value < 0) throw std::logic_error("Specified integer type cannot accomodate negative numbers.");
         } // if constexpr (...)
@@ -72,34 +78,28 @@ namespace ropufu::aftermath::algebra
     } // nearest_fraction(...)
 
     /** @brief Represents a rational number (fraction of two integers). */
-    template <typename t_integer_type>
-    struct fraction : public detail::fraction_negate_module<std::is_signed_v<t_integer_type>, fraction<t_integer_type>>
+    template <ropufu::integer t_integer_type>
+    struct fraction : public detail::fraction_negate_module<fraction<t_integer_type>, t_integer_type>
     {
         using type = fraction<t_integer_type>;
         using integer_type = t_integer_type;
 
-        template <bool, typename> friend struct detail::fraction_negate_module;
+        template <typename, typename> friend struct detail::fraction_negate_module;
 
     private:
         integer_type m_numerator = 0; // Numerator of the fraction. Could be negative.
         integer_type m_denominator = 1; // Denominator of the fraction. Always positive.
 
-        static constexpr void traits_check() noexcept
-        {
-            static_assert(std::numeric_limits<integer_type>::is_integer, "Underlying type has to be an integer type.");
-        } // traits_check(...)
-
         /** @brief Unchecked constructor. */
         fraction(std::nullptr_t, const integer_type& numerator, const integer_type& denominator) noexcept
             : m_numerator(numerator), m_denominator(denominator)
         {
-            type::traits_check();
             this->regularize();
         } // fraction(...)
 
     public:
         /** Constructs a defult \c fraction with value 0. */
-        fraction() noexcept { type::traits_check(); }
+        fraction() noexcept { }
         
         /** @brief Constructs a \c fraction from an integer \p value. 
          *  @remark Also defines implicit conversion.
@@ -107,7 +107,6 @@ namespace ropufu::aftermath::algebra
         /*implicit*/ fraction(const integer_type& value) noexcept
             : m_numerator(value)
         {
-            type::traits_check();
         } // fraction(...)
 
         /** @brief Constructs a \c fraction as a ratio \p numerator / \p denominator.
@@ -293,7 +292,7 @@ namespace ropufu::aftermath::algebra
 
 namespace std
 {
-    template <typename t_integer_type>
+    template <ropufu::integer t_integer_type>
     struct hash<ropufu::aftermath::algebra::fraction<t_integer_type>>
     {
         using argument_type = ropufu::aftermath::algebra::fraction<t_integer_type>;
