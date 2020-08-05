@@ -1,8 +1,4 @@
 
-#ifndef __cpp_concepts
-#define __cpp_concepts 201907L
-#endif
-
 #define DOCTEST_CONFIG_IMPLEMENT
 #include <doctest/doctest.h>
 #include "benchmark_reporter.hpp"
