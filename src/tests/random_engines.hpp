@@ -2,6 +2,7 @@
 #ifndef ROPUFU_AFTERMATH_TESTS_RANDOM_ENGINES_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_TESTS_RANDOM_ENGINES_HPP_INCLUDED
 
+#include "../ropufu/arithmetic.hpp"
 #include "../ropufu/math_constants.hpp"
 
 #include <cstddef>  // std::size_t

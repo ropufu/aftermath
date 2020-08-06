@@ -2,7 +2,7 @@
 #ifndef ROPUFU_AFTERMATH_RANDOM_ZIGGURAT_LAYERS_NORMAL_512_M32_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_RANDOM_ZIGGURAT_LAYERS_NORMAL_512_M32_HPP_INCLUDED
 
-#include "../math_constants.hpp"
+#include "../arithmetic.hpp"
 #include "../probability/standard_normal_distribution.hpp"
 
 #include <cstddef> // std::size_t
@@ -14,15 +14,15 @@ namespace ropufu::aftermath::random
 
     /** @brief Ziggurat with 512 layers for normal distribution and full 32-bit engines. */
     template <typename t_uniform_type,typename t_value_type, typename t_expectation_type>
-    struct ziggurat_layers_normal_512<t_uniform_type, t_value_type, t_expectation_type, mersenne_number(32ULL)>
+    struct ziggurat_layers_normal_512<t_uniform_type, t_value_type, t_expectation_type, aftermath::mersenne_number(32ULL)>
     {
-        using type = ziggurat_layers_normal_512<t_uniform_type, t_value_type, t_expectation_type, mersenne_number(32ULL)>;
+        using type = ziggurat_layers_normal_512<t_uniform_type, t_value_type, t_expectation_type, aftermath::mersenne_number(32ULL)>;
         using uniform_type = t_uniform_type;
         using value_type = t_value_type;
         using expectation_type = t_expectation_type;
 
         static constexpr std::size_t n_boxes = 512;
-        static constexpr std::size_t engine_diameter = mersenne_number(32ULL); // 4294967295.
+        static constexpr std::size_t engine_diameter = aftermath::mersenne_number(32ULL); // 4294967295.
 
         static inline const uniform_type upscaled_low_probabilities[n_boxes] = {
             uniform_type(128325335ULL), uniform_type(107536362ULL), uniform_type(70682736ULL), uniform_type(53872386ULL), uniform_type(44083751ULL), uniform_type(37620342ULL), uniform_type(33007934ULL), uniform_type(29537361ULL), 

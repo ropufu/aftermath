@@ -60,6 +60,9 @@ namespace ropufu
     concept arithmetic = std::is_arithmetic_v<t_numeric_type>;
 
     template <typename t_numeric_type>
+    concept signed_arithmetic = arithmetic<t_numeric_type> && std::numeric_limits<t_numeric_type>::is_signed;
+
+    template <typename t_numeric_type>
     concept zero_assignable = requires(t_numeric_type& x)
     {
         {x = 0};

@@ -2,7 +2,6 @@
 #ifndef ROPUFU_AFTERMATH_RANDOM_ZIGGURAT_LAYERS_NORMAL_512_2147483645_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_RANDOM_ZIGGURAT_LAYERS_NORMAL_512_2147483645_HPP_INCLUDED
 
-#include "../math_constants.hpp"
 #include "../probability/standard_normal_distribution.hpp"
 
 #include <cstddef> // std::size_t

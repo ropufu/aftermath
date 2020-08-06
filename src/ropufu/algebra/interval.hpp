@@ -58,7 +58,7 @@ namespace ropufu::aftermath::algebra
                 std::vector<value_type> interval_pair = {};
                 aftermath::noexcept_json::as(j, interval_pair, ec);
                 if (ec.value() != 0) return;
-                if (interval_pair.size() != 2) // INTERVAL should be a vector with two entries.
+                if (interval_pair.size() != 2) // Vector representation must have two entries.
                 {
                     ec = std::make_error_code(std::errc::bad_message);
                     return;

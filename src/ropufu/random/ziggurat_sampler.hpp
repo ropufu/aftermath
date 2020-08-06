@@ -2,8 +2,8 @@
 #ifndef ROPUFU_AFTERMATH_RANDOM_ZIGGURAT_SAMPLER_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_RANDOM_ZIGGURAT_SAMPLER_HPP_INCLUDED
 
+#include "../arithmetic.hpp"
 #include "../concepts.hpp"
-#include "../math_constants.hpp"
 #include "../probability/concepts.hpp"
 
 #include <cstddef>     // std:size_t
