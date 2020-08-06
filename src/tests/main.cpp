@@ -21,6 +21,7 @@
 #include "random/binomial_sampler.hpp"
 #include "random/normal_sampler_512.hpp"
 #include "random/uniform_int_sampler.hpp"
+#include "ropufu/arithmetic.hpp"
 #include "ropufu/enum_array.hpp"
 #include "ropufu/simple_vector.hpp"
 #include "ropufu/sliding_array.hpp"
