@@ -51,16 +51,19 @@ namespace ropufu
     concept enumeration = std::is_enum_v<t_enum_type>;
 
     template <typename t_numeric_type>
+    concept numeric_signed = std::numeric_limits<t_numeric_type>::is_signed;
+
+    template <typename t_numeric_type>
     concept integer = std::numeric_limits<t_numeric_type>::is_integer;
 
     template <typename t_numeric_type>
-    concept signed_integer = integer<t_numeric_type> && std::numeric_limits<t_numeric_type>::is_signed;
+    concept signed_integer = integer<t_numeric_type> && numeric_signed<t_numeric_type>;
 
     template <typename t_numeric_type>
     concept arithmetic = std::is_arithmetic_v<t_numeric_type>;
 
     template <typename t_numeric_type>
-    concept signed_arithmetic = arithmetic<t_numeric_type> && std::numeric_limits<t_numeric_type>::is_signed;
+    concept signed_arithmetic = arithmetic<t_numeric_type> && numeric_signed<t_numeric_type>;
 
     template <typename t_numeric_type>
     concept zero_assignable = requires(t_numeric_type& x)
@@ -205,6 +208,31 @@ namespace ropufu
         {
             {x * r} -> std::same_as<t_numeric_type>;
         }; // concept right_module
+} // namespace ropufu
+
+namespace ropufu
+{
+    namespace detail
+    {
+        template <typename t_type>
+        struct try_make_signed
+        {
+            using type = t_type;
+        }; // struct ensure_signed
+
+        template <typename t_integer_type>
+            requires (!std::numeric_limits<t_integer_type>::is_signed)
+        struct try_make_signed<t_integer_type>
+        {
+            using type = std::make_signed_t<t_integer_type>;
+        }; // struct ensure_signed
+    } // namespace detail
+
+    /** If the arithmetic type is already signed, defines the type itself;
+     *  otherwise defines \c std::make_signed_t<t_arithmetic_type>.
+     **/
+    template <ropufu::arithmetic t_arithmetic_type>
+    using try_make_signed_t = typename detail::try_make_signed<t_arithmetic_type>::type;
 } // namespace ropufu
 
 #endif // ROPUFU_AFTERMATH_CONCEPTS_HPP_INCLUDED

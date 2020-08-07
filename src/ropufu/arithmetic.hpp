@@ -4,7 +4,8 @@
 
 #include "concepts.hpp"
 
-#include <limits> // std::numeric_limits
+#include <limits>      // std::numeric_limits
+#include <type_traits> // std::type_identity_t
 
 namespace ropufu::aftermath
 {
@@ -118,14 +119,14 @@ namespace ropufu::aftermath
 
     /** Calculates the binomical coefficient (\p of_total choose \p to_choose). */
     template <ropufu::integer t_integer_type>
-    inline constexpr t_integer_type nchoosek(t_integer_type of_total, t_integer_type to_choose)
+    inline constexpr t_integer_type nchoosek(t_integer_type of_total, std::type_identity_t<t_integer_type> to_choose)
     {
         return falling_factorial(of_total, to_choose) / falling_factorial(to_choose, to_choose);
     } // nchoosek(...)
 
     /** @brief Divides \p numerator by \p denominator and rounds toward zero. */
     template <ropufu::integer t_integer_type>
-    inline constexpr t_integer_type fraction_toward_zero(t_integer_type numerator, t_integer_type denominator) noexcept
+    inline constexpr t_integer_type fraction_toward_zero(t_integer_type numerator, std::type_identity_t<t_integer_type> denominator) noexcept
     {
         return numerator / denominator;
     } // fraction_toward_zero(...)
@@ -136,7 +137,7 @@ namespace ropufu::aftermath
      *  @warning \p numerator + \p denominator must not exceed std::numeric_limits<t_integer_type>::max().
      */
     template <ropufu::integer t_integer_type>
-    inline constexpr t_integer_type fraction_away_from_zero(t_integer_type numerator, t_integer_type denominator) noexcept
+    inline constexpr t_integer_type fraction_away_from_zero(t_integer_type numerator, std::type_identity_t<t_integer_type> denominator) noexcept
     {
         if constexpr (ropufu::signed_integer<t_integer_type>)
         {
