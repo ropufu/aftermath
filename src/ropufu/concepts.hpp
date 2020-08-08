@@ -17,16 +17,28 @@ namespace ropufu
     }; // concept pure_action
 
     template <typename t_func_type, typename t_arg_type>
-    concept action_one = requires(t_func_type& x, t_arg_type a)
+    concept unary_action = requires(t_func_type& x, t_arg_type a)
     {
         {x(a)} -> std::same_as<void>;
-    }; // concept action_one
+    }; // concept unary_action
 
     template <typename t_func_type, typename t_first_arg_type, typename t_second_arg_type>
-    concept action_two = requires(t_func_type& x, t_first_arg_type a, t_second_arg_type b)
+    concept binary_action = requires(t_func_type& x, t_first_arg_type a, t_second_arg_type b)
     {
         {x(a, b)} -> std::same_as<void>;
-    }; // concept action_two
+    }; // concept binary_action
+
+    template <typename t_func_type, typename t_arg_type>
+    concept unary_predicate = requires(t_func_type& x, t_arg_type a)
+    {
+        {x(a)} -> std::same_as<bool>;
+    }; // concept unary_predicate
+
+    template <typename t_func_type, typename t_first_arg_type, typename t_second_arg_type>
+    concept binary_predicate = requires(t_func_type& x, t_first_arg_type a, t_second_arg_type b)
+    {
+        {x(a, b)} -> std::same_as<bool>;
+    }; // concept binary_predicate
 
     template <typename t_container_type>
     concept wipeable = requires(t_container_type& x)

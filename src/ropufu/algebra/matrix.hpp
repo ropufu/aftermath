@@ -374,7 +374,7 @@ namespace ropufu::aftermath::algebra
          *  @param action Has to implement (value_type&) -> void.
          */
         template <typename t_action_type>
-            requires ropufu::action_one<t_action_type, value_type&>
+            requires ropufu::unary_action<t_action_type, value_type&>
         void transform(t_action_type&& action) noexcept
         {
             for (value_type& x : this->m_container) action(x);
