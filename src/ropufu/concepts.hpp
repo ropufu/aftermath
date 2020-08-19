@@ -5,10 +5,36 @@
 #include <concepts>    // std::same_as, std::convertible_to, std::equality_comparable
 #include <functional>  // std::hashable
 #include <ostream>     // std::ostream
-#include <type_traits> // std::is_enum_v, std::is_arithmetic_v
+#include <ranges>      // std::ranges::range
+#include <type_traits> // std::is_enum_v, std::is_arithmetic_v, std::decay_t
+#include <utility>     // std::declval
 
 namespace ropufu
 {
+    template <typename t_value_type>
+    concept decayed = std::same_as<std::decay_t<t_value_type>, t_value_type>;
+
+    template <typename t_container_type>
+    concept push_back_container = std::ranges::range<t_container_type> &&
+        requires(t_container_type& x)
+        {
+            typename t_container_type::value_type;
+            {x.clear()};
+            {x.push_back(std::declval<typename t_container_type::value_type>())};
+        }; // concept push_back_container
+
+    template <typename t_dictionary_type>
+    concept emplace_dictionary = std::ranges::range<t_dictionary_type> &&
+        requires(t_dictionary_type& x)
+        {
+            typename t_dictionary_type::key_type;
+            typename t_dictionary_type::mapped_type;
+            {x.clear()};
+            {x.emplace(
+                std::declval<typename t_dictionary_type::key_type>(),
+                std::declval<typename t_dictionary_type::mapped_type>()).second} -> std::convertible_to<bool>;
+        }; // concept emplace_dictionary
+
     /** @todo Keep an eye on concept support for parameter packs. */
     template <typename t_func_type>
     concept pure_action = requires(t_func_type& x)
@@ -165,6 +191,7 @@ namespace ropufu
      *  if \em x, \em y, \em z, are arbitrary elements of \tparam t_numeric_type, then:
      *  \li x + (y + z) = (x + y) + z
      *  \li x + y = y + x
+     *  @todo Consider moving declaration to aftermath::algebra.
      */
     template <typename t_numeric_type>
     concept abelian_group = zero_assignable<t_numeric_type> &&
@@ -177,6 +204,7 @@ namespace ropufu
      *  \li x 1 = 1 x = x
      *  \li x (y + z) = x y + x z
      *  \li (x + y) z = x z + y z
+     *  @todo Consider moving declaration to aftermath::algebra.
      */
     template <typename t_numeric_type>
     concept ring = abelian_group<t_numeric_type> &&
@@ -185,6 +213,7 @@ namespace ropufu
     /** The \c ring \tparam t_numeric_type is closed under subtraction and division,
      *  and has a multiplicative inverse for every element of \tparam t_numeric_type
      *  except for 0.
+     *  @todo Consider moving declaration to aftermath::algebra.
      */
     template <typename t_numeric_type>
     concept field = ring<t_numeric_type> && closed_under_division<t_numeric_type>;
@@ -197,6 +226,7 @@ namespace ropufu
      *  \li (r + s) x = r x + s x
      *  \li (r s) x = r (s x)
      *  \li 1 x = x
+     *  @todo Consider moving declaration to aftermath::algebra.
      */
     template <typename t_scalar_type, typename t_numeric_type>
     concept left_module = abelian_group<t_numeric_type> && ring<t_scalar_type> &&
@@ -213,6 +243,7 @@ namespace ropufu
      *  \li x (r + s) = x t + x s
      *  \li x (r s) = (x r) s
      *  \li x 1 = x
+     *  @todo Consider moving declaration to aftermath::algebra.
      */
     template <typename t_scalar_type, typename t_numeric_type>
     concept right_module = abelian_group<t_numeric_type> && ring<t_scalar_type> &&

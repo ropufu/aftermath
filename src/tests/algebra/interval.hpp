@@ -3,13 +3,17 @@
 #define ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_HPP_INCLUDED
 
 #include <doctest/doctest.h>
+#include <nlohmann/json.hpp>
 
 #include "../core.hpp"
 #include "../../ropufu/algebra/interval.hpp"
+#include "../../ropufu/noexcept_json.hpp"
 
 #include <cstddef>    // std::size_t
 #include <cstdint>    // std::int16_t, std::int32_t, std::int64_t
 #include <functional> // std::hash
+#include <map>        // std::map
+#include <string>     // std::string
 #include <vector>     // std::vector
 
 #define ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_XLL_TYPES   \
@@ -26,25 +30,46 @@
     ropufu::aftermath::algebra::interval<double>            \
 
 
-TEST_CASE_TEMPLATE("testing interval json", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
+TEST_CASE_TEMPLATE("testing interval json", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {
-    tested_t a = tested_t(1, 1729);
-    tested_t b = tested_t(13, 2);
-    tested_t c = tested_t(27, 27);
+    interval_type a {1, 1729};
+    interval_type b {13, 2};
+    interval_type c {27, 27};
 
     CHECK(ropufu::aftermath::tests::does_json_round_trip(a));
     CHECK(ropufu::aftermath::tests::does_json_round_trip(b));
     CHECK(ropufu::aftermath::tests::does_json_round_trip(c));
 } // TEST_CASE_TEMPLATE(...)
 
-TEST_CASE_TEMPLATE("testing interval explosion", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
+TEST_CASE_TEMPLATE("testing interval noexcept json", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {
-    using value_type = typename tested_t::value_type;
+    interval_type a {1, 1729};
+    interval_type b {13, 2};
+    interval_type c {27, 27};
+
+    nlohmann::json j = {
+        {"a", a},
+        {"b", b},
+        {"gamma", c}
+    };
+
+    std::map<std::string, interval_type> m {};
+
+    REQUIRE(ropufu::noexcept_json::try_get(j, m));
+
+    CHECK_EQ(m["a"], a);
+    CHECK_EQ(m["b"], b);
+    CHECK_EQ(m["gamma"], c);
+} // TEST_CASE_TEMPLATE(...)
+
+TEST_CASE_TEMPLATE("testing interval explosion", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
+{
+    using value_type = typename interval_type::value_type;
     constexpr std::size_t n = 5;
     value_type from = 1;
     value_type to = 5;
 
-    tested_t a = tested_t(from, to);
+    interval_type a = interval_type(from, to);
     std::vector<value_type> a_lin_seq {};
     std::vector<value_type> a_log_seq {};
     std::vector<value_type> a_exp_seq {};
@@ -86,13 +111,13 @@ TEST_CASE_TEMPLATE("testing interval explosion", tested_t, ROPUFU_AFTERMATH_TEST
     for (std::size_t i = 0; i < n; ++i) CHECK(error_exp_seq[i] < tolerance);
 } // TEST_CASE_TEMPLATE(...)
 
-TEST_CASE_TEMPLATE("testing interval hash", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
+TEST_CASE_TEMPLATE("testing interval hash", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {
-    std::hash<tested_t> tested_hash {};
-    std::size_t h1 = tested_hash(tested_t(1, 1729));
-    std::size_t h2 = tested_hash(tested_t(2, 1729));
-    std::size_t h3 = tested_hash(tested_t(1, 3));
-    std::size_t h4 = tested_hash(tested_t(2, 3));
+    std::hash<interval_type> tested_hash {};
+    std::size_t h1 = tested_hash(interval_type(1, 1729));
+    std::size_t h2 = tested_hash(interval_type(2, 1729));
+    std::size_t h3 = tested_hash(interval_type(1, 3));
+    std::size_t h4 = tested_hash(interval_type(2, 3));
 
     CHECK(h1 != h2);
     CHECK(h1 != h3);

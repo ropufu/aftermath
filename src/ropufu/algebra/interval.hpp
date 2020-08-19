@@ -51,28 +51,6 @@ namespace ropufu::aftermath::algebra
         {
         } // interval(...)
 
-        interval(const nlohmann::json& j, std::error_code& ec) noexcept
-        {
-            if (j.is_array())
-            {
-                std::vector<value_type> interval_pair = {};
-                aftermath::noexcept_json::as(j, interval_pair, ec);
-                if (ec.value() != 0) return;
-                if (interval_pair.size() != 2) // Vector representation must have two entries.
-                {
-                    ec = std::make_error_code(std::errc::bad_message);
-                    return;
-                } // if (...)
-                this->m_from = interval_pair.front();
-                this->m_to = interval_pair.back();
-            } // if (...)
-            else
-            {
-                aftermath::noexcept_json::required(j, type::jstr_from, this->m_from, ec);
-                aftermath::noexcept_json::required(j, type::jstr_to, this->m_to, ec);
-            } // else (...)
-        } // interval(...)
-
         const value_type& from() const noexcept { return this->m_from; }
         const value_type& to() const noexcept { return this->m_to; }
 
@@ -112,10 +90,7 @@ namespace ropufu::aftermath::algebra
     template <std::totally_ordered t_value_type>
     void from_json(const nlohmann::json& j, interval<t_value_type>& x)
     {
-        using type = interval<t_value_type>;
-        std::error_code ec {};
-        x = type(j, ec);
-        if (ec.value() != 0) throw std::runtime_error("Parsing <interval> failed: " + j.dump());
+        if (!noexcept_json::try_get(j, x)) throw std::runtime_error("Parsing <interval> failed: " + j.dump());
     } // from_json(...)
 
     template <std::totally_ordered t_value_type, ropufu::spacing t_spacing_type>
@@ -149,6 +124,40 @@ namespace ropufu::aftermath::algebra
         container.shrink_to_fit();
     } // explode(...)
 } // namespace ropufu::aftermath::algebra
+
+namespace ropufu
+{
+    template <std::totally_ordered t_value_type>
+    struct noexcept_json_serializer<ropufu::aftermath::algebra::interval<t_value_type>>
+    {
+        using value_type = t_value_type;
+        using result_type = ropufu::aftermath::algebra::interval<t_value_type>;
+
+        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        {
+            value_type from {};
+            value_type to {};
+
+            if (j.is_array()) // [a, b]
+            {
+                std::vector<value_type> interval_pair = {};
+                if (!noexcept_json::try_get(j, interval_pair)) return false;
+                if (interval_pair.size() != 2) return false; // Vector representation must have two entries.
+                
+                from = interval_pair.front();
+                to = interval_pair.back();
+            } // if (...)
+            else // {"from": a, "to": b}
+            {
+                if (!noexcept_json::required(j, result_type::jstr_from, from)) return false;
+                if (!noexcept_json::required(j, result_type::jstr_to, to)) return false;
+            } // else (...)
+
+            x = {from, to};
+            return true;
+        } // try_get(...)
+    }; // struct noexcept_json_serializer<...>
+} // namespace ropufu
 
 namespace std
 {

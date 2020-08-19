@@ -243,21 +243,11 @@ namespace ropufu::aftermath
         static constexpr std::size_t capacity = static_cast<std::size_t>(helper_type::past_the_last_index - helper_type::first_index);
         static constexpr underlying_type first_index = helper_type::first_index;
         static constexpr underlying_type past_the_last_index = helper_type::past_the_last_index;
+        
+        friend struct ropufu::noexcept_json_serializer<type>;
 
         enum_array() noexcept { }
         explicit enum_array(const value_type& value) noexcept { this->m_collection.fill(value); }
-
-        /** Unpack JSON object { ..., "<enum key>": value, ... }. */
-        enum_array(const nlohmann::json& j, std::error_code& ec) noexcept
-        {
-            for (underlying_type k = type::first_index; k < type::past_the_last_index; ++k)
-            {
-                enum_type key = static_cast<enum_type>(k);
-                std::string key_str = detail::enum_parser<enum_type>::to_string(key);
-                value_type& value = this->operator [](k);
-                aftermath::noexcept_json::optional(j, key_str, value, ec);
-            } // for (...)
-        } // enum_array(...)
 
         const_iterator_type cbegin() const noexcept { return const_iterator_type(this->m_collection.data(), type::first_index); }
         const_iterator_type cend() const noexcept { return const_iterator_type(this->m_collection.data(), type::past_the_last_index); }
@@ -296,6 +286,8 @@ namespace ropufu::aftermath
         static constexpr underlying_type first_index = helper_type::first_index;
         static constexpr underlying_type past_the_last_index = helper_type::past_the_last_index;
 
+        friend struct ropufu::noexcept_json_serializer<type>;
+
         enum_array() noexcept { }
 
         /*implicit*/ enum_array(std::initializer_list<enum_type> flags) noexcept
@@ -307,21 +299,6 @@ namespace ropufu::aftermath
                 this->operator [](k) = true;
             } // for (...)
         } // enum_array
-
-        /** @brief Unpack JSON array [ ..., "<enum key>", ... ].
-         *  @param ec Will contain \c std::errc::bad_message if enum was not recognized.
-         */
-        enum_array(const nlohmann::json& j, std::error_code& ec) noexcept
-        {
-            std::vector<std::string> str_vector = {};
-            aftermath::noexcept_json::as(j, str_vector, ec);
-            for (const std::string& key_str : str_vector)
-            {
-                enum_type key {};
-                if (detail::enum_parser<enum_type>::try_parse(key_str, key)) this->operator [](key) = true;
-                else ec = std::make_error_code(std::errc::bad_message); // Unrecognized enum key.
-            } // for (...)
-        } // enum_array(...)
 
         const_iterator_type cbegin() const noexcept { return const_iterator_type(this->m_collection.data(), type::first_index); }
         const_iterator_type cend() const noexcept { return const_iterator_type(this->m_collection.data(), type::past_the_last_index); }
@@ -397,6 +374,8 @@ namespace ropufu::aftermath
         static constexpr underlying_type first_index = helper_type::first_index;
         static constexpr underlying_type past_the_last_index = helper_type::past_the_last_index;
 
+        friend struct ropufu::noexcept_json_serializer<type>;
+
     private:
         std::array<value_type, type::capacity> m_collection = { };
 
@@ -409,20 +388,6 @@ namespace ropufu::aftermath
     public:
         enum_array() noexcept
         {
-            static type s_instance(nullptr); // Populate the list only once.
-            this->m_collection = s_instance.m_collection;
-        } // enum_array(...)
-
-        /** @brief Unpack JSON array [ ..., "<enum key>", ... ].
-         *  @param ec Will contain \c std::errc::bad_message if enum was not recognized.
-         */
-        enum_array(const nlohmann::json& j, std::error_code& ec) noexcept
-        {
-            std::vector<std::string> str_vector = {};
-            aftermath::noexcept_json::as(j, str_vector, ec);
-            /** @todo Check existing strings in \c str_vector against \c enum_array values. */
-            if (str_vector.size() != type::capacity) ec = std::make_error_code(std::errc::bad_message); // Unrecognized enum key.
-
             static type s_instance(nullptr); // Populate the list only once.
             this->m_collection = s_instance.m_collection;
         } // enum_array(...)
@@ -456,8 +421,8 @@ namespace ropufu::aftermath
     template <ropufu::enumeration t_enum_type, typename t_value_type>
     void to_json(nlohmann::json& j, const enum_array<t_enum_type, t_value_type>& x) noexcept
     {
-        j = { };
-        t_value_type z { };
+        j = {};
+        t_value_type z {};
         for (const auto& pair : x)
         {
             if (pair.value() == z) continue; // Skip default values.
@@ -469,7 +434,7 @@ namespace ropufu::aftermath
     template <ropufu::enumeration t_enum_type>
     void to_json(nlohmann::json& j, const enum_array<t_enum_type, bool>& x) noexcept
     {
-        std::vector<std::string> y { };
+        std::vector<std::string> y {};
         y.reserve(enum_array<t_enum_type, bool>::capacity);
         for (t_enum_type value : x) y.push_back(detail::enum_parser<t_enum_type>::to_string(value));
         j = y;
@@ -479,42 +444,92 @@ namespace ropufu::aftermath
     template <ropufu::enumeration t_enum_type>
     void to_json(nlohmann::json& j, const enum_array<t_enum_type, void>& x) noexcept
     {
-        std::vector<std::string> y { };
+        std::vector<std::string> y {};
         y.reserve(enum_array<t_enum_type, void>::capacity);
         for (t_enum_type value : x) y.push_back(detail::enum_parser<t_enum_type>::to_string(value));
         j = y;
     } // to_json(...)
 
-    /** Unpack object { ..., "<enum key>": value, ... }. */
     template <ropufu::enumeration t_enum_type, typename t_value_type>
     void from_json(const nlohmann::json& j, enum_array<t_enum_type, t_value_type>& x)
     {
-        using type = enum_array<t_enum_type, t_value_type>;
-        std::error_code ec {};
-        x = type(j, ec);
-        if (ec.value() != 0) throw std::runtime_error("Parsing <enum_array> failed: " + j.dump());
-    } // from_json(...)
-
-    /** Unpack array [ ..., "<enum key>", ... ]. */
-    template <ropufu::enumeration t_enum_type>
-    void from_json(const nlohmann::json& j, enum_array<t_enum_type, bool>& x)
-    {
-        using type = enum_array<t_enum_type, bool>;
-        std::error_code ec {};
-        x = type(j, ec);
-        if (ec.value() != 0) throw std::runtime_error("Parsing <enum_array> failed: " + j.dump());
-    } // from_json(...)
-
-    /** Unpack array [ ..., "<enum key>", ... ]. */
-    template <ropufu::enumeration t_enum_type>
-    void from_json(const nlohmann::json& j, enum_array<t_enum_type, void>& x)
-    {
-        using type = enum_array<t_enum_type, void>;
-        std::error_code ec {};
-        x = type(j, ec);
-        if (ec.value() != 0) throw std::runtime_error("Parsing <enum_array> failed: " + j.dump());
+        if (!noexcept_json::try_get(j, x)) throw std::runtime_error("Parsing <interval> failed: " + j.dump());
     } // from_json(...)
 } // namespace ropufu::aftermath
+
+namespace ropufu
+{
+    template <ropufu::enumeration t_enum_type, typename t_value_type>
+    struct noexcept_json_serializer<ropufu::aftermath::enum_array<t_enum_type, t_value_type>>
+    {
+        using enum_type = t_enum_type;
+        using value_type = t_value_type;
+        using result_type = ropufu::aftermath::enum_array<t_enum_type, t_value_type>;
+        using underlying_type = std::underlying_type_t<t_enum_type>;
+
+        /** Unpack JSON object { ..., "<enum key>": value, ... }. */
+        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        {
+            for (underlying_type k = result_type::first_index; k < result_type::past_the_last_index; ++k)
+            {
+                enum_type key = static_cast<enum_type>(k);
+                value_type value {};
+
+                std::string key_str = aftermath::detail::enum_parser<enum_type>::to_string(key);
+                if (!noexcept_json::optional(j, key_str, value)) return false;
+                x[k] = value;
+            } // for (...)
+            return true;
+        } // try_get(...)
+    }; // struct noexcept_json_serializer<...>
+
+    template <ropufu::enumeration t_enum_type>
+    struct noexcept_json_serializer<ropufu::aftermath::enum_array<t_enum_type, bool>>
+    {
+        using enum_type = t_enum_type;
+        using value_type = bool;
+        using result_type = ropufu::aftermath::enum_array<t_enum_type, bool>;
+        using underlying_type = std::underlying_type_t<t_enum_type>;
+
+        /** Unpack JSON array [ ..., "<enum key>", ... ]. */
+        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        {
+            std::vector<std::string> str_vector {};
+            if (!noexcept_json::try_get(j, str_vector)) return false;
+
+            for (const std::string& key_str : str_vector)
+            {
+                enum_type key {};
+                if (!aftermath::detail::enum_parser<enum_type>::try_parse(key_str, key)) return false;
+                x[key] = true;
+            } // for (...)
+            return true;
+        } // try_get(...)
+    }; // struct noexcept_json_serializer<...>
+
+    template <ropufu::enumeration t_enum_type>
+    struct noexcept_json_serializer<ropufu::aftermath::enum_array<t_enum_type, void>>
+    {
+        using enum_type = t_enum_type;
+        using value_type = void;
+        using result_type = ropufu::aftermath::enum_array<t_enum_type, void>;
+        using underlying_type = std::underlying_type_t<t_enum_type>;
+
+        /** Unpack JSON array [ ..., "<enum key>", ... ]. */
+        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        {
+            std::vector<std::string> str_vector = {};
+            if (!noexcept_json::try_get(j, str_vector)) return false;
+
+            /** @todo Check existing strings in \c str_vector against \c enum_array values. */
+            if (str_vector.size() != result_type::capacity) return false;
+
+            static result_type s_instance(nullptr); // Populate the list only once.
+            x.m_collection = s_instance.m_collection;
+            return true;
+        } // try_get(...)
+    }; // struct noexcept_json_serializer<...>
+} // namespace ropufu
 
 namespace std
 {
