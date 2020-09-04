@@ -10,7 +10,7 @@
 #include <memory>    // std::allocator, std::allocator_traits
 #include <ranges>    // std::ranges:range
 #include <stdexcept> // std::out_of_range, std::logic_error
-#include <utility>   // std::move
+#include <utility>   // std::move, std::hash
 
 namespace ropufu::aftermath
 {
@@ -177,7 +177,7 @@ namespace ropufu::aftermath
 
         /** @brief Creates a vector from another sequence. */
         template <std::ranges::range t_container_type>
-            requires std::same_as<typename t_container_type::value_type, value_type>
+            requires std::same_as<std::ranges::range_value_t<t_container_type>, value_type>
         explicit simple_vector(const t_container_type& container) : simple_vector(nullptr, container.size())
         {
             value_type* it = this->m_begin_ptr;
@@ -311,7 +311,35 @@ namespace ropufu::aftermath
             if (index >= this->m_size) throw std::out_of_range("Index must be less than the size of the vector.");
             return this->operator [](index);
         } // at(...)
+
+        std::size_t get_hash() const noexcept
+        {
+            std::size_t result = 0;
+            std::hash<value_type> value_hash = {};
+            const value_type* end_ptr = this->m_begin_ptr + this->m_size;
+            for (const value_type* it = this->m_begin_ptr; it != end_ptr; ++it)
+            {
+                result ^= value_hash(*it);
+                result <<= 1;
+            } // for (...)
+            return result;
+        } // get_hash(...)
     }; // struct simple_vector
 } // namespace ropufu::aftermath
+
+namespace std
+{
+    template <std::default_initializable t_value_type, typename t_allocator_type>
+    struct hash<ropufu::aftermath::simple_vector<t_value_type, t_allocator_type>>
+    {
+        using argument_type = ropufu::aftermath::simple_vector<t_value_type, t_allocator_type>;
+        using result_type = std::size_t;
+
+        result_type operator ()(argument_type const& x) const noexcept
+        {
+            return x.get_hash();
+        } // operator ()(...)
+    }; // struct hash<...>
+} // namespace std
 
 #endif // ROPUFU_AFTERMATH_SIMPLE_VECTOR_HPP_INCLUDED

@@ -12,6 +12,7 @@
 #include <limits>      // std::numeric_limits
 #include <random>      // std::bernoulli_distribution
 #include <stdexcept>   // std::logic_error
+#include <string_view> // std::string_view
 #include <type_traits> // std::is_floating_point_v
 #include <utility>     // std::declval
 #include <vector>      // std::vector
@@ -47,7 +48,7 @@ namespace ropufu::aftermath::probability
         using expectation_type = t_expectation_type;
         using std_type = std::bernoulli_distribution;
 
-        static constexpr char name[] = "bernoulli";
+        static constexpr std::string_view name = "bernoulli";
 
     private:
         probability_type m_probability_of_success = 0;
@@ -135,10 +136,6 @@ namespace ropufu::aftermath::probability
         /** Checks if the two distributions are different. */
         bool operator !=(const type& other) const noexcept { return !this->operator ==(other); }
     }; // struct bernoulli_distribution
-
-    // ~~ Definitions ~~
-    template <std::floating_point t_probability_type, std::floating_point t_expectation_type>
-    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std

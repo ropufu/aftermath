@@ -13,6 +13,7 @@
 #include <limits>      // std::numeric_limits
 #include <random>      // std::normal_distribution
 #include <stdexcept>   // std::logic_error
+#include <string_view> // std::string_view
 #include <type_traits> // std::is_floating_point_v
 #include <utility>     // std::declval
 
@@ -61,7 +62,7 @@ namespace ropufu::aftermath::probability
         using expectation_type = t_expectation_type;
         using std_type = std::normal_distribution<t_value_type>;
 
-        static constexpr char name[] = "norm"; // "normal"
+        static constexpr std::string_view name = "norm"; // "normal"
 
     private:
         fundamental_type m_fundamental_distribution = {};
@@ -167,10 +168,6 @@ namespace ropufu::aftermath::probability
             return !this->operator ==(other);
         } // operator !=(...)
     }; // struct normal_distribution
-
-    // ~~ Definitions ~~
-    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
-    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std

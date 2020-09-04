@@ -4,8 +4,9 @@
 
 #include <cstddef>     // std::size_t
 #include <algorithm>   // std::sort
+#include <stdexcept>   // std::logic_error
 #include <type_traits> // std::decay_t
-#include <utility>     // std::declval
+#include <utility>     // std::declval, std::swap
 #include <vector>      // std::vector
 
 namespace ropufu
@@ -27,7 +28,7 @@ namespace ropufu
     {
         for (const t_value_type& x : collection) if (x == value) return true;
         return false;
-    } // append_distinct(...)
+    } // contains(...)
 
     template <typename t_value_type>
     void append_distinct(std::vector<t_value_type>& left, const std::vector<t_value_type>& right) noexcept
@@ -55,18 +56,16 @@ namespace ropufu
         ropufu::append_distinct(result, a);
         ropufu::append_distinct(result, b);
         return result;
-    } // distinct(...)
+    } // union_of(...)
 
-    template <typename t_value_type, typename t_selector_type>
-    auto select(const std::vector<t_value_type>& collection, t_selector_type&& selector) noexcept
+    template <typename t_value_type>
+    inline std::vector<t_value_type> sample(const std::vector<t_value_type>& collection, const std::vector<std::size_t>& indices) noexcept
     {
-        using selected_type = std::decay_t<decltype(selector(std::declval<t_value_type>()))>;
-
-        std::vector<selected_type> result {};
-        result.reserve(collection.size());
-        for (const t_value_type& x : collection) result.push_back(selector(x));
+        std::vector<t_value_type> result {};
+        result.reserve(indices.size());
+        for (std::size_t j : indices) result.push_back(collection[j]);
         return result;
-    } // select(...)
+    } // sample(...)
 } // namespace ropufu
 
 #endif // ROPUFU_AFTERMATH_VECTOR_EXTENDER_HPP_INCLUDED

@@ -20,10 +20,30 @@
             "problemMatcher": [
                 "$gcc"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
+            "group": "test",
+            "presentation": {
+                "reveal": "silent"
+            }
+        },
+        {
+            "label": "GCC Tests (Release)",
+            "type": "shell",
+            "command": "g++-10",
+            "args": [
+                "-std=c++2a",
+                "-Wall",
+                "-I${workspaceRoot}/../../include",
+                "${workspaceFolder}/src/tests/main.cpp",
+                "-o",
+                "${workspaceFolder}/src/tests/tests.out"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/src/tests"
             },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "test",
             "presentation": {
                 "reveal": "silent"
             }

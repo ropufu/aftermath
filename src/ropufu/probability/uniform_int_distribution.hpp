@@ -13,6 +13,7 @@
 #include <limits>      // std::numeric_limits
 #include <random>      // std::uniform_int_distribution
 #include <stdexcept>   // std::logic_error
+#include <string_view> // std::string_view
 #include <type_traits> // std::is_floating_point_v
 #include <utility>     // std::declval
 #include <vector>      // std::vector
@@ -49,7 +50,7 @@ namespace ropufu::aftermath::probability
         using expectation_type = t_expectation_type;
         using std_type = std::uniform_int_distribution<value_type>;
 
-        static constexpr char name[] = "uniform_int";
+        static constexpr std::string_view name = "uniform int";
 
     private:
         value_type m_min = 0;
@@ -157,10 +158,6 @@ namespace ropufu::aftermath::probability
         /** Checks if the two distributions are different. */
         bool operator !=(const type& other) const noexcept { return !this->operator ==(other); }
     }; // struct uniform_int_distribution
-
-    // ~~ Definitions ~~
-    template <ropufu::integer t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
-    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std

@@ -3,6 +3,8 @@
 #include <doctest/doctest.h>
 #include "benchmark_reporter.hpp"
 
+#define JSON_USE_IMPLICIT_CONVERSIONS 0
+
 // Tests:
 #include "algebra/elementwise.hpp"
 #include "algebra/fraction.hpp"
@@ -23,6 +25,8 @@
 #include "random/uniform_int_sampler.hpp"
 #include "ropufu/arithmetic.hpp"
 #include "ropufu/enum_array.hpp"
+#include "ropufu/noexcept_json.hpp"
+#include "ropufu/partitioned_vector.hpp"
 #include "ropufu/simple_vector.hpp"
 #include "ropufu/sliding_array.hpp"
 

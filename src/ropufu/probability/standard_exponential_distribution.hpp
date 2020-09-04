@@ -12,6 +12,7 @@
 #include <limits>      // std::numeric_limits
 #include <random>      // std::exponential_distribution
 #include <stdexcept>   // std::logic_error
+#include <string_view> // std::string_view
 #include <utility>     // std::declval
 
 #ifdef ROPUFU_TMP_TYPENAME
@@ -51,7 +52,7 @@ namespace ropufu::aftermath::probability
         using expectation_type = t_expectation_type;
         using std_type = std::exponential_distribution<t_value_type>;
 
-        static constexpr char name[] = "std exp";
+        static constexpr std::string_view name = "std exp";
 
     private:
 
@@ -122,10 +123,6 @@ namespace ropufu::aftermath::probability
             return !this->operator ==(other);
         } // operator !=(...)
     }; // struct standard_exponential_distribution
-
-    // ~~ Definitions ~~
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std

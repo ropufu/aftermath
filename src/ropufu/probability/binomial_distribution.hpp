@@ -12,6 +12,7 @@
 #include <limits>      // std::numeric_limits
 #include <random>      // std::binomial_distribution
 #include <stdexcept>   // std::logic_error
+#include <string_view> // std::string_view
 #include <type_traits> // std::is_floating_point_v
 #include <utility>     // std::declval, std::swap
 
@@ -47,7 +48,7 @@ namespace ropufu::aftermath::probability
         using expectation_type = t_expectation_type;
         using std_type = std::binomial_distribution<t_value_type>;
 
-        static constexpr char name[] = "binomial";
+        static constexpr std::string_view name = "binomial";
 
     private:
         value_type m_number_of_trials = 1;
@@ -183,10 +184,6 @@ namespace ropufu::aftermath::probability
         /** Checks if the two distributions are different. */
         bool operator !=(const type& other) const noexcept { return !this->operator ==(other); }
     }; // struct binomial_distribution
-
-    // ~~ Definitions ~~
-    template <ropufu::integer t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
-    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std

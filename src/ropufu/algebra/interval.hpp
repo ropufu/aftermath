@@ -7,16 +7,16 @@
 
 #include "interval_spacing.hpp"
 
-#include <concepts>   // std::totally_ordered
-#include <cstddef>    // std::size_t
-#include <functional> // std::hash
+#include <concepts>     // std::totally_ordered
+#include <cstddef>      // std::size_t
+#include <functional>   // std::hash
 #include <initializer_list> // std::initializer_list
-#include <iostream>   // std::ostream
-#include <ranges>     // std::ranges::range
-#include <stdexcept>  // std::runtime_error
-#include <string>     // std::string
-#include <system_error> // std::error_code, std::errc
-#include <vector>     // std::vector
+#include <iostream>     // std::ostream
+#include <ranges>       // std::ranges::range
+#include <stdexcept>    // std::runtime_error
+#include <string>       // std::string
+#include <string_view>  // std::string_view
+#include <vector>       // std::vector
 
 namespace ropufu::aftermath::algebra
 {
@@ -36,8 +36,10 @@ namespace ropufu::aftermath::algebra
         using value_type = t_value_type;
 
         // ~~ Json names ~~
-        static constexpr char jstr_from[] = "from";
-        static constexpr char jstr_to[] = "to";
+        static constexpr std::string_view jstr_from = "from";
+        static constexpr std::string_view jstr_to = "to";
+        
+        friend ropufu::noexcept_json_serializer<type>;
 
     private:
         value_type m_from = {};
@@ -71,10 +73,6 @@ namespace ropufu::aftermath::algebra
             return os << self.m_from << "--" << self.m_to;
         } // operator <<(...)
     }; // struct interval
-
-    // ~~ Json name definitions ~~
-    template <std::totally_ordered t_value_type> constexpr char interval<t_value_type>::jstr_from[];
-    template <std::totally_ordered t_value_type> constexpr char interval<t_value_type>::jstr_to[];
     
     template <std::totally_ordered t_value_type>
     void to_json(nlohmann::json& j, const interval<t_value_type>& x) noexcept
@@ -135,25 +133,21 @@ namespace ropufu
 
         static bool try_get(const nlohmann::json& j, result_type& x) noexcept
         {
-            value_type from {};
-            value_type to {};
-
             if (j.is_array()) // [a, b]
             {
                 std::vector<value_type> interval_pair = {};
                 if (!noexcept_json::try_get(j, interval_pair)) return false;
                 if (interval_pair.size() != 2) return false; // Vector representation must have two entries.
                 
-                from = interval_pair.front();
-                to = interval_pair.back();
+                x.m_from = interval_pair.front();
+                x.m_to = interval_pair.back();
             } // if (...)
             else // {"from": a, "to": b}
             {
-                if (!noexcept_json::required(j, result_type::jstr_from, from)) return false;
-                if (!noexcept_json::required(j, result_type::jstr_to, to)) return false;
+                if (!noexcept_json::required(j, result_type::jstr_from, x.m_from)) return false;
+                if (!noexcept_json::required(j, result_type::jstr_to, x.m_to)) return false;
             } // else (...)
 
-            x = {from, to};
             return true;
         } // try_get(...)
     }; // struct noexcept_json_serializer<...>

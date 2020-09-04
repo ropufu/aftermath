@@ -8,11 +8,14 @@
 
 #include <concepts>    // std::floating_point, std::same_as
 #include <map>         // std::map
+#include <optional>    // std::optional, std::nullopt
 #include <ranges>      // std::ranges::range
 #include <set>         // std::set
 #include <string>      // std::string, std::basic_string
+#include <string_view> // std::string_view
 #include <type_traits> // std::underlying_type_t
 #include <utility>     // std::forward
+#include <variant>     // std::variant
 #include <vector>      // std::vector
 
 namespace ropufu
@@ -20,7 +23,8 @@ namespace ropufu
     template <typename t_result_type>
     struct noexcept_json_serializer
     {
-        // static bool try_get(const nlohmann::json& j, t_result_type& x) noexcept; // To be specialized.
+        /** To be specialized. */
+        // static bool try_get(const nlohmann::json& j, t_result_type& x) noexcept;
     }; // struct noexcept_json_serializer
 
     template <typename t_value_type>
@@ -39,6 +43,44 @@ namespace ropufu
             noexcept(noexcept_json_serializer<t_value_type>::try_get(j, x));
         }; // concept json_noexcept
 
+    struct noexcept_json;
+
+    namespace detail
+    {
+        template <typename t_noexcept_json_type, ropufu::decayed t_first_value_type, ropufu::decayed... t_more_value_types>
+        struct noexcept_json_variant_discriminator
+        {
+            template <typename... t_all_value_types>
+            static bool discriminate(const nlohmann::json& j, std::variant<t_all_value_types...>& result) noexcept
+            {
+                t_first_value_type x {};
+                if (t_noexcept_json_type::try_get(j, x))
+                {
+                    result = x;
+                    return true;
+                } // if (...)
+                return noexcept_json_variant_discriminator<t_noexcept_json_type, t_more_value_types...>::discriminate(j, result);
+            } // discriminate(...)
+        }; // struct noexcept_json_variant_discriminator
+
+        template <typename t_noexcept_json_type, typename t_value_type>
+        struct noexcept_json_variant_discriminator<t_noexcept_json_type, t_value_type>
+        {
+            /** @brief Base case: only one option type left. */
+            template <typename... t_all_value_types>
+            static bool discriminate(const nlohmann::json& j, std::variant<t_all_value_types...>& result) noexcept
+            {
+                t_value_type x {};
+                if (t_noexcept_json_type::try_get(j, x))
+                {
+                    result = x;
+                    return true;
+                } // if (...)
+                return false;
+            } // discriminate(...)
+        }; // struct noexcept_json_variant_discriminator<...>
+    } // namespace detail
+
     struct noexcept_json
     {
         using json_value_type = nlohmann::detail::value_t;
@@ -52,7 +94,7 @@ namespace ropufu
             return !j.is_discarded();
         } // try_parse(...)
 
-        static json_pointer_type try_find(const nlohmann::json& j, const std::string& key) noexcept
+        static json_pointer_type try_find(const nlohmann::json& j, std::string_view key) noexcept
         {
             if (j.is_discarded()) return nullptr;
 
@@ -93,6 +135,34 @@ namespace ropufu
                     return true;
                 default: return false;
             } // switch (...)
+        } // try_get(...)
+
+        /** Tries to serialize an optional JSON value. */
+        template <ropufu::decayed t_value_type>
+        static bool try_get(const nlohmann::json& j, std::optional<t_value_type>& result) noexcept
+        {
+            using value_type = t_value_type;
+            switch (j.type())
+            {
+                case json_value_type::discarded: return false;
+                case json_value_type::null:
+                    result = std::nullopt;
+                    return true;
+                default:
+                    value_type x {};
+                    if (!noexcept_json::try_get(j, x)) return false;
+                    result = x;
+                    return true;
+            } // switch (...)
+        } // try_get(...)
+
+        /** Tries to serialize a JSON value that can be one of several types.
+         *  The first that works will be selected.
+         */
+        template <ropufu::decayed... t_value_types>
+        static bool try_get(const nlohmann::json& j, std::variant<t_value_types...>& result) noexcept
+        {
+            return detail::noexcept_json_variant_discriminator<noexcept_json, t_value_types...>::discriminate(j, result);
         } // try_get(...)
 
         static bool try_get(const nlohmann::json& j, bool& result) noexcept
@@ -210,7 +280,7 @@ namespace ropufu
         } // try_get(...)
 
         template <ropufu::decayed t_value_type>
-        static bool required(const nlohmann::json& j, const std::string& key, t_value_type& result) noexcept
+        static bool required(const nlohmann::json& j, std::string_view key, t_value_type& result) noexcept
         {
             json_pointer_type result_pointer = noexcept_json::try_find(j, key);
             if (result_pointer == nullptr) return false; // Missing keys not allowed.
@@ -218,7 +288,7 @@ namespace ropufu
         } // required(...)
 
         template <ropufu::decayed t_value_type>
-        static bool optional(const nlohmann::json& j, const std::string& key, t_value_type& result) noexcept
+        static bool optional(const nlohmann::json& j, std::string_view key, t_value_type& result) noexcept
         {
             json_pointer_type result_pointer = noexcept_json::try_find(j, key);
             if (result_pointer == nullptr) return true; // Missing keys expected.

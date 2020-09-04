@@ -91,6 +91,7 @@
         "compare": "cpp",
         "ranges": "cpp",
         "stop_token": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "variant": "cpp"
     }
 }

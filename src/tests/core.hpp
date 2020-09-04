@@ -107,7 +107,7 @@ namespace ropufu::aftermath::tests
         try
         {
             nlohmann::json j = x;
-            t_type y = j;
+            t_type y = j.get<t_type>();
             return x == y;
         } // try
         catch (...) { return false; }

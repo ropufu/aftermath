@@ -9,14 +9,15 @@
 #include "enum_parser.hpp"
 #include "key_value_pair.hpp"
 
-#include <array>     // std::array
-#include <cstddef>   // std::size_t, std::nullptr_t
+#include <array>        // std::array
+#include <cstddef>      // std::size_t, std::nullptr_t
 #include <initializer_list> // std::initializer_list
-#include <ostream>   // std::ostream
-#include <stdexcept> // std::out_of_range, std::logic_error
-#include <string>    // std::string, std::to_string
+#include <ostream>      // std::ostream
+#include <stdexcept>    // std::out_of_range, std::logic_error
+#include <string>       // std::string, std::to_string
 #include <type_traits>  // std::underlying_type_t
 #include <system_error> // std::error_code, std::errc
+#include <utility>      // std::hash
 
 namespace ropufu::aftermath
 {
@@ -258,6 +259,18 @@ namespace ropufu::aftermath
         iterator_type begin() noexcept { return iterator_type(this->m_collection.data(), type::first_index); }
         iterator_type end() noexcept { return iterator_type(this->m_collection.data(), type::past_the_last_index); }
 
+        std::size_t get_hash() const noexcept
+        {
+            std::size_t result = 0;
+            std::hash<value_type> value_hash = {};
+            for (const value_type& x : this->m_collection)
+            {
+                result ^= value_hash(x);
+                result <<= 1;
+            } // for (...)
+            return result;
+        } // get_hash(...)
+
         friend std::ostream& operator <<(std::ostream& os, const type& self) noexcept
         {
             nlohmann::json j = self;
@@ -327,30 +340,56 @@ namespace ropufu::aftermath
             this->operator [](k) = false;
         } // unset(...)
 
+        /** Flip all the flags. */
+        void flip() noexcept
+        {
+            for (std::size_t i = 0; i < type::capacity; ++i) this->m_collection[i] = !this->m_collection[i];
+        } // flip(...)
+
+        /** Elementwise "not". */
+        type operator !() const noexcept
+        {
+            type result = *this;
+            for (std::size_t i = 0; i < type::capacity; ++i) result.m_collection[i] = !result.m_collection[i];
+            return result;
+        } // operator !(...)
+
         /** Elementwise "or". */
         type& operator |=(const type& other) noexcept
         {
-            for (std::size_t i = 0; i < type::capacity; ++i) this->m_collection[i] = (this->m_collection[i] || other.m_collection[i]);
+            for (std::size_t i = 0; i < type::capacity; ++i) this->m_collection[i] |= other.m_collection[i];
             return *this;
         } // operator |=(...)
 
         /** Elementwise "and". */
         type& operator &=(const type& other) noexcept
         {
-            for (std::size_t i = 0; i < type::capacity; ++i) this->m_collection[i] = (this->m_collection[i] && other.m_collection[i]);
+            for (std::size_t i = 0; i < type::capacity; ++i) this->m_collection[i] &= other.m_collection[i];
             return *this;
         } // operator &=(...)
 
         /** Elementwise "exclusive or". */
         type& operator ^=(const type& other) noexcept
         {
-            for (std::size_t i = 0; i < type::capacity; ++i) this->m_collection[i] = (this->m_collection[i] ^ other.m_collection[i]);
+            for (std::size_t i = 0; i < type::capacity; ++i) this->m_collection[i] ^= other.m_collection[i];
             return *this;
         } // operator ^=(...)
 
         friend type operator |(type left, const type& right) noexcept { left |= right; return left; }
         friend type operator &(type left, const type& right) noexcept { left &= right; return left; }
         friend type operator ^(type left, const type& right) noexcept { left ^= right; return left; }
+
+        std::size_t get_hash() const noexcept
+        {
+            std::size_t result = 0;
+            std::size_t one = 1;
+            for (const bool& x : this->m_collection)
+            {
+                if (x) result ^= one;
+                one <<= 1;
+            } // for (...)
+            return result;
+        } // get_hash(...)
 
         friend std::ostream& operator <<(std::ostream& os, const type& self) noexcept
         {
@@ -409,6 +448,8 @@ namespace ropufu::aftermath
 
         bool operator !=(const type& other) const noexcept { return this->m_collection != other.m_collection; }
         bool operator ==(const type& other) const noexcept { return this->m_collection == other.m_collection; }
+
+        constexpr std::size_t get_hash() const noexcept { return 0; }
 
         friend std::ostream& operator <<(std::ostream& os, const type& self) noexcept
         {
@@ -539,6 +580,18 @@ namespace std
         nlohmann::json j = value;
         return j.dump();
     } // to_string(...)
+
+    template <ropufu::enumeration t_enum_type, typename t_value_type>
+    struct hash<ropufu::aftermath::enum_array<t_enum_type, t_value_type>>
+    {
+        using argument_type = ropufu::aftermath::enum_array<t_enum_type, t_value_type>;
+        using result_type = std::size_t;
+
+        result_type operator ()(argument_type const& x) const noexcept
+        {
+            return x.get_hash();
+        } // operator ()(...)
+    }; // struct hash<...>
 } // namespace std
 
 #endif // ROPUFU_AFTERMATH_ENUM_ARRAY_HPP_INCLUDED

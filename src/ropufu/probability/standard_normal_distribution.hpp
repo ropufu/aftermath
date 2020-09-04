@@ -14,6 +14,7 @@
 #include <numbers>     // std::numbers::sqrt2_v
 #include <random>      // std::normal_distribution
 #include <stdexcept>   // std::logic_error
+#include <string_view> // std::string_view
 #include <utility>     // std::declval
 
 #ifdef ROPUFU_TMP_TYPENAME
@@ -60,7 +61,7 @@ namespace ropufu::aftermath::probability
         using expectation_type = t_expectation_type;
         using std_type = std::normal_distribution<t_value_type>;
 
-        static constexpr char name[] = "std norm";
+        static constexpr std::string_view name = "std norm";
 
     private:
 
@@ -138,10 +139,6 @@ namespace ropufu::aftermath::probability
             return !this->operator ==(other);
         } // operator !=(...)
     }; // struct standard_normal_distribution
-
-    // ~~ Definitions ~~
-    template <typename t_value_type, typename t_probability_type, typename t_expectation_type>
-    constexpr char ROPUFU_TMP_TYPENAME::name[];
 } // namespace ropufu::aftermath::probability
 
 namespace std
