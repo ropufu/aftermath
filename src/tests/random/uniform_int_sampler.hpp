@@ -17,21 +17,21 @@
 #include <stdexcept>  // std::logic_error
 
 #define ROPUFU_AFTERMATH_TESTS_RANDOM_UNIFORM_INT_SAMPLER_ALL_TYPES                                           \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::ranlux24, int, float, float>,                    \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::ranlux24, std::size_t, float, double>,           \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::ranlux24, std::int_fast32_t, double, double>,    \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::minstd_rand, int, float, float>,                 \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::minstd_rand, std::size_t, float, double>,        \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::minstd_rand, std::int_fast32_t, double, double>, \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::mt19937, int, float, float>,                     \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::mt19937, std::size_t, float, double>,            \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::mt19937, std::int_fast32_t, double, double>,     \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::ranlux48, int, float, float>,                    \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::ranlux48, std::size_t, float, double>,           \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::ranlux48, std::int_fast32_t, double, double>,    \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::mt19937_64, int, float, float>,                  \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::mt19937_64, std::size_t, float, double>,         \
-    ropufu::aftermath::tests::engine_distribution_tuple<std::mt19937_64, std::int_fast32_t, double, double>   \
+    ropufu::tests::engine_distribution_tuple<std::ranlux24, int, float, float>,                    \
+    ropufu::tests::engine_distribution_tuple<std::ranlux24, std::size_t, float, double>,           \
+    ropufu::tests::engine_distribution_tuple<std::ranlux24, std::int_fast32_t, double, double>,    \
+    ropufu::tests::engine_distribution_tuple<std::minstd_rand, int, float, float>,                 \
+    ropufu::tests::engine_distribution_tuple<std::minstd_rand, std::size_t, float, double>,        \
+    ropufu::tests::engine_distribution_tuple<std::minstd_rand, std::int_fast32_t, double, double>, \
+    ropufu::tests::engine_distribution_tuple<std::mt19937, int, float, float>,                     \
+    ropufu::tests::engine_distribution_tuple<std::mt19937, std::size_t, float, double>,            \
+    ropufu::tests::engine_distribution_tuple<std::mt19937, std::int_fast32_t, double, double>,     \
+    ropufu::tests::engine_distribution_tuple<std::ranlux48, int, float, float>,                    \
+    ropufu::tests::engine_distribution_tuple<std::ranlux48, std::size_t, float, double>,           \
+    ropufu::tests::engine_distribution_tuple<std::ranlux48, std::int_fast32_t, double, double>,    \
+    ropufu::tests::engine_distribution_tuple<std::mt19937_64, int, float, float>,                  \
+    ropufu::tests::engine_distribution_tuple<std::mt19937_64, std::size_t, float, double>,         \
+    ropufu::tests::engine_distribution_tuple<std::mt19937_64, std::int_fast32_t, double, double>   \
 
 
 TEST_CASE_TEMPLATE("testing (randomized) uniform_int_sampler", tested_t, ROPUFU_AFTERMATH_TESTS_RANDOM_UNIFORM_INT_SAMPLER_ALL_TYPES)
@@ -47,11 +47,11 @@ TEST_CASE_TEMPLATE("testing (randomized) uniform_int_sampler", tested_t, ROPUFU_
     value_type b = 8;
     double midpoint = static_cast<double>(a + b) / 2;
 
-    std::string engine_name = tested_t::engine_name();
+    std::string engine_name {tested_t::engine_name()};
     CAPTURE(engine_name);
 
     engine_type engine {};
-    ropufu::aftermath::tests::seed(engine);
+    ropufu::tests::seed(engine);
 
     distribution_type distribution_always_a { a, a };
     distribution_type distribution_always_b { b, b };
@@ -92,22 +92,22 @@ TEST_SUITE("Benchmarks")
         using distribution_type = typename sampler_type::distribution_type;
         using builtin_sampler_type = typename distribution_type::std_type;
         
-        if (!ropufu::aftermath::tests::g_do_benchmarks) return;
+        if (!ropufu::tests::g_do_benchmarks) return;
 
-        std::string engine_name = tested_t::engine_name();
+        std::string engine_name {tested_t::engine_name()};
         CAPTURE(engine_name);
 
         engine_type engine {};
-        ropufu::aftermath::tests::seed(engine);
+        ropufu::tests::seed(engine);
 
         distribution_type distribution { 100, 1729 };
         sampler_type sampler { distribution };
         builtin_sampler_type builtin_sampler = distribution.to_std();
 
-        constexpr std::size_t sample_size = 10'000'000 / ropufu::aftermath::tests::template engine_slowdown_factor<engine_type>(5);
+        constexpr std::size_t sample_size = 10'000'000 / ropufu::tests::template engine_slowdown_factor<engine_type>(5);
 
-        double seconds_fast = ropufu::aftermath::tests::sample_timing(sample_size, engine, sampler);
-        double seconds_slow = ropufu::aftermath::tests::sample_timing(sample_size, engine, builtin_sampler);
+        double seconds_fast = ropufu::tests::sample_timing(sample_size, engine, sampler);
+        double seconds_slow = ropufu::tests::sample_timing(sample_size, engine, builtin_sampler);
 
         BENCH_COMPARE_TIMING(engine_name, "aftermath", "builtin", seconds_fast, seconds_slow);
     } // TEST_CASE_TEMPLATE(...)

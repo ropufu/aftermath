@@ -15,7 +15,7 @@
 #include <unordered_set> // std::unordered_set
 #include <vector>    // std::vector
 
-namespace ropufu::aftermath::tests
+namespace ropufu::tests
 {
     template <typename t_left_matrix_type, typename t_right_matrix_type>
     long double matrix_distance(const t_left_matrix_type& left, const t_right_matrix_type& right) noexcept
@@ -62,7 +62,7 @@ namespace ropufu::aftermath::tests
 
         return result;
     } // initialize_matrix_one(...)
-} // namespace ropufu::aftermath::tests
+} // namespace ropufu::tests
 
 // Note: std::int16_t and std::uint16_t are not closed under addition.
 #define ROPUFU_AFTERMATH_TESTS_ALGEBRA_MATRIX_ARITHMETIC_TYPES \
@@ -93,9 +93,9 @@ TEST_CASE_TEMPLATE("testing matrix type-casting", tested_t, ROPUFU_AFTERMATH_TES
     CAPTURE(height);
     CAPTURE(width);
 
-    tested_t zero = ropufu::aftermath::tests::template zeros_matrix<tested_t>(height, width);
-    tested_t one = ropufu::aftermath::tests::template ones_matrix<tested_t>(height, width);
-    tested_t b = ropufu::aftermath::tests::template non_negative_matrix_b<tested_t>(height, width);
+    tested_t zero = ropufu::tests::template zeros_matrix<tested_t>(height, width);
+    tested_t one = ropufu::tests::template ones_matrix<tested_t>(height, width);
+    tested_t b = ropufu::tests::template non_negative_matrix_b<tested_t>(height, width);
     tested_t c = tested_t::generate(height, width,
         [&b] (std::size_t i, std::size_t j) { return static_cast<scalar_t>(b(i, j) + 1); });
     
@@ -105,10 +105,10 @@ TEST_CASE_TEMPLATE("testing matrix type-casting", tested_t, ROPUFU_AFTERMATH_TES
     target_type b_cast = static_cast<target_type>(b);
     target_type c_cast = static_cast<target_type>(c);
 
-    CHECK(ropufu::aftermath::tests::matrix_distance(zero, zero_cast) == 0);
-    CHECK(ropufu::aftermath::tests::matrix_distance(one, one_cast) == 0);
-    CHECK(ropufu::aftermath::tests::matrix_distance(b, b_cast) == 0);
-    CHECK(ropufu::aftermath::tests::matrix_distance(c, c_cast) == 0);
+    CHECK(ropufu::tests::matrix_distance(zero, zero_cast) == 0);
+    CHECK(ropufu::tests::matrix_distance(one, one_cast) == 0);
+    CHECK(ropufu::tests::matrix_distance(b, b_cast) == 0);
+    CHECK(ropufu::tests::matrix_distance(c, c_cast) == 0);
 } // TEST_CASE_TEMPLATE(...)
 
 TEST_CASE_TEMPLATE("testing matrix arithmetic 1", tested_t, ROPUFU_AFTERMATH_TESTS_ALGEBRA_MATRIX_ARITHMETIC_TYPES)
@@ -126,9 +126,9 @@ TEST_CASE_TEMPLATE("testing matrix arithmetic 1", tested_t, ROPUFU_AFTERMATH_TES
     CAPTURE(height);
     CAPTURE(width);
 
-    tested_t zero = ropufu::aftermath::tests::template zeros_matrix<tested_t>(height, width);
-    tested_t one = ropufu::aftermath::tests::template ones_matrix<tested_t>(height, width);
-    tested_t b = ropufu::aftermath::tests::template non_negative_matrix_b<tested_t>(height, width);
+    tested_t zero = ropufu::tests::template zeros_matrix<tested_t>(height, width);
+    tested_t one = ropufu::tests::template ones_matrix<tested_t>(height, width);
+    tested_t b = ropufu::tests::template non_negative_matrix_b<tested_t>(height, width);
     tested_t c = tested_t::generate(height, width,
         [&b] (std::size_t i, std::size_t j) { return static_cast<scalar_t>(b(i, j) + 1); });
         
@@ -163,9 +163,9 @@ TEST_CASE_TEMPLATE("testing matrix arithmetic 2", tested_t, ROPUFU_AFTERMATH_TES
     CAPTURE(height);
     CAPTURE(width);
 
-    tested_t zero = ropufu::aftermath::tests::template zeros_matrix<tested_t>(height, width);
-    tested_t one = ropufu::aftermath::tests::template ones_matrix<tested_t>(height, width);
-    tested_t b = ropufu::aftermath::tests::template non_negative_matrix_b<tested_t>(height, width);
+    tested_t zero = ropufu::tests::template zeros_matrix<tested_t>(height, width);
+    tested_t one = ropufu::tests::template ones_matrix<tested_t>(height, width);
+    tested_t b = ropufu::tests::template non_negative_matrix_b<tested_t>(height, width);
     tested_t c = tested_t::generate(height, width,
         [&b] (std::size_t i, std::size_t j) { return static_cast<scalar_t>(b(i, j) + 1); });
 
@@ -211,9 +211,9 @@ TEST_CASE_TEMPLATE("testing matrix slicing", tested_t, ROPUFU_AFTERMATH_TESTS_AL
     CAPTURE(height);
     CAPTURE(width);
 
-    tested_t zero = ropufu::aftermath::tests::template zeros_matrix<tested_t>(height, width);
-    tested_t one = ropufu::aftermath::tests::template ones_matrix<tested_t>(height, width);
-    tested_t b = ropufu::aftermath::tests::template non_negative_matrix_b<tested_t>(height, width);
+    tested_t zero = ropufu::tests::template zeros_matrix<tested_t>(height, width);
+    tested_t one = ropufu::tests::template ones_matrix<tested_t>(height, width);
+    tested_t b = ropufu::tests::template non_negative_matrix_b<tested_t>(height, width);
     tested_t c = tested_t::generate(height, width,
         [&b] (std::size_t i, std::size_t j) { return static_cast<scalar_t>(b(i, j) + 1); });
 
@@ -263,7 +263,7 @@ TEST_CASE_TEMPLATE("testing masked slicing", tested_t, ROPUFU_AFTERMATH_TESTS_AL
     CAPTURE(height);
     CAPTURE(width);
 
-    tested_t b = ropufu::aftermath::tests::template non_negative_matrix_b<tested_t>(height, width);
+    tested_t b = ropufu::tests::template non_negative_matrix_b<tested_t>(height, width);
 
     mask_t all {height, width, true};
     mask_t none {height, width, false};

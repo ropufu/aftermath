@@ -13,7 +13,7 @@
 #include <list>    // std::list
 #include <vector>  // std::vector
 
-namespace ropufu::aftermath::tests
+namespace ropufu::tests
 {
     template <typename t_left_vector_type, typename t_right_vector_type>
     long double vector_distance(const t_left_vector_type& left, const t_right_vector_type& right) noexcept
@@ -55,7 +55,7 @@ namespace ropufu::aftermath::tests
 
         return result;
     } // initialize_vector_one(...)
-} // namespace ropufu::aftermath::tests
+} // namespace ropufu::tests
 
 #define ROPUFU_AFTERMATH_TESTS_ALGEBRA_VECTOR_ARITHMETIC_TYPES \
     ropufu::aftermath::simple_vector<std::size_t>,             \
@@ -107,18 +107,18 @@ TEST_CASE_TEMPLATE("testing vector type-casting", tested_t, ROPUFU_AFTERMATH_TES
 
     CAPTURE(size);
 
-    tested_t zero = ropufu::aftermath::tests::template zeros_vector<tested_t>(size);
-    tested_t one = ropufu::aftermath::tests::template ones_vector<tested_t>(size);
-    tested_t b = ropufu::aftermath::tests::template non_negative_vector_b<tested_t>(size);
+    tested_t zero = ropufu::tests::template zeros_vector<tested_t>(size);
+    tested_t one = ropufu::tests::template ones_vector<tested_t>(size);
+    tested_t b = ropufu::tests::template non_negative_vector_b<tested_t>(size);
     
     using target_type = ropufu::aftermath::simple_vector<float>;
     target_type zero_cast = static_cast<target_type>(zero);
     target_type one_cast = static_cast<target_type>(one);
     target_type b_cast = static_cast<target_type>(b);
 
-    CHECK(ropufu::aftermath::tests::vector_distance(zero, zero_cast) == 0);
-    CHECK(ropufu::aftermath::tests::vector_distance(one, one_cast) == 0);
-    CHECK(ropufu::aftermath::tests::vector_distance(b, b_cast) == 0);
+    CHECK(ropufu::tests::vector_distance(zero, zero_cast) == 0);
+    CHECK(ropufu::tests::vector_distance(one, one_cast) == 0);
+    CHECK(ropufu::tests::vector_distance(b, b_cast) == 0);
 } // TEST_CASE_TEMPLATE(...)
 
 #endif // ROPUFU_AFTERMATH_TESTS_ROPUFU_SIMPLE_VECTOR_HPP_INCLUDED

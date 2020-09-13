@@ -36,9 +36,17 @@ TEST_CASE_TEMPLATE("testing interval json", interval_type, ROPUFU_AFTERMATH_TEST
     interval_type b {13, 2};
     interval_type c {27, 27};
 
-    CHECK(ropufu::aftermath::tests::does_json_round_trip(a));
-    CHECK(ropufu::aftermath::tests::does_json_round_trip(b));
-    CHECK(ropufu::aftermath::tests::does_json_round_trip(c));
+    std::string xxx {};
+    std::string yyy {};
+
+    ropufu::tests::does_json_round_trip(a, xxx, yyy);
+    CHECK_EQ(xxx, yyy);
+
+    ropufu::tests::does_json_round_trip(b, xxx, yyy);
+    CHECK_EQ(xxx, yyy);
+
+    ropufu::tests::does_json_round_trip(c, xxx, yyy);
+    CHECK_EQ(xxx, yyy);
 } // TEST_CASE_TEMPLATE(...)
 
 TEST_CASE_TEMPLATE("testing interval noexcept json", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)

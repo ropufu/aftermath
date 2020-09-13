@@ -17,13 +17,13 @@
 #include <random>  // std::mt19937
 #include <string>  // std::string
 
-namespace ropufu::aftermath::tests
+namespace ropufu::tests
 {
     template <typename t_value_type, typename t_allocator_type, typename t_arrangement_type>
     void randomize_matrix(aftermath::algebra::matrix<t_value_type, t_allocator_type, t_arrangement_type>& mat) noexcept
     {
         std::mt19937 engine {};
-        ropufu::aftermath::tests::seed(engine);
+        ropufu::tests::seed(engine);
 
         typename std::mt19937::result_type norm = std::mt19937::max() / 1'000;
         for (t_value_type& x : mat)
@@ -33,16 +33,16 @@ namespace ropufu::aftermath::tests
             x = static_cast<t_value_type>(z);
         } // for (...)
     } // randomize_matrix(...)
-} // namespace ropufu::aftermath::tests
+} // namespace ropufu::tests
 
 #define ROPUFU_AFTERMATH_TESTS_FORMAT_MAT4_STREAM_BASE_TRIPLET_TYPES            \
-    ropufu::aftermath::tests::type_triplet<std::int32_t, std::uint16_t, float>, \
-    ropufu::aftermath::tests::type_triplet<std::int32_t, std::int16_t, double>, \
-    ropufu::aftermath::tests::type_triplet<std::uint16_t, std::int32_t, float>, \
-    ropufu::aftermath::tests::type_triplet<std::uint16_t, std::uint8_t, float>, \
-    ropufu::aftermath::tests::type_triplet<std::int32_t, double, std::int32_t>, \
-    ropufu::aftermath::tests::type_triplet<float, std::int32_t, float>,         \
-    ropufu::aftermath::tests::type_triplet<double, float, float>                \
+    ropufu::tests::type_triplet<std::int32_t, std::uint16_t, float>, \
+    ropufu::tests::type_triplet<std::int32_t, std::int16_t, double>, \
+    ropufu::tests::type_triplet<std::uint16_t, std::int32_t, float>, \
+    ropufu::tests::type_triplet<std::uint16_t, std::uint8_t, float>, \
+    ropufu::tests::type_triplet<std::int32_t, double, std::int32_t>, \
+    ropufu::tests::type_triplet<float, std::int32_t, float>,         \
+    ropufu::tests::type_triplet<double, float, float>                \
 
 
 TEST_CASE_TEMPLATE("testing mat4_stream_base", triplet_t, ROPUFU_AFTERMATH_TESTS_FORMAT_MAT4_STREAM_BASE_TRIPLET_TYPES)
@@ -59,9 +59,9 @@ TEST_CASE_TEMPLATE("testing mat4_stream_base", triplet_t, ROPUFU_AFTERMATH_TESTS
     matrix_b_t b = matrix_b_t::uninitialized(4, 7);
     matrix_c_t c = matrix_c_t::uninitialized(8, 8);
 
-    ropufu::aftermath::tests::randomize_matrix(a);
-    ropufu::aftermath::tests::randomize_matrix(b);
-    ropufu::aftermath::tests::randomize_matrix(c);
+    ropufu::tests::randomize_matrix(a);
+    ropufu::tests::randomize_matrix(b);
+    ropufu::tests::randomize_matrix(c);
 
     std::filesystem::path path = "./temp_1729.mat";
     ropufu::aftermath::format::mat4_istream matin {path};

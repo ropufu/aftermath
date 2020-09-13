@@ -14,7 +14,7 @@
 #include <utility> // std::pair
 #include <vector>  // std::vector
 
-namespace ropufu::aftermath::tests
+namespace ropufu::tests
 {
     template <typename t_left_container_type, typename t_right_container_type>
     static bool try_sync_initialize_containers(t_left_container_type& left, t_right_container_type& right) noexcept
@@ -36,7 +36,7 @@ namespace ropufu::aftermath::tests
 
         return true;
     } // try_sync_initialize_containers(...)
-} // namespace ropufu::aftermath::tests
+} // namespace ropufu::tests
 
 #define ROPUFU_AFTERMATH_TESTS_ALGEBRA_ELEMENTWISE_ALL_TYPES            \
     std::pair<std::vector<std::size_t>, std::array<std::int32_t, 5>>,   \
@@ -85,7 +85,7 @@ TEST_CASE_TEMPLATE("testing elementwise arithmetic assignment", tested_t, ROPUFU
 
     first_type left {};
     second_type right {};
-    bool is_good = ropufu::aftermath::tests::try_sync_initialize_containers(left, right);
+    bool is_good = ropufu::tests::try_sync_initialize_containers(left, right);
     REQUIRE(is_good);
 
     std::size_t n = left.size();
@@ -124,7 +124,7 @@ TEST_CASE_TEMPLATE("testing elementwise binary masks", tested_t, ROPUFU_AFTERMAT
 
     first_type left {};
     second_type right {};
-    bool is_good = ropufu::aftermath::tests::try_sync_initialize_containers(left, right);
+    bool is_good = ropufu::tests::try_sync_initialize_containers(left, right);
     REQUIRE(is_good);
 
     std::size_t n = left.size();

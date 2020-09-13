@@ -47,14 +47,14 @@ namespace ropufu::aftermath::detail
 } // namespace ropufu::aftermath::detail
 
 #define ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_ALL_TYPES                                 \
-    ropufu::aftermath::enum_array<ropufu::aftermath::tests::mystruct, double>,      \
-    ropufu::aftermath::enum_array<ropufu::aftermath::tests::mystruct, std::size_t>, \
-    ropufu::aftermath::enum_array<ropufu::aftermath::tests::mystruct, bool>,        \
-    ropufu::aftermath::enum_array<ropufu::aftermath::tests::mystruct, void>         \
+    ropufu::aftermath::enum_array<ropufu::tests::mystruct, double>,      \
+    ropufu::aftermath::enum_array<ropufu::tests::mystruct, std::size_t>, \
+    ropufu::aftermath::enum_array<ropufu::tests::mystruct, bool>,        \
+    ropufu::aftermath::enum_array<ropufu::tests::mystruct, void>         \
 
 #define ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_MAP_TYPES                                 \
-    ropufu::aftermath::enum_array<ropufu::aftermath::tests::mystruct, double>,      \
-    ropufu::aftermath::enum_array<ropufu::aftermath::tests::mystruct, std::size_t>  \
+    ropufu::aftermath::enum_array<ropufu::tests::mystruct, double>,      \
+    ropufu::aftermath::enum_array<ropufu::tests::mystruct, std::size_t>  \
 
 
 TEST_CASE_TEMPLATE("testing enum_array json", tested_t, ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_MAP_TYPES)
@@ -62,14 +62,18 @@ TEST_CASE_TEMPLATE("testing enum_array json", tested_t, ROPUFU_AFTERMATH_TESTS_E
     tested_t tested {};
     typename tested_t::underlying_type i = 0;
     for (auto x : tested) x.value() = ++i;
-    
-    CHECK(ropufu::aftermath::tests::does_json_round_trip(tested));
+
+    std::string xxx {};
+    std::string yyy {};
+
+    ropufu::tests::does_json_round_trip(tested, xxx, yyy);
+    CHECK_EQ(xxx, yyy);
 } // TEST_CASE_TEMPLATE(...)
 
 TEST_CASE_TEMPLATE("testing enum_array flags", tested_t,
-    ropufu::aftermath::enum_array<ropufu::aftermath::tests::mystruct, bool>)
+    ropufu::aftermath::enum_array<ropufu::tests::mystruct, bool>)
 {
-    using enum_type = ropufu::aftermath::tests::mystruct;
+    using enum_type = ropufu::tests::mystruct;
     using underlying_type = typename tested_t::underlying_type;
 
     tested_t tested { enum_type::almost_surely, enum_type::surely };
@@ -82,15 +86,19 @@ TEST_CASE_TEMPLATE("testing enum_array flags", tested_t,
 
     for (enum_type x : tested) aggregate += static_cast<underlying_type>(x);
     underlying_type expected_aggregate = static_cast<underlying_type>(enum_type::perhaps) + static_cast<underlying_type>(enum_type::surely);
+
+    std::string xxx {};
+    std::string yyy {};
     
-    CHECK(ropufu::aftermath::tests::does_json_round_trip(tested));
-    CHECK(aggregate == expected_aggregate);
+    ropufu::tests::does_json_round_trip(tested, xxx, yyy);
+    CHECK_EQ(xxx, yyy);
+    CHECK_EQ(aggregate, expected_aggregate);
 } // TEST_CASE_TEMPLATE(...)
 
 TEST_CASE_TEMPLATE("testing enum_array void", tested_t,
-    ropufu::aftermath::enum_array<ropufu::aftermath::tests::mystruct, void>)
+    ropufu::aftermath::enum_array<ropufu::tests::mystruct, void>)
 {
-    using enum_type = ropufu::aftermath::tests::mystruct;
+    using enum_type = ropufu::tests::mystruct;
     using underlying_type = typename tested_t::underlying_type;
 
     tested_t tested {};
@@ -102,8 +110,12 @@ TEST_CASE_TEMPLATE("testing enum_array void", tested_t,
         static_cast<underlying_type>(enum_type::almost_surely) +
         static_cast<underlying_type>(enum_type::surely);
     
-    CHECK(ropufu::aftermath::tests::does_json_round_trip(tested));
-    CHECK(aggregate == expected_aggregate);
+    std::string xxx {};
+    std::string yyy {};
+    
+    ropufu::tests::does_json_round_trip(tested, xxx, yyy);
+    CHECK_EQ(xxx, yyy);
+    CHECK_EQ(aggregate, expected_aggregate);
 } // TEST_CASE_TEMPLATE(...)
 
 #endif // ROPUFU_AFTERMATH_TESTS_ROPUFU_ENUM_ARRAY_HPP_INCLUDED

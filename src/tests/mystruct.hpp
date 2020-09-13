@@ -7,7 +7,7 @@
 #include <cstddef>  // std::size_t
 #include <string>   // std::string, std::to_string
 
-namespace ropufu::aftermath::tests
+namespace ropufu::tests
 {
     enum struct mystruct
     {
@@ -19,13 +19,13 @@ namespace ropufu::aftermath::tests
 
     static constexpr std::size_t mystruct_first_index = 0;
     static constexpr std::size_t mystruct_last_index = 3;
-} // namespace ropufu::aftermath::tests
+} // namespace ropufu::tests
 
 namespace std
 {
-    std::string to_string(ropufu::aftermath::tests::mystruct x) noexcept
+    std::string to_string(ropufu::tests::mystruct x) noexcept
     {
-        using enum_type = ropufu::aftermath::tests::mystruct;
+        using enum_type = ropufu::tests::mystruct;
         switch (x)
         {
             case enum_type::maybe: return "maybe";

@@ -17,7 +17,7 @@
 #include <unordered_map> // std::unordered_map
 #include <vector>     // std::vector
 
-namespace ropufu::aftermath::tests
+namespace ropufu::tests
 {
     template <typename t_count_type>
     static void dictionary(std::vector<mystruct>& keys, std::vector<t_count_type>& counts)
@@ -32,7 +32,7 @@ namespace ropufu::aftermath::tests
         keys = { "Hello", "world", "1729" };
         counts = { t_count_type(7), t_count_type(3), t_count_type(10) };
     } // dictionary(...)
-} // namespace ropufu::aftermath::tests
+} // namespace ropufu::tests
 
 #define ROPUFU_AFTERMATH_TESTS_PROBABILITY_EMPIRICAL_MEASURE_ORDERED_TYPES                \
     ropufu::aftermath::probability::empirical_measure<std::int16_t, std::int16_t, float>, \
@@ -42,7 +42,7 @@ namespace ropufu::aftermath::tests
 
 #define ROPUFU_AFTERMATH_TESTS_PROBABILITY_EMPIRICAL_MEASURE_UNORDERED_TYPES              \
     ropufu::aftermath::probability::empirical_measure<                                    \
-        ropufu::aftermath::tests::mystruct, std::size_t>,                                 \
+        ropufu::tests::mystruct, std::size_t>,                                 \
     ropufu::aftermath::probability::empirical_measure<std::string, std::int32_t>          \
 
 
@@ -106,7 +106,7 @@ TEST_CASE_TEMPLATE("testing empirical_measure ordered", tested_t, ROPUFU_AFTERMA
 TEST_CASE("testing empirical_measure unordered")
 {
     using tested_type_a = ropufu::aftermath::probability::empirical_measure<std::string, std::int32_t>;
-    using tested_type_b = ropufu::aftermath::probability::empirical_measure<ropufu::aftermath::tests::mystruct, std::size_t>;
+    using tested_type_b = ropufu::aftermath::probability::empirical_measure<ropufu::tests::mystruct, std::size_t>;
     
     tested_type_a a {};
     tested_type_b b {};
@@ -115,11 +115,11 @@ TEST_CASE("testing empirical_measure unordered")
     REQUIRE(a.count() == 2);
     CHECK(a.most_likely_value() == "Hello, ");
     
-    b << ropufu::aftermath::tests::mystruct::maybe <<
-        ropufu::aftermath::tests::mystruct::almost_surely;
-    b.observe(ropufu::aftermath::tests::mystruct::maybe);
+    b << ropufu::tests::mystruct::maybe <<
+        ropufu::tests::mystruct::almost_surely;
+    b.observe(ropufu::tests::mystruct::maybe);
     REQUIRE(b.most_likely_count() == 2);
-    REQUIRE(b.most_likely_value() == ropufu::aftermath::tests::mystruct::maybe);
+    REQUIRE(b.most_likely_value() == ropufu::tests::mystruct::maybe);
 } // TEST_CASE_TEMPLATE(...)
 
 #endif // ROPUFU_AFTERMATH_TESTS_PROBABILITY_EMPIRICAL_MEASURE_HPP_INCLUDED

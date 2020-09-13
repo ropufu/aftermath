@@ -11,10 +11,10 @@
 #include <string>     // std::string
 
 #define BENCH_COMPARE_TIMING(suffix, left_name, right_name, left_seconds, right_seconds)                           \
-    ropufu::aftermath::tests::benchmark_compare_timing(suffix, left_name, right_name, left_seconds, right_seconds) \
+    ropufu::tests::benchmark_compare_timing(suffix, left_name, right_name, left_seconds, right_seconds) \
 
 
-namespace ropufu::aftermath::tests
+namespace ropufu::tests
 {
     static constexpr int bench_percentage_threshold = 10;
 
@@ -102,6 +102,6 @@ namespace ropufu::aftermath::tests
         
         void test_case_reenter(const doctest::TestCaseData& /*in*/) override { }
     }; // struct benchmark_reporter
-} // namespace ropufu::aftermath::tests
+} // namespace ropufu::tests
 
 #endif // ROPUFU_AFTERMATH_TESTS_BENCHMARK_REPORTER_HPP_INCLUDED

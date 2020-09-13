@@ -30,16 +30,20 @@
 #include "ropufu/simple_vector.hpp"
 #include "ropufu/sliding_array.hpp"
 
+#include "../ropufu/metadata.hpp"
+
 //#include "random_engines.hpp"
 
 #include <exception> // std::exception
 #include <iostream>  // std::cout, std::endl
 
-REGISTER_REPORTER("bench", 1, ropufu::aftermath::tests::benchmark_reporter);
-REGISTER_REPORTER("benchmark", 1, ropufu::aftermath::tests::benchmark_reporter);
+REGISTER_REPORTER("bench", 1, ropufu::tests::benchmark_reporter);
+REGISTER_REPORTER("benchmark", 1, ropufu::tests::benchmark_reporter);
 
 int main(int argc, char** argv, char** /*envp*/)
 {
+    static_assert(ropufu::qualified_name<void>() == "void");
+
     doctest::Context context {};
     std::cout << "For benchmarks launch with --reporters=bench" << std::endl;
     try
@@ -55,6 +59,6 @@ int main(int argc, char** argv, char** /*envp*/)
     } // catch (...)
 
     // std::cout << std::endl;
-    // ropufu::aftermath::tests::print_random_engine_diameters();
+    // ropufu::tests::print_random_engine_diameters();
     return 0;
 } // main(...)

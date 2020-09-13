@@ -10,7 +10,7 @@
 #include <random>   // ...
 #include <set>      // std::set
 
-namespace ropufu::aftermath::tests
+namespace ropufu::tests
 {
     template <typename t_engine_type>
     std::size_t diameter_of() { return static_cast<std::size_t>(t_engine_type::max() - t_engine_type::min()); }
@@ -51,6 +51,6 @@ namespace ropufu::aftermath::tests
             std::cout << std::endl;
         } // for (...)
     } // print_random_engine_diameters(...)
-} // namespace ropufu::aftermath::tests
+} // namespace ropufu::tests
 
 #endif // ROPUFU_AFTERMATH_TESTS_RANDOM_ENGINES_HPP_INCLUDED

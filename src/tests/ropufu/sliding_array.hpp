@@ -27,7 +27,7 @@ TEST_CASE_TEMPLATE("testing (randomized) sliding array", tested_t, ROPUFU_AFTERM
     using value_type = typename tested_t::value_type;
 
     engine_type engine {};
-    ropufu::aftermath::tests::seed(engine);
+    ropufu::tests::seed(engine);
 
     constexpr std::size_t sample_size = 80;
     std::array<value_type, sample_size> sequence {};

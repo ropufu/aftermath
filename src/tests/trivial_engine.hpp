@@ -6,7 +6,7 @@
 #include <limits>  // std::numeric_limits
 #include <random>  // std::seed_seq
 
-namespace ropufu::aftermath::tests
+namespace ropufu::tests
 {
     template <typename t_result_type,
         t_result_type t_min = std::numeric_limits<t_result_type>::min(),
@@ -31,6 +31,6 @@ namespace ropufu::aftermath::tests
 
         constexpr result_type operator ()() const noexcept { return t_state; }
     }; // enum struct trivial_engine
-} // namespace ropufu::aftermath::tests
+} // namespace ropufu::tests
 
 #endif // ROPUFU_AFTERMATH_TESTS_TRIVIAL_ENGINE_HPP_INCLUDED

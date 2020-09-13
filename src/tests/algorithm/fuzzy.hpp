@@ -11,7 +11,7 @@
 #include <random>   // std::mt19937
 #include <vector>   // std::vector
 
-namespace ropufu::aftermath::tests
+namespace ropufu::tests
 {
     template <typename t_numeric_type>
     struct increasing_func_linear
@@ -48,13 +48,13 @@ namespace ropufu::aftermath::tests
         static inline std::string name = "quadratic";
         value_type operator ()(argument_type x) const noexcept { return (x < 0) ? (x * x) : (-x * x); }
     }; // struct decreasing_func_quadratic
-} // namespace ropufu::aftermath::tests
+} // namespace ropufu::tests
 
 #define ROPUFU_AFTERMATH_TESTS_ALGORITHM_FUZZY_FUNCTION_TYPES   \
-    ropufu::aftermath::tests::increasing_func_linear<float>,    \
-    ropufu::aftermath::tests::increasing_func_linear<double>,   \
-    ropufu::aftermath::tests::increasing_func_cubic<double>,    \
-    ropufu::aftermath::tests::decreasing_func_quadratic<double> \
+    ropufu::tests::increasing_func_linear<float>,    \
+    ropufu::tests::increasing_func_linear<double>,   \
+    ropufu::tests::increasing_func_cubic<double>,    \
+    ropufu::tests::decreasing_func_quadratic<double> \
 
 
 TEST_CASE_TEMPLATE("testing fuzzy on increasing functions", function_t, ROPUFU_AFTERMATH_TESTS_ALGORITHM_FUZZY_FUNCTION_TYPES)
@@ -64,7 +64,7 @@ TEST_CASE_TEMPLATE("testing fuzzy on increasing functions", function_t, ROPUFU_A
     using fuzzy_type = ropufu::aftermath::algorithm::fuzzy<argument_type, value_type>;
 
     std::mt19937 engine {};
-    ropufu::aftermath::tests::seed(engine);
+    ropufu::tests::seed(engine);
     value_type norm = static_cast<value_type>(std::mt19937::max()) + 1;
     value_type offset = static_cast<value_type>(std::mt19937::max() / 2);
 
