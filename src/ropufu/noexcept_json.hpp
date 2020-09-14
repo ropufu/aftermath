@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 
 #include "concepts.hpp"
+#include "enum_parser.hpp"
 
 #include <concepts>    // std::floating_point, std::same_as
 #include <map>         // std::map
@@ -35,13 +36,23 @@ namespace ropufu
         }; // concept json_ready
 
     template <typename t_value_type>
-    concept json_noexcept = json_ready<t_value_type> &&
+    concept json_noexcept = ropufu::json_ready<t_value_type> &&
         requires(const nlohmann::json& j, t_value_type& x)
         {
             // Check if noexcept serializer has been specialized.
             {noexcept_json_serializer<t_value_type>::try_get(j, x)} -> std::same_as<bool>;
             noexcept(noexcept_json_serializer<t_value_type>::try_get(j, x));
         }; // concept json_noexcept
+
+    template <typename t_value_type>
+    concept enum_noexcept = ropufu::enumeration<t_value_type> &&
+        (!ropufu::aftermath::detail::does_not_specialize_enum_parser<t_value_type>) &&
+        requires(const std::string& s, t_value_type& x)
+        {
+            // Check if enum parser has been specialized.
+            {ropufu::aftermath::detail::enum_parser<t_value_type>::try_parse(s, x)} -> std::same_as<bool>;
+            noexcept(ropufu::aftermath::detail::enum_parser<t_value_type>::try_parse(s, x));
+        }; // concept enum_noexcept
 
     struct noexcept_json;
 
@@ -228,7 +239,14 @@ namespace ropufu
             {
                 return serializer_type::try_get(j, result);
             } // if constexpr (...)
-            else if constexpr (ropufu::enumeration<value_type>) // Second clause: non-specialized noexcept_json_serializer enumerations.
+            else if constexpr (ropufu::enum_noexcept<value_type>) // Second clause: type is a specialized enum_parser-ready enumeration.
+            {
+                std::string x {};
+                if (!noexcept_json::try_get(j, x)) return false;
+                if (!ropufu::aftermath::detail::try_parse_enum(x, result)) return false;
+                return true;
+            } // if constexpr (...)
+            else if constexpr (ropufu::enumeration<value_type>) // Third clause: non-specialized noexcept_json_serializer enumerations.
             {
                 using underlying_type = std::underlying_type_t<value_type>;
 
@@ -237,7 +255,7 @@ namespace ropufu
                 result = static_cast<value_type>(x);
                 return true;
             } // if constexpr (...)
-            else if constexpr (ropufu::push_back_container<value_type>) // Third clause: vector-like containers.
+            else if constexpr (ropufu::push_back_container<value_type>) // Fourth clause: vector-like containers.
             {
                 using element_type = typename value_type::value_type;
                 switch (j.type())
@@ -255,7 +273,7 @@ namespace ropufu
                 } // switch (...)
             } // if constexpr (...)
             else if constexpr (ropufu::emplace_dictionary<value_type> &&
-                std::same_as<typename nlohmann::json::object_t::key_type, typename value_type::key_type>) // Fourth clause: map-like containers.
+                std::same_as<typename nlohmann::json::object_t::key_type, typename value_type::key_type>) // Fifth clause: map-like containers.
             {
                 using element_type = typename value_type::mapped_type;
                 switch (j.type())

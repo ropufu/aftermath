@@ -7,6 +7,7 @@
 
 #include "../../ropufu/noexcept_json.hpp"
 #include "../core.hpp"
+#include "../mystruct.hpp"
 
 #include <cstdint>  // std::int??_t, std::uint??_t
 #include <map>      // std::map
@@ -15,6 +16,18 @@
 #include <string>   // std::string
 #include <variant>  // std::variant, std::holds_alternative, std::get
 #include <vector>   // std::vector
+
+TEST_CASE("noexcept json specialized enums")
+{
+    using enum_type = ropufu::tests::mystruct;
+
+    nlohmann::json j {};
+    enum_type x {};
+    REQUIRE(ropufu::noexcept_json::try_parse("\"perhaps\"", j));
+    REQUIRE(ropufu::noexcept_json::try_get(j, x));
+
+    CHECK_EQ(x, enum_type::perhaps);
+} // TEST_CASE(...)
 
 TEST_CASE("noexcept json std::variant unsigned/signed: unsigned")
 {

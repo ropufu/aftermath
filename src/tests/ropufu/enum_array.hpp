@@ -15,44 +15,13 @@
 #include <string>   // std::string, std::to_string
 #include <type_traits> // std::underlying_type_t
 
-namespace ropufu::aftermath::detail
-{
-    template <>
-    struct enum_array_keys<tests::mystruct>
-    {
-        using underlying_type = std::underlying_type_t<tests::mystruct>;
-        static constexpr underlying_type first_index = tests::mystruct_first_index;
-        static constexpr underlying_type past_the_last_index = tests::mystruct_last_index + 1;
-    }; // struct enum_array_keys<...>
-
-    template <>
-    struct enum_parser<tests::mystruct>
-    {
-        using enum_type = tests::mystruct;
-
-        static std::string to_string(const enum_type& from) noexcept
-        {
-            return std::to_string(from);
-        } // to_string(...)
-
-        static bool try_parse(const std::string& from, enum_type& to) noexcept
-        {
-            if (from == "maybe") { to = enum_type::maybe; return true; }
-            if (from == "perhaps") { to = enum_type::perhaps; return true; }
-            if (from == "almost surely") { to = enum_type::almost_surely; return true; }
-            if (from == "surely") { to = enum_type::surely; return true; }
-            return false;
-        } // try_parse(...)
-    }; // struct enum_parser<...>
-} // namespace ropufu::aftermath::detail
-
-#define ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_ALL_TYPES                                 \
+#define ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_ALL_TYPES                      \
     ropufu::aftermath::enum_array<ropufu::tests::mystruct, double>,      \
     ropufu::aftermath::enum_array<ropufu::tests::mystruct, std::size_t>, \
     ropufu::aftermath::enum_array<ropufu::tests::mystruct, bool>,        \
     ropufu::aftermath::enum_array<ropufu::tests::mystruct, void>         \
 
-#define ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_MAP_TYPES                                 \
+#define ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_MAP_TYPES                      \
     ropufu::aftermath::enum_array<ropufu::tests::mystruct, double>,      \
     ropufu::aftermath::enum_array<ropufu::tests::mystruct, std::size_t>  \
 
