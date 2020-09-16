@@ -35,6 +35,10 @@ namespace ropufu
                 std::declval<typename t_dictionary_type::mapped_type>()).second} -> std::convertible_to<bool>;
         }; // concept emplace_dictionary
 
+    template <typename t_dictionary_type, typename t_key_type>
+    concept emplace_dictionary_with_key = emplace_dictionary<t_dictionary_type> &&
+        std::same_as<typename t_dictionary_type::key_type, t_key_type>;
+
     /** @todo Keep an eye on concept support for parameter packs. */
     template <typename t_func_type>
     concept pure_action = requires(t_func_type& x)

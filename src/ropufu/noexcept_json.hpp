@@ -7,7 +7,9 @@
 #include "concepts.hpp"
 #include "enum_parser.hpp"
 
+#include <array>       // std::array
 #include <concepts>    // std::floating_point, std::same_as
+#include <cstddef>     // std::size_t
 #include <map>         // std::map
 #include <optional>    // std::optional, std::nullopt
 #include <ranges>      // std::ranges::range
@@ -126,6 +128,28 @@ namespace ropufu
                     return true;
                 default: return false;
             } // switch (...)
+        } // try_get(...)
+
+        /** Tries to serialize a JSON array as \c std::array. Fails if sizes do not match. */
+        template <ropufu::decayed t_value_type, std::size_t t_size>
+        static bool try_get(const nlohmann::json& j, std::array<t_value_type, t_size>& result) noexcept
+        {
+            using value_type = t_value_type;
+
+            std::vector<value_type> x {};
+            if (!noexcept_json::try_get(j, x)) return false;
+            if (x.size() != t_size) return false;
+
+            auto result_it = result.begin();
+            auto vector_it = x.cbegin();
+            for (std::size_t i = 0; i < t_size; ++i)
+            {
+                *result_it = *vector_it;
+                ++result_it;
+                ++vector_it;
+            } // for (...)
+
+            return true;
         } // try_get(...)
 
         /** Tries to serialize a JSON array as \c std::set. Fails if source contains duplicate values. */
@@ -272,8 +296,7 @@ namespace ropufu
                     default: return false;
                 } // switch (...)
             } // if constexpr (...)
-            else if constexpr (ropufu::emplace_dictionary<value_type> &&
-                std::same_as<typename nlohmann::json::object_t::key_type, typename value_type::key_type>) // Fifth clause: map-like containers.
+            else if constexpr (ropufu::emplace_dictionary_with_key<value_type, typename nlohmann::json::object_t::key_type>) // Fifth clause: map-like containers.
             {
                 using element_type = typename value_type::mapped_type;
                 switch (j.type())
