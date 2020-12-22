@@ -44,18 +44,18 @@ namespace ropufu::aftermath::random
         {
         } // binomial_sampler(...)
 
-        explicit binomial_sampler(const distribution_type& distribution) noexcept
-            : m_count(distribution.number_of_trials()), m_effective_count(distribution.number_of_trials())
+        explicit binomial_sampler(const distribution_type& dist) noexcept
+            : m_count(dist.number_of_trials()), m_effective_count(dist.number_of_trials())
         {
-            uniform_type h = rationalize_t::probability(distribution.probability_of_success());
+            uniform_type h = rationalize_t::probability(dist.probability_of_success());
             this->m_threshold = engine_type::min() + h;
 
             // ~~ Special case p* = 0: always generate \c false. ~~
             if (h == 0) this->m_effective_count = 0;
             // ~~ Special case p = 1: always generate \c true. ~~
-            if (distribution.probability_of_success() == 1)
+            if (dist.probability_of_success() == 1)
             {
-                this->m_offset = distribution.number_of_trials();
+                this->m_offset = dist.number_of_trials();
                 this->m_effective_count = 0;
             } // if (...)
         } // binomial_sampler(...)

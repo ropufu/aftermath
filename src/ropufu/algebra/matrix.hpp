@@ -247,7 +247,6 @@ namespace ropufu::aftermath::algebra
         using iterator_type = typename container_t<>::iterator_type;
         using const_iterator_type = typename container_t<>::const_iterator_type;
 
-        template <std::default_initializable, typename, typename> friend struct matrix;
         template <typename, typename, typename> friend struct detail::matrix_wipe_module;
 
         ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(addition)
@@ -258,7 +257,7 @@ namespace ropufu::aftermath::algebra
         ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(binary_or)
         ROPUFU_AFTERMATH_ALGEBRA_MATRIX_FRIEND_OP_MODULE(binary_xor)
 
-        template <bool, typename, typename> friend struct detail::matrix_inequality_op_module;
+        template <typename, typename> friend struct detail::matrix_inequality_op_module;
 
         using wipe_module = detail::matrix_wipe_module<type, container_t<>, arrangement_type>;
 
@@ -341,9 +340,14 @@ namespace ropufu::aftermath::algebra
         template <typename t_other_value_type, typename t_other_allocator_type>
         explicit operator matrix<t_other_value_type, t_other_allocator_type, arrangement_type>() const
         {
-            matrix<t_other_value_type, t_other_allocator_type, arrangement_type> other {};
-            other.m_container = static_cast<container_t<t_other_value_type, t_other_allocator_type>>(this->m_container);
-            other.m_arrangement = this->m_arrangement;
+            using other_type = matrix<t_other_value_type, t_other_allocator_type, arrangement_type>;
+            other_type other {this->height(), this->width()};
+            auto it = this->cbegin();
+            for (t_other_value_type& x : other)
+            {
+                x = static_cast<t_other_value_type>(*(it));
+                ++it;
+            } // for (...)
             return other;
         } // static_cast<...>
 

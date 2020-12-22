@@ -67,9 +67,9 @@ namespace ropufu::aftermath::random
             this->m_offset_indices.reserve(count_distributions);
         } // reserve(...)
 
-        std::size_t push_back(const distribution_type& distribution)
+        std::size_t push_back(const distribution_type& dist)
         {
-            alias_type a { distribution };
+            alias_type a { dist };
             std::size_t offset_index = this->m_support.size();
 
             std::copy(a.support().begin(), a.support().end(), std::back_inserter(this->m_support));

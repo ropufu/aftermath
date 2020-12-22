@@ -226,8 +226,11 @@ namespace ropufu
             {
                 case json_value_type::number_integer: // Negative integer.
                     if constexpr (!ropufu::numeric_signed<value_type>) return false;
-                    result = j.template get<value_type>();
-                    return true;
+                    else
+                    {
+                        result = j.template get<value_type>();
+                        return true;
+                    } // if constexpr
                 case json_value_type::number_unsigned: // Non-negative integer.
                     result = j.template get<value_type>();
                     return true;
@@ -316,8 +319,10 @@ namespace ropufu
                     default: return false;
                 } // switch (...)
             } // if constexpr (...)
-
-            return false;
+            else
+            {
+                return false;
+            } // if constexpr (...)
         } // try_get(...)
 
         template <ropufu::decayed t_value_type>

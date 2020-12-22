@@ -58,8 +58,8 @@ namespace ropufu::aftermath::random
          *  @exception std::logic_error Trivial distributions not supported.
          *  @exception std::logic_error \c t_engine_type cannot accomodate such a wide distribution.
          */
-        explicit alias_sampler(const distribution_type& distribution)
-            : m_support(distribution.support()),
+        explicit alias_sampler(const distribution_type& dist)
+            : m_support(dist.support()),
             m_alias(this->m_support),
             m_cutoff(this->m_support.size())
         {
@@ -82,7 +82,7 @@ namespace ropufu::aftermath::random
             for (std::size_t i = 0; i < n; ++i)
             {
                 const value_type& x = this->m_support[i];
-                probability_type np = distribution.pmf(x, p_scale);
+                probability_type np = dist.pmf(x, p_scale);
                 upscaled_pmf.push_back(np);
             } // for (...)
 

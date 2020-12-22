@@ -74,8 +74,8 @@ namespace ropufu::aftermath::random
     public:
         ziggurat_sampler() noexcept { }
 
-        /*implicit*/ ziggurat_sampler(const distribution_type& distribution) noexcept
-            : m_distribution(distribution)
+        /*implicit*/ ziggurat_sampler(const distribution_type& dist) noexcept
+            : m_distribution(dist)
         {
         } // ziggurat_sampler(...)
 

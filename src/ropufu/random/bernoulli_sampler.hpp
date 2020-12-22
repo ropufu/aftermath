@@ -41,13 +41,13 @@ namespace ropufu::aftermath::random
         {
         } // bernoulli_sampler(...)
 
-        explicit bernoulli_sampler(const distribution_type& distribution) noexcept
+        explicit bernoulli_sampler(const distribution_type& dist) noexcept
         {
-            uniform_type h = rationalize_t::probability(distribution.probability_of_success());
+            uniform_type h = rationalize_t::probability(dist.probability_of_success());
             this->m_threshold = engine_type::min() + h;
 
             // ~~ Special case p = 1: always generate \c true. ~~
-            if (distribution.probability_of_success() == 1)
+            if (dist.probability_of_success() == 1)
             {
                 this->m_factor = 0;
                 this->m_threshold = 1;

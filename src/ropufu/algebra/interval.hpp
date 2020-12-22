@@ -109,12 +109,13 @@ namespace ropufu::aftermath::algebra
         intermediate_type f_from = spacing.forward_transform(interval.from());
         intermediate_type f_to = spacing.forward_transform(interval.to());
         intermediate_type f_diameter = f_to - f_from;
+        intermediate_type sentinel = static_cast<intermediate_type>(count - 1);
         
         container.push_back(interval.from()); // First value is always the left end-point.
-        for (std::size_t i = 1; i < count - 1; ++i)
+        for (intermediate_type i = 1; i < sentinel; ++i)
         {
-            intermediate_type f_step = (i * f_diameter) / (count - 1);
-            intermediate_type x = spacing.backward_transform(f_from + f_step);
+            intermediate_type f_step = (i * f_diameter) / sentinel;
+            t_value_type x = spacing.backward_transform(f_from + f_step);
 
             container.push_back(x);
         } // for (...)

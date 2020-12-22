@@ -44,8 +44,8 @@ namespace ropufu::aftermath::random
         {
         } // uniform_int_sampler(...)
 
-        explicit uniform_int_sampler(const distribution_type& distribution)
-            : m_min(distribution.a()), m_diameter(static_cast<uniform_type>(distribution.b() - distribution.a()))
+        explicit uniform_int_sampler(const distribution_type& dist)
+            : m_min(dist.a()), m_diameter(static_cast<uniform_type>(dist.b() - dist.a()))
         {
             if (type::engine_diameter < this->m_diameter) throw std::overflow_error("Engine diameter insufficient for the distribution.");
             if (this->m_diameter + 1 < this->m_diameter) throw std::overflow_error("Engine precision insufficient for the distribution.");
