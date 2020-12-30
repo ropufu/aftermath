@@ -108,7 +108,7 @@ namespace ropufu::aftermath
         void allocate()
         {
             if (this->m_begin_ptr != nullptr) throw std::logic_error("Memory has to be deallocated prior to another allocation call.");
-            if (this->m_size == 0) return; // Do not perform trivial allocations.
+            //if (this->m_size == 0) return; // Do not perform trivial allocations.
             this->m_begin_ptr = this->m_allocator.allocate(this->m_size);
         } // allocate(...)
 
@@ -153,7 +153,7 @@ namespace ropufu::aftermath
         ~simple_vector() noexcept { this->deconstruct(); }
 
         /** @brief Creates an empty vector. */
-        simple_vector() noexcept { }
+        simple_vector() : simple_vector(nullptr, 0) { }
 
         /** @brief Creates an empty (default-constructed) vector of a given size. */
         explicit simple_vector(size_type size) : simple_vector(nullptr, size)

@@ -145,10 +145,12 @@ namespace ropufu::aftermath::format
             if (filestream.fail() || name_length < 1) return this->on_read_error(ec, int32_blocks_processed);
             ++int32_blocks_processed;
 
+            --name_length; // The name length contains an integer with 1 plus the length of the matrix name.
+
             // Variable-sized header: variable name.
-            text_data.resize(name_length - 1);
-            filestream.read(text_data.data(), name_length - 1);
-            if (filestream.fail() || filestream.gcount() != name_length - 1) return this->on_read_error(ec, int32_blocks_processed);
+            text_data.resize(name_length);
+            filestream.read(text_data.data(), name_length);
+            if (filestream.fail() || filestream.gcount() != name_length) return this->on_read_error(ec, int32_blocks_processed);
             filestream.read(&terminator, 1);
             if (filestream.fail() || terminator != '\0') return this->on_read_error(ec, int32_blocks_processed);
 
@@ -197,7 +199,7 @@ namespace ropufu::aftermath::format
             ++int32_blocks_processed;
 
             // Variable-sized header: variable name.
-            filestream.write(this->m_name.c_str(), name_length - 1);
+            filestream.write(this->m_name.c_str(), this->m_name.size());
             if (filestream.fail()) return this->on_write_error(ec, int32_blocks_processed);
             filestream.write(&terminator, 1);
             if (filestream.fail()) return this->on_write_error(ec, int32_blocks_processed);
