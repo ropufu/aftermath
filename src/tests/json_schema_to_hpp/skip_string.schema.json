@@ -1,0 +1,7 @@
+{
+  "$schema": "../../JsonSchemaToHpp/json_to_hpp.schema.json",
+  "title": "Enumerated String",
+  "description": "This schema should by skipped by JsonSchemaToHpp generator.",
+  "type": "string",
+  "enum": ["a", "b", "c"]
+}

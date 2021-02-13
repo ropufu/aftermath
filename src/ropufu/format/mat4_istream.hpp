@@ -3,6 +3,7 @@
 #define ROPUFU_AFTERMATH_FORMAT_MAT4_ISTREAM_HPP_INCLUDED
 
 #include "../algebra/matrix.hpp"
+#include "mat4_header.hpp"
 #include "mat4_stream_base.hpp"
 
 #include <cstddef>    // std::size_t

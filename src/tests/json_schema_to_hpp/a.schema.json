@@ -1,0 +1,17 @@
+{
+  "$schema": "../../JsonSchemaToHpp/json_to_hpp.schema.json",
+  "title": "Test Schema A",
+  "type": "object",
+  "@ropufu-target-path": "test_a.g.hpp",
+  "@ropufu-namespace": "ropufu::tests::json_schema_to_hpp",
+  "@ropufu-typename": "test_a",
+  "additionalProperties": false,
+  "properties": {
+    "age": {
+      "type": "integer",
+      "@ropufu-typename": "int"
+    },
+    "label": {"type": "string"}
+  },
+  "required": ["age"]
+}

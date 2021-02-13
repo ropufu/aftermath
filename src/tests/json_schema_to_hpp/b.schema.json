@@ -1,0 +1,38 @@
+{
+  "$schema": "../../JsonSchemaToHpp/json_to_hpp.schema.json",
+  "title": "Test Schema B",
+  "type": "object",
+  "@ropufu-target-path": "test_b.g.hpp",
+  "@ropufu-namespace": "ropufu::tests::json_schema_to_hpp",
+  "@ropufu-typename": "test_b",
+  "@ropufu-templates": [
+    {"key": "ropufu::integer", "name": "t_integer_type", "alias": "integer_type"}
+  ],
+  "@ropufu-includes": [
+    {"header": "\"test_a.g.hpp\""},
+    {"header": "<ropufu/concepts.hpp>"},
+    {"header": "<set>", "comment": "std::set"}
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "names": {
+      "type": "array",
+      "@ropufu-typename": "std::set<std::string>",
+      "minItems": 1,
+      "@ropufu-validation-message": "There must be at least one name.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "@ropufu-validation-message": "Name cannot be empty."
+      },
+      "@ropufu-default-value": "{\"??\"}"
+    },
+    "tag": {
+      "type": "object",
+      "@ropufu-typename": "json_schema_to_hpp::test_a",
+      "default": { "id": 1729 },
+      "@ropufu-default-value": "json_schema_to_hpp::test_a{1729}"
+    }
+  },
+  "required": ["names"]
+}

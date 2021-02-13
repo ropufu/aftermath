@@ -5,7 +5,7 @@ CC = g++-10
 
 CFLAGS = -std=c++20 -Wall -O3
 
-PATHINC = -I./../../../../include -I./..
+PATHINC = -I./../../../aftermath/src -I./../../../../include -I./..
 
 PATHLIB =
 
