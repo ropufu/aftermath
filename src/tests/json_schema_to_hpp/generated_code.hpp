@@ -6,9 +6,10 @@
 #include <nlohmann/json.hpp>
 
 #include "../core.hpp"
-#include "test_a.g.hpp"
-#include "test_b.g.hpp"
-#include "test_c.g.hpp"
+#include "test_a.hpp"
+#include "test_b.hpp"
+#include "test_c.hpp"
+#include "test_d.hpp"
 
 #include <cstddef>    // std::size_t
 #include <cstdint>    // std::int16_t, std::int32_t, std::int64_t
@@ -85,5 +86,29 @@ TEST_CASE_TEMPLATE("testing generated json roundtrip schema C", triplet_type, RO
     ropufu::tests::does_json_round_trip(y, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 } // TEST_CASE_TEMPLATE
+
+TEST_CASE("generated json roundtrip schema D")
+{
+    using test_d_type = ropufu::tests::json_schema_to_hpp::test_d;
+
+    test_d_type x = test_d_type::one_one_one;
+    test_d_type y = "two?";
+    test_d_type z = "three";
+
+    std::string xxx {};
+    std::string yyy {};
+    ropufu::tests::does_json_round_trip(x, xxx, yyy);
+    CHECK_EQ(xxx, yyy);
+
+    xxx = {};
+    yyy = {};
+    ropufu::tests::does_json_round_trip(y, xxx, yyy);
+    CHECK_EQ(xxx, yyy);
+
+    xxx = {};
+    yyy = {};
+    ropufu::tests::does_json_round_trip(z, xxx, yyy);
+    CHECK_EQ(xxx, yyy);
+} // TEST_CASE(...)
 
 #endif // ROPUFU_AFTERMATH_TESTS_JSON_SCHEMA_TO_HPP_GENERATED_CODE_HPP_INCLUDED

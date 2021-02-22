@@ -95,5 +95,16 @@ namespace Ropufu.JsonSchemaToHpp
                 ++k;
             } // foreach (...)
         } // ForEach(...)
+
+        public static void ForEach<T>(this IList<T> that, Action<T, Int32> action)
+        {
+            if (that is null) throw new ArgumentNullException(nameof(that));
+            var k = 0;
+            foreach (var x in that)
+            {
+                action(x, k);
+                ++k;
+            } // foreach (...)
+        } // ForEach(...)
     } // class Extenders
 } // namespace Ropufu.JsonSchemaToHpp

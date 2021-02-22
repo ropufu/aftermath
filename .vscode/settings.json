@@ -92,6 +92,7 @@
         "ranges": "cpp",
         "stop_token": "cpp",
         "numbers": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "span": "cpp"
     }
 }

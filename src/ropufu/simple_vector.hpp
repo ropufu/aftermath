@@ -10,6 +10,7 @@
 #include <memory>    // std::allocator, std::allocator_traits
 #include <ranges>    // std::ranges:range
 #include <stdexcept> // std::out_of_range, std::logic_error
+#include <type_traits> // std::is_arithmetic_v
 #include <utility>   // std::move, std::hash
 
 namespace ropufu::aftermath
@@ -26,7 +27,8 @@ namespace ropufu::aftermath
             static constexpr bool is_enabled = false;
         }; // struct vector_wipe_module
 
-        template <typename t_derived_type, ropufu::arithmetic t_value_type, typename t_size_type>
+        template <typename t_derived_type, typename t_value_type, typename t_size_type>
+            requires (std::is_arithmetic_v<t_value_type>)
         struct vector_wipe_module<t_derived_type, t_value_type, t_size_type>
         {
             using derived_type = t_derived_type;

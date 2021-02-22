@@ -1,0 +1,10 @@
+{
+  "$schema": "../../JsonSchemaToHpp/json_to_hpp.schema.json",
+  "title": "Enumerated String",
+  "@ropufu-target-path": "test_d.g.hpp",
+  "@ropufu-typename": "test_d",
+  "@ropufu-namespace": "ropufu::tests::json_schema_to_hpp",
+  "type": "string",
+  "enum": ["one one one", "two?", "three"],
+  "@ropufu-hard-enums": true
+}

@@ -64,7 +64,7 @@
         },
         {
             "label": "C# Build (Debug)",
-            "dependsOn": ["Cleanup dotnet (Debug)"],
+            "dependsOn": ["Remove dotnet bin (shell)", "Remove dotnet obj (shell)"],
             "type": "process",
             "command": "dotnet",
             "args": [
@@ -77,7 +77,7 @@
         },
         {
             "label": "C# Publish (Release)",
-            "dependsOn": ["Cleanup dotnet (Release)"],
+            "dependsOn": ["Remove dotnet bin (shell)", "Remove dotnet obj (shell)"],
             "type": "process",
             "command": "dotnet",
             "args": [
@@ -108,28 +108,22 @@
             }
         },
         {
-            "label": "Cleanup dotnet (Debug)",
-            "type": "process",
-            "command": "dotnet",
+            "label": "Remove dotnet bin (shell)",
+            "type": "shell",
+            "command": "rm",
             "args": [
-                "clean",
-                "${workspaceFolder}/src/JsonSchemaToHpp/JsonSchemaToHpp.csproj",
-                "-c",
-                "Debug"
-            ],
-            "problemMatcher": "$msCompile"
+                "-R",
+                "${workspaceFolder}/src/JsonSchemaToHpp/bin/",
+            ]
         },
         {
-            "label": "Cleanup dotnet (Release)",
-            "type": "process",
-            "command": "dotnet",
+            "label": "Remove dotnet obj (shell)",
+            "type": "shell",
+            "command": "rm",
             "args": [
-                "clean",
-                "${workspaceFolder}/src/JsonSchemaToHpp/JsonSchemaToHpp.csproj",
-                "-c",
-                "Release"
-            ],
-            "problemMatcher": "$msCompile"
+                "-R",
+                "${workspaceFolder}/src/JsonSchemaToHpp/obj/",
+            ]
         }
     ]
 }

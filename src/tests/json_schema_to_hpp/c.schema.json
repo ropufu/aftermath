@@ -10,22 +10,23 @@
     {"key": "std::floating_point", "name": "t_probability_type", "alias": "probability_type"}
   ],
   "@ropufu-inherits": [
-    "public json_schema_to_hpp::test_a",
-    "public json_schema_to_hpp::test_b<t_integer_type>"
+    {"mode": "public", "name": "json_schema_to_hpp::test_a", "constructor arguments": "{0}"},
+    {"mode": "public", "name": "json_schema_to_hpp::test_b<t_integer_type>", "constructor arguments": "{1}", "error message call": "error_message()"}
   ],
   "@ropufu-includes": [
-    {"header": "\"test_a.g.hpp\""},
-    {"header": "\"test_b.g.hpp\""},
+    {"header": "\"test_a.hpp\""},
+    {"header": "\"test_b.hpp\""},
     {"header": "<ropufu/concepts.hpp>"},
     {"header": "<concepts>", "comment": "std::floating_point"}
   ],
   "additionalProperties": false,
+  "required": ["age", "names"],
   "properties": {
     "age": {
       "type": "integer",
       "@ropufu-typename": "integer_type",
       "@ropufu-is-inherited": true,
-      "default": 0
+      "default": 21
     },
     "names": {
       "type": "array",
@@ -37,7 +38,8 @@
         "type": "string",
         "minLength": 1,
         "@ropufu-validation-message": "Name cannot be empty."
-      }
+      },
+      "default": ["??"]
     },
     "tag": {
       "type": "object",

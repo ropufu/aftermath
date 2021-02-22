@@ -17,7 +17,7 @@ namespace Ropufu.JsonSchemaToHpp
         [JsonPropertyName("@ropufu-templates")]
         public List<HppTemplate> HppTemplates { get; set; }
         [JsonPropertyName("@ropufu-inherits")]
-        public List<String> HppInherits { get; set; }
+        public List<HppInherit> HppInherits { get; set; }
         [JsonPropertyName("@ropufu-includes")]
         public List<HppInclude> HppIncludes { get; set; }
         [JsonPropertyName("@ropufu-default-value")]

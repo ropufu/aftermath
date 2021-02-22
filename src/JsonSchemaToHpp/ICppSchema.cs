@@ -7,15 +7,17 @@ namespace Ropufu.JsonSchemaToHpp
 {
     public interface ICppSchema
     {
+        Boolean DoesSupportCodeGeneration { get; }
+        
         /// <summary>
         /// If this schema describes a property in another schema, indicates that the property is inherited from a base class.
         /// </summary>
         Boolean IsPropertyInherited { get; }
 
-        /// <summary>
-        /// If this schema describes a property in another schema, indicates that an explicit value of the property is required.
-        /// </summary>
-        Boolean IsPropertyRequired { get; }
+        // /// <summary>
+        // /// If this schema describes a property in another schema, indicates that an explicit value of the property is required.
+        // /// </summary>
+        // Boolean IsPropertyRequired { get; }
 
         /// <summary>
         /// If this schema describes a property in another schema, name of the property.
@@ -33,10 +35,17 @@ namespace Ropufu.JsonSchemaToHpp
         String FieldName { get; }
 
         /// <summary>
-        /// Code for object type.
+        /// C++ object type, either qualified or unqualified.
         /// </summary>
         /// <example>"std::size_t"</example>
         String Typename { get; }
+
+        /// <summary>
+        /// Namespace for object type.
+        /// </summary>
+        /// <example>"std::chrono"</example>
+        /// <example>"::"</example>
+        String Namespace { get; }
 
         /// <summary>
         /// Description of the object.
@@ -79,8 +88,14 @@ namespace Ropufu.JsonSchemaToHpp
         ///     "foreach (const auto& x : {0}) if (x == 0) return \"Zero elements not allowed.\";",
         ///   ]
         /// </example>
-        IEnumerable<CodeLine> ValidationFormats { get; }
+        IList<CodeLine> ValidationFormats { get; }
+
+        IList<HppInclude> Includes { get; }
+
+        IList<ICppSchema> Definitions { get; }
 
         String Parse(JsonElement value);
+
+        void Invalidate(IList<String> reservedNames, out List<String> warnings);
     } // interface ICppType
 } // namespace Ropufu.JsonSchemaToHpp

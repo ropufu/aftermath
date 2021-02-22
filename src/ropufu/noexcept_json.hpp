@@ -225,7 +225,7 @@ namespace ropufu
             switch (j.type())
             {
                 case json_value_type::number_integer: // Negative integer.
-                    if constexpr (!ropufu::numeric_signed<value_type>) return false;
+                    if constexpr (!ropufu::signed_integer<value_type>) return false;
                     else
                     {
                         result = j.template get<value_type>();

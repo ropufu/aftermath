@@ -32,16 +32,16 @@ namespace ropufu
     ROPUFU_MAKE_METADATA(std::nullptr_t, "::std::nullptr_t", true)
     ROPUFU_MAKE_METADATA(bool, "bool", true)
     ROPUFU_MAKE_METADATA(char, "char", true)
-    ROPUFU_MAKE_METADATA(signed char, "signed char", true)
-    ROPUFU_MAKE_METADATA(unsigned char, "unsigned char", true)
     ROPUFU_MAKE_METADATA(float, "float", true)
     ROPUFU_MAKE_METADATA(double, "double", true)
     ROPUFU_MAKE_METADATA(long double, "long double", true)
 
+    ROPUFU_MAKE_METADATA(std::int8_t, "::std::int8_t", true)
     ROPUFU_MAKE_METADATA(std::int16_t, "::std::int16_t", true)
     ROPUFU_MAKE_METADATA(std::int32_t, "::std::int32_t", true)
     ROPUFU_MAKE_METADATA(std::int64_t, "::std::int64_t", true)
 
+    ROPUFU_MAKE_METADATA(std::uint8_t, "::std::uint8_t", true)
     ROPUFU_MAKE_METADATA(std::uint16_t, "::std::uint16_t", true)
     ROPUFU_MAKE_METADATA(std::uint32_t, "::std::uint32_t", true)
     ROPUFU_MAKE_METADATA(std::uint64_t, "::std::uint64_t", true)

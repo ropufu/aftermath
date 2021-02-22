@@ -104,23 +104,24 @@ namespace Ropufu.JsonSchemaToHpp
                 for (var i = 0; i < jsonSchemaTexts.Length; ++i)
                 {
                     var text = jsonSchemaTexts[i];
-                    var schema = JsonSchema.Parse(text);
-                    schema.SchemaFileName = System.IO.Path.GetFileName(jsonSchemaPaths[i]);
+                    var jsonSchema = JsonSchema.Parse(text);
+                    jsonSchema.SchemaFileName = System.IO.Path.GetFileName(jsonSchemaPaths[i]);
+                    var cppSchema = jsonSchema.ToCppType();
 
-                    if (schema.HppTargetPath is null)
+                    if (jsonSchema.HppTargetPath is null)
                     {
-                        System.Console.WriteLine($"Skipping {schema.SchemaFileName}: target path is null.");
+                        System.Console.WriteLine($"Skipping {jsonSchema.SchemaFileName}: target path is null.");
                         continue;
                     } // if (...)
 
-                    if (schema.SchemaKind != JsonSchemaValueKind.Object)
+                    if (!cppSchema.DoesSupportCodeGeneration)
                     {
-                        System.Console.WriteLine($"Skipping {schema.SchemaFileName}: only object-typed schemas are supported.");
+                        System.Console.WriteLine($"Skipping {jsonSchema.SchemaFileName}: code generation are supported.");
                         continue;
                     } // if (...)
 
-                    System.Console.Write($"Parsing {schema.SchemaFileName}...");
-                    var generator = new HppGenerator(new(schema), out var warnings);
+                    System.Console.Write($"Parsing {jsonSchema.SchemaFileName}...");
+                    var generator = HppGeneratorFactory.MakeGenerator(cppSchema, out var warnings);
                     var code = generator.ToString();
                     if (code is null) throw new ApplicationException(); // Should never happen.
                     if (warnings.Count == 0) System.Console.WriteLine(" succeded.");
@@ -136,7 +137,7 @@ namespace Ropufu.JsonSchemaToHpp
 
                     hppPaths.Add(System.IO.Path.Combine(
                         System.IO.Path.GetDirectoryName(jsonSchemaPaths[i]),
-                        schema.HppTargetPath));
+                        jsonSchema.HppTargetPath));
                     hppCodes.Add(code);
                 } // foreach (...)
 

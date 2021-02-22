@@ -303,8 +303,40 @@
             "type": "array",
             "description": "List of inherited classes for the generated class.",
             "items": {
-                "type": "string",
-                "minLength": 1
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "mode": {
+                        "type": "string",
+                        "enum": ["public", "protected", "private"]
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "examples": [
+                            "my_namespace::my_base_name<std::size_t>"
+                        ]
+                    },
+                    "constructor arguments": {
+                        "type": "string",
+                        "description": "Arguments format to pass to inherited constructor taking required arguments for formatting.",
+                        "@comment": "Zero-based indices correspond to properties in the required list. Default constructor passes default values of said properties.",
+                        "examples": [
+                            "1729, \"Hello, world!\"",
+                            "{0}, \"Hello, world!\"",
+                            "{0}, {1}"
+                        ]
+                    },
+                    "error message call": {
+                        "type": "string",
+                        "description": "Call to error message: () const noexcept -> std::optional<std::string>.",
+                        "$comment": "If left blank, inherited typename is assumed not to throw exceptions.",
+                        "examples": [
+                            "error_message()"
+                        ]
+                    }
+                },
+                "required": ["mode", "name"]
             }
         },
         "@ropufu-default-value": {

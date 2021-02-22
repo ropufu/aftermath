@@ -93,21 +93,6 @@ namespace ropufu
     concept enumeration = std::is_enum_v<t_enum_type>;
 
     template <typename t_numeric_type>
-    concept numeric_signed = std::numeric_limits<t_numeric_type>::is_signed;
-
-    template <typename t_numeric_type>
-    concept integer = std::numeric_limits<t_numeric_type>::is_integer;
-
-    template <typename t_numeric_type>
-    concept signed_integer = integer<t_numeric_type> && numeric_signed<t_numeric_type>;
-
-    template <typename t_numeric_type>
-    concept arithmetic = std::is_arithmetic_v<t_numeric_type>;
-
-    template <typename t_numeric_type>
-    concept signed_arithmetic = arithmetic<t_numeric_type> && numeric_signed<t_numeric_type>;
-
-    template <typename t_numeric_type>
     concept zero_assignable = requires(t_numeric_type& x)
     {
         {x = 0};
@@ -255,6 +240,29 @@ namespace ropufu
         {
             {x * r} -> std::same_as<t_numeric_type>;
         }; // concept right_module
+
+    /** Relaxed version of a field: must support arithmetic operations +, -, *, /, but need not
+     *  be closed under them. Also has to support zero-assignment and self-assignment (=).
+     */
+    template <typename t_numeric_type>
+    concept arithmetic = decayed<t_numeric_type> && requires(t_numeric_type x, t_numeric_type y)
+    {
+        {x = 0};
+        {x = y};
+        {x + y};
+        {x - y};
+        {x * y};
+        {x / y};
+    }; // concept integer
+
+    template <typename t_numeric_type>
+    concept signed_arithmetic = arithmetic<t_numeric_type> && std::numeric_limits<t_numeric_type>::is_signed;
+
+    template <typename t_numeric_type>
+    concept integer = arithmetic<t_numeric_type> && std::numeric_limits<t_numeric_type>::is_integer;
+
+    template <typename t_numeric_type>
+    concept signed_integer = integer<t_numeric_type> && std::numeric_limits<t_numeric_type>::is_signed;
 } // namespace ropufu
 
 namespace ropufu
@@ -265,21 +273,19 @@ namespace ropufu
         struct try_make_signed
         {
             using type = t_type;
-        }; // struct ensure_signed
+        }; // struct try_make_signed
 
-        template <typename t_integer_type>
-            requires (!std::numeric_limits<t_integer_type>::is_signed)
-        struct try_make_signed<t_integer_type>
+        template <typename t_numeric_type>
+            requires (!std::numeric_limits<t_numeric_type>::is_signed)
+        struct try_make_signed<t_numeric_type>
         {
-            using type = std::make_signed_t<t_integer_type>;
-        }; // struct ensure_signed
+            using type = std::make_signed_t<t_numeric_type>;
+        }; // struct try_make_signed<...>
     } // namespace detail
 
-    /** If the arithmetic type is already signed, defines the type itself;
-     *  otherwise defines \c std::make_signed_t<t_arithmetic_type>.
-     **/
-    template <ropufu::arithmetic t_arithmetic_type>
-    using try_make_signed_t = typename detail::try_make_signed<t_arithmetic_type>::type;
+    /** Either \c std::make_signed_t<t_type> or \c t_type if the latter is not an unsigned numeric type. */
+    template <ropufu::arithmetic t_numeric_type>
+    using try_make_signed_t = typename detail::try_make_signed<t_numeric_type>::type;
 } // namespace ropufu
 
 #endif // ROPUFU_AFTERMATH_CONCEPTS_HPP_INCLUDED

@@ -8,7 +8,10 @@ namespace Ropufu.JsonSchemaToHpp
     public abstract class CppSchemaBase : ICppSchema
     {
         private readonly String trivialValueCode;
-        private readonly List<CodeLine> validationFormat = new List<CodeLine>();
+        private readonly List<CodeLine> validationFormats = new();
+        private readonly List<String> permissibleValueCodes = new();
+        private readonly List<HppInclude> includes = null;
+        private readonly List<ICppSchema> definitions = null;
 
         public String PropertyName { get; private init; }
 
@@ -16,11 +19,13 @@ namespace Ropufu.JsonSchemaToHpp
 
         public String FieldName => this.PropertyName?.ToSnakeCase().Prepend("m_");
 
+        public virtual Boolean DoesSupportCodeGeneration => false;
+
         public Boolean IsPropertyInherited { get; private init; }
 
-        public Boolean IsPropertyRequired { get; private set; }
-
         public String Typename { get; private init; }
+
+        public String Namespace { get; private init; }
 
         public String Description { get; private init; }
 
@@ -34,13 +39,19 @@ namespace Ropufu.JsonSchemaToHpp
 
         protected virtual String TrivialTypename => null;
 
-        public Boolean DoesRequireValidation => this.DoesRequireValidationOverride || this.validationFormat.Count > 0;
+        public Boolean DoesRequireValidation => this.DoesRequireValidationOverride ?? this.validationFormats.Count > 0;
 
-        protected virtual Boolean DoesRequireValidationOverride => false;
+        protected virtual Boolean? DoesRequireValidationOverride => null;
 
         public abstract Boolean DoPassByValue { get; }
 
-        public IEnumerable<CodeLine> ValidationFormats => this.validationFormat.AsReadOnly();
+        public IList<CodeLine> ValidationFormats => this.validationFormats.AsReadOnly();
+
+        public IList<String> PermissibleValueCodes => this.permissibleValueCodes.AsReadOnly();
+
+        public IList<HppInclude> Includes => this.includes.AsReadOnly();
+
+        public IList<ICppSchema> Definitions => this.definitions.AsReadOnly();
 
         protected CppSchemaBase(JsonSchema jsonSchema, JsonSchemaValueKind valueKind)
         {
@@ -52,8 +63,49 @@ namespace Ropufu.JsonSchemaToHpp
             this.IsPropertyInherited = jsonSchema.HppIsInherited;
 
             this.Typename = (jsonSchema.HppTypename?.Trim().Nullify()) ?? (this.TrivialTypename?.Trim().Nullify());
+            this.Namespace = jsonSchema.HppNamespace?.Trim().Nullify();
             if (this.Typename is null) throw new SchemaException(jsonSchema, nameof(jsonSchema.HppTypename), "Schema requires \"{0}\".");
-            this.ValidateJsonSchema(jsonSchema); // Specialized validation.
+
+            var isTypenameQualified = this.Typename.Contains("::");
+            if (isTypenameQualified && this.Namespace is not null) throw new SchemaException(jsonSchema, nameof(jsonSchema.HppNamespace), "\"{0}\" not allowed for already qualified type.");
+
+            // ~~ Permissible values validation ~~
+
+            this.permissibleValueCodes = new List<String>();
+            if (jsonSchema.PermissibleValues is not null)
+            {
+                foreach (var x in jsonSchema.PermissibleValues) permissibleValueCodes.Add(this.Parse(x)); 
+                if (permissibleValueCodes.Count == 0) throw new SchemaException(jsonSchema, nameof(jsonSchema.PermissibleValues), "\"{0}\" array should contain at least one value.");
+            } // if (...)
+            
+            // ~~ Includes validation ~~
+
+            if (jsonSchema.HppIncludes is null) this.includes = new(0);
+            else
+            {
+                this.includes = new(jsonSchema.HppIncludes.Count);
+                foreach (var x in jsonSchema.HppIncludes)
+                {
+                    var item = x.TrimmedClone();
+                    if (item.Header is null) throw new SchemaException(jsonSchema, nameof(jsonSchema.HppIncludes), "Headers in \"{0}\" cannot be empty.");
+                    this.includes.Add(item);
+                } // foreach (...)
+            } // if (...)
+            
+            // ~~ Definitions ~~
+
+            if (jsonSchema.Definitions is null) this.definitions = new(0);
+            else
+            {
+                this.definitions = new(jsonSchema.Definitions.Count);
+                foreach (var x in jsonSchema.Definitions)
+                    if (x.Value?.HppTypename is not null)
+                        this.definitions.Add(x.Value.ToCppType());
+            } // if (...)
+
+            // ~~ Specialized validation ~~
+
+            this.ValidateJsonSchema(jsonSchema); 
 
             // ~~ Default value ~~
 
@@ -72,16 +124,15 @@ namespace Ropufu.JsonSchemaToHpp
                 foreach (var x in jsonSchema.HppInvalidFormats)
                 {
                     var y = (x?.Trim().Nullify()) ?? throw new SchemaException(jsonSchema, nameof(jsonSchema.HppTypename), "Schema invalid format cannot be empty.");
-                    this.validationFormat.Add(String.Concat("if (", y, ") return \"", validationMessage, "\";"));
+                    this.validationFormats.Add(String.Concat("if (", y, ") return \"", validationMessage, "\";"));
                 } // foreach (...)
 
-            if (jsonSchema.PermissibleValues is not null && jsonSchema.HppDoHardcodeEnums)
+            if (jsonSchema.HppDoHardcodeEnums && permissibleValueCodes.Count > 0)
             {
-                var clauses = new List<String>(jsonSchema.PermissibleValues.Count);
-                foreach (var x in jsonSchema.PermissibleValues) clauses.Add(String.Concat("({0} == ", this.Parse(x) ?? throw new ApplicationException(), ")"));
-                if (clauses.Count == 0) throw new SchemaException(jsonSchema, nameof(jsonSchema.PermissibleValues), "\"{0}\" array should contain at least one value.");
+                var clauses = new List<String>(permissibleValueCodes.Count);
+                foreach (var x in permissibleValueCodes) clauses.Add(String.Concat("({0} == ", x, ")"));
 
-                this.validationFormat.Add(String.Concat(
+                this.validationFormats.Add(String.Concat(
                     "if (!(",
                     String.Join(" || ", clauses),
                     ")) return \"",
@@ -89,7 +140,7 @@ namespace Ropufu.JsonSchemaToHpp
                     "\";"));
             } // if (...)
 
-            this.validationFormat.AddRange(this.MoreValidationFormat(jsonSchema, validationMessage));
+            this.validationFormats.AddRange(this.MoreValidationFormat(jsonSchema, validationMessage));
         } // CppSchemaBase(...)
 
         protected virtual void ValidateJsonSchema(JsonSchema schema) { }
@@ -98,8 +149,28 @@ namespace Ropufu.JsonSchemaToHpp
 
         public String Parse(JsonElement value) => this.ParseOverride(value)?.Trim().Nullify();
 
+        /// <exception cref="NotSupportedException">Schema does not support code generation.</exception>
+        /// <exception cref="SchemaException">Schema validation failed.</exception>
+        public void Invalidate(IList<String> reservedNames, out List<String> warnings)
+        {
+            if (!this.DoesSupportCodeGeneration) throw new NotSupportedException("Schema does not support code generation.");
+            
+            warnings = new();
+            foreach (var x in this.definitions)
+            {
+                x.Invalidate(reservedNames, out var moreWarnings);
+                warnings.AddRange(moreWarnings);
+            } // foreach (...)
+
+             this.InvalidateOverride(reservedNames, out warnings);
+        } // Invalidate(...)
+
         protected abstract String ParseOverride(JsonElement value);
 
-        public void MarkPropertyRequired() => this.IsPropertyRequired = true;
+        protected virtual void InvalidateOverride(IList<String> reservedNames, out List<String> warnings)
+        {
+            if (reservedNames is null) throw new ArgumentNullException(nameof(reservedNames));
+            warnings = new();
+        } // InvalidateOverride(...)
     } // class CppSchemaBase
 } // Ropufu.JsonSchemaToHpp

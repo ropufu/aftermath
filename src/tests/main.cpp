@@ -31,6 +31,7 @@
 #include "ropufu/sliding_array.hpp"
 #include "json_schema_to_hpp/generated_code.hpp"
 
+#include "../ropufu/concepts.hpp"
 #include "../ropufu/metadata.hpp"
 
 //#include "random_engines.hpp"
@@ -44,6 +45,15 @@ REGISTER_REPORTER("benchmark", 1, ropufu::tests::benchmark_reporter);
 int main(int argc, char** argv, char** /*envp*/)
 {
     static_assert(ropufu::qualified_name<void>() == "void");
+    static_assert(ropufu::qualified_name<char>() == "char");
+    static_assert(ropufu::qualified_name<signed char>() == "::std::int8_t");
+    static_assert(ropufu::qualified_name<unsigned char>() == "::std::uint8_t");
+
+    // static_assert(ropufu::integer<bool> == false); // Never realized booleans support arithmetic operations o_0
+    static_assert(ropufu::integer<std::int8_t>);
+    static_assert(ropufu::integer<std::int16_t>);
+    static_assert(ropufu::integer<std::int32_t>);
+    static_assert(ropufu::integer<std::int64_t>);
 
     doctest::Context context {};
     std::cout << "For benchmarks launch with --reporters=bench" << std::endl;

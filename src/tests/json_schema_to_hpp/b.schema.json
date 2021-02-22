@@ -9,7 +9,7 @@
     {"key": "ropufu::integer", "name": "t_integer_type", "alias": "integer_type"}
   ],
   "@ropufu-includes": [
-    {"header": "\"test_a.g.hpp\""},
+    {"header": "\"test_a.hpp\""},
     {"header": "<ropufu/concepts.hpp>"},
     {"header": "<set>", "comment": "std::set"}
   ],
