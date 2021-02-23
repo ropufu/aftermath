@@ -357,11 +357,20 @@
         },
         "@ropufu-is-inherited": {
             "type": "boolean",
-            "description": "If this schema describes a property in another schema, indicates that the property is inherited from a base class."
+            "description": "If this schema describes a property in another schema, indicates that the property is inherited from a base class.",
+            "default": false
         },
         "@ropufu-hard-enums": {
             "type": "boolean",
-            "description": "Indicates if the permissible values (if any) are to be hard-coded for validation purposes."
+            "description": "Indicates if the permissible values (if any) are to be hard-coded.",
+            "default": false
+        },
+        "@ropufu-extensions": {
+            "type": "array",
+            "description": "Additional lines of code to add to the struct body, e.g., function signatures that will be defined elsewhere.",
+            "items": {
+                "type": "string"
+            }
         }
     },
     "default": true

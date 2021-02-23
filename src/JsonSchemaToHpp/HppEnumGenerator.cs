@@ -78,11 +78,13 @@ namespace Ropufu.JsonSchemaToHpp
                         builder.Append($"static const {this.ValidatedSchema.Typename} {x.ToSnakeCase()};");
 
                     builder
+                        .Append($"/** @exception std::logic_error Value not recognized. */")
+                        .Append($"constexpr void validate() const {{ if (this->m_value == 0) throw std::logic_error(\"Value not recognized\"); }}")
                         .Append()
                         .Append($"constexpr {this.ValidatedSchema.Typename}() noexcept {{ }}")
-                        .Append($"constexpr {this.ValidatedSchema.Typename}(std::string_view value) noexcept {{ this->parse(value); }}")
-                        .Append($"constexpr {this.ValidatedSchema.Typename}(const char* value) noexcept {{ this->parse(value); }}")
-                        .Append($"{this.ValidatedSchema.Typename}(const std::string& value) noexcept {{ this->parse(value); }}")
+                        .Append($"constexpr {this.ValidatedSchema.Typename}(std::string_view value) {{ this->parse(value); this->validate(); }}")
+                        .Append($"constexpr {this.ValidatedSchema.Typename}(const char* value) {{ this->parse(value); this->validate(); }}")
+                        .Append($"{this.ValidatedSchema.Typename}(const std::string& value) {{ this->parse(value); this->validate(); }}")
                         .Append()
                         .Append($"constexpr std::string_view to_string_view() const noexcept")
                         .Append($"{{")
@@ -119,6 +121,12 @@ namespace Ropufu.JsonSchemaToHpp
                         .Append($"if (!ropufu::noexcept_json::try_get(j, x))", 1)
                         .Append($"throw std::runtime_error(\"Parsing <{this.ValidatedSchema.Typename}> failed: \" + j.dump());", 2)
                         .Append($"}} // from_json(...)");
+
+                    if (this.ValidatedSchema.Extensions.Count > 0)
+                    {
+                        builder.Append();
+                        foreach (var x in this.ValidatedSchema.Extensions) builder.Append(x);
+                    } // if (...)
                 } // using (...)
 
                 builder

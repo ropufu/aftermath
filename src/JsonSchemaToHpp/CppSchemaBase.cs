@@ -12,6 +12,7 @@ namespace Ropufu.JsonSchemaToHpp
         private readonly List<String> permissibleValueCodes = new();
         private readonly List<HppInclude> includes = null;
         private readonly List<ICppSchema> definitions = null;
+        private readonly List<String> extensions = null;
 
         public String PropertyName { get; private init; }
 
@@ -52,6 +53,8 @@ namespace Ropufu.JsonSchemaToHpp
         public IList<HppInclude> Includes => this.includes.AsReadOnly();
 
         public IList<ICppSchema> Definitions => this.definitions.AsReadOnly();
+
+        public IList<String> Extensions => this.extensions.AsReadOnly();
 
         protected CppSchemaBase(JsonSchema jsonSchema, JsonSchemaValueKind valueKind)
         {
@@ -101,6 +104,15 @@ namespace Ropufu.JsonSchemaToHpp
                 foreach (var x in jsonSchema.Definitions)
                     if (x.Value?.HppTypename is not null)
                         this.definitions.Add(x.Value.ToCppType());
+            } // if (...)
+            
+            // ~~ Extensions ~~
+            
+            if (jsonSchema.HppExtensions is null) this.extensions = new(0);
+            else
+            {
+                this.extensions = new(jsonSchema.HppExtensions.Count);
+                foreach (var x in jsonSchema.HppExtensions) this.extensions.Add(x?.Trim() ?? "");
             } // if (...)
 
             // ~~ Specialized validation ~~

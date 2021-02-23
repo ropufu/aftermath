@@ -33,11 +33,10 @@ TEST_CASE("generated json roundtrip schema A")
 
     std::string xxx {};
     std::string yyy {};
+
     ropufu::tests::does_json_round_trip(x, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 
-    xxx = {};
-    yyy = {};
     ropufu::tests::does_json_round_trip(y, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 } // TEST_CASE(...)
@@ -53,11 +52,10 @@ TEST_CASE_TEMPLATE("generated json roundtrip schema B", integer_type, std::int16
 
     std::string xxx {};
     std::string yyy {};
+
     ropufu::tests::does_json_round_trip(x, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 
-    xxx = {};
-    yyy = {};
     ropufu::tests::does_json_round_trip(y, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 } // TEST_CASE_TEMPLATE(...)
@@ -78,11 +76,10 @@ TEST_CASE_TEMPLATE("testing generated json roundtrip schema C", triplet_type, RO
 
     std::string xxx {};
     std::string yyy {};
+
     ropufu::tests::does_json_round_trip(x, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 
-    xxx = {};
-    yyy = {};
     ropufu::tests::does_json_round_trip(y, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 } // TEST_CASE_TEMPLATE
@@ -95,18 +92,19 @@ TEST_CASE("generated json roundtrip schema D")
     test_d_type y = "two?";
     test_d_type z = "three";
 
+    CHECK_EQ(x.hello_world(), true);
+    CHECK_EQ(y.hello_world(), true);
+    CHECK_EQ(z.hello_world(), true);
+
     std::string xxx {};
     std::string yyy {};
+
     ropufu::tests::does_json_round_trip(x, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 
-    xxx = {};
-    yyy = {};
     ropufu::tests::does_json_round_trip(y, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 
-    xxx = {};
-    yyy = {};
     ropufu::tests::does_json_round_trip(z, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 } // TEST_CASE(...)

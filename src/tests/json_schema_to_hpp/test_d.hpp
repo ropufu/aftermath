@@ -4,6 +4,11 @@
 
 #if __has_include("test_d.g.hpp")
 #include "test_d.g.hpp"
+#include <iostream>
+namespace ropufu::tests::json_schema_to_hpp
+{
+    bool test_d::hello_world() const noexcept { return true; }
+} // namespace ropufu::tests::json_schema_to_hpp
 #else
 
 #include <concepts>
@@ -43,6 +48,8 @@ namespace ropufu::tests::json_schema_to_hpp
         friend std::ostream& operator <<(std::ostream& os, type) { return os; }
         friend void to_json(nlohmann::json&, const type&) noexcept { }
         friend void from_json(const nlohmann::json&, type&) { }
+
+        bool hello_world() const noexcept;
     }; // struct test_d
 } // namespace ropufu::tests::json_schema_to_hpp
 

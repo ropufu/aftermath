@@ -30,5 +30,7 @@ namespace Ropufu.JsonSchemaToHpp
         public Boolean HppIsInherited { get; set; } = false;
         [JsonPropertyName("@ropufu-hard-enums")]
         public Boolean HppDoHardcodeEnums { get; set; } = false;
+        [JsonPropertyName("@ropufu-extensions")]
+        public List<String> HppExtensions { get; set; }
     } // class JsonSchema
 } // namespace Ropufu.JsonSchemaToHpp

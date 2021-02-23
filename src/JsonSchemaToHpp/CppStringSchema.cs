@@ -7,6 +7,7 @@ namespace Ropufu.JsonSchemaToHpp
 {
     public sealed class CppStringSchema : CppSchemaBase
     {
+        private Boolean doPassByValue = false;
         private Boolean doesSupportCodeGeneration = false;
         private Boolean? doesRequireValidationOverride = null;
         private List<String> unquotedPermissibleValues = null;
@@ -19,7 +20,7 @@ namespace Ropufu.JsonSchemaToHpp
 
         protected override String TrivialTypename => "std::string";
 
-        public override Boolean DoPassByValue => false;
+        public override Boolean DoPassByValue => this.doPassByValue;
 
         public CppStringSchema(JsonSchema jsonSchema)
             : base(jsonSchema, JsonSchemaValueKind.String)
@@ -29,6 +30,7 @@ namespace Ropufu.JsonSchemaToHpp
             if (jsonSchema.HppDoHardcodeEnums)
             {
                 if (base.PermissibleValueCodes.Count == 0) throw new SchemaException(jsonSchema, nameof(jsonSchema.HppDoHardcodeEnums), "Permissible values cannot be emtpty when \"{0}\" is true.");
+                this.doPassByValue = true;
                 this.doesSupportCodeGeneration = true;
                 this.doesRequireValidationOverride = false;
 

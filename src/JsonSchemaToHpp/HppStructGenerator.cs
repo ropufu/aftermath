@@ -407,6 +407,13 @@ namespace Ropufu.JsonSchemaToHpp
 
                     // ~~ Nlohmann utils body ~~
                     builder.Append(this.MakeNlohmannUtils());
+
+                    // ~~ Extensions ~~
+                    if (this.ValidatedSchema.Extensions.Count > 0)
+                    {
+                        builder.Append();
+                        foreach (var x in this.ValidatedSchema.Extensions) builder.Append(x);
+                    } // if (...)
                 } // using (...)
                 builder.Append($"}}; // struct {this.ValidatedSchema.Typename}");
 

@@ -6,5 +6,8 @@
   "@ropufu-namespace": "ropufu::tests::json_schema_to_hpp",
   "type": "string",
   "enum": ["one one one", "two?", "three"],
-  "@ropufu-hard-enums": true
+  "@ropufu-hard-enums": true,
+  "@ropufu-extensions": [
+    "bool hello_world() const noexcept;"
+  ]
 }
