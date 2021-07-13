@@ -91,8 +91,8 @@ namespace ropufu::aftermath::algebra
         if (!noexcept_json::try_get(j, x)) throw std::runtime_error("Parsing <interval> failed: " + j.dump());
     } // from_json(...)
 
-    template <std::totally_ordered t_value_type, ropufu::spacing t_spacing_type>
-    void explode(const interval<t_value_type>& interval, std::vector<t_value_type>& container, std::size_t count, const t_spacing_type& spacing) noexcept
+    template <ropufu::spacing t_spacing_type, std::totally_ordered t_value_type, typename t_allocator_type>
+    void explode(const interval<t_value_type>& interval, std::vector<t_value_type, t_allocator_type>& container, std::size_t count, const t_spacing_type& spacing)
     {
         using intermediate_type = typename t_spacing_type::intermediate_type;
 

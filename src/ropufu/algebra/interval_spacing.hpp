@@ -7,16 +7,19 @@
 #include <cstddef>     // std::size_t
 #include <numbers>     // std::numbers::e_v
 #include <string>      // std::string
-#include <type_traits> // std::is_same_v
+#include <string_view> // std::string_view
 #include <utility>     // std::declval
 
 namespace ropufu
 {
     template <typename t_type>
-    concept spacing = requires(const t_type& x)
+    concept spacing = requires(const t_type& x, std::string& s)
     {
         typename t_type::value_type;
         typename t_type::intermediate_type;
+        requires !t_type::name.empty();
+
+        s = t_type::name;
 
         /** Sends data points to where they are linearly spaced. */
         {x.forward_transform(std::declval<typename t_type::value_type>())}
@@ -41,17 +44,19 @@ namespace ropufu::aftermath::algebra
         using value_type = t_value_type;
         using intermediate_type = t_intermediate_type;
 
+        static constexpr std::string_view name = "linear";
+
         /** Sends data points to where they are linearly spaced. */
         intermediate_type forward_transform(const value_type& value) const noexcept
         {
-            if constexpr (std::is_same_v<intermediate_type, value_type>) return value;
+            if constexpr (std::same_as<intermediate_type, value_type>) return value;
             else return static_cast<intermediate_type>(value);
         } // forward_transform(...)
 
         /** Sends transformed points back to to where they came from. */
         value_type backward_transform(const intermediate_type& transformed_value) const noexcept
         {
-            if constexpr (std::is_same_v<intermediate_type, value_type>) return transformed_value;
+            if constexpr (std::same_as<intermediate_type, value_type>) return transformed_value;
             else return static_cast<value_type>(transformed_value);
         } // backward_transform(...)
     }; // struct linear_spacing
@@ -69,6 +74,8 @@ namespace ropufu::aftermath::algebra
         using type = logarithmic_spacing<t_value_type, t_intermediate_type>;
         using value_type = t_value_type;
         using intermediate_type = t_intermediate_type;
+        
+        static constexpr std::string_view name = "logarithmic";
 
     private:
         intermediate_type m_log_base = std::numbers::e_v<intermediate_type>;
@@ -86,14 +93,14 @@ namespace ropufu::aftermath::algebra
         /** Sends data points to where they are linearly spaced. */
         intermediate_type forward_transform(const value_type& value) const noexcept
         {
-            if constexpr (std::is_same_v<intermediate_type, value_type>) return this->m_log_factor * std::log(value);
+            if constexpr (std::same_as<intermediate_type, value_type>) return this->m_log_factor * std::log(value);
             else return this->m_log_factor * std::log(static_cast<intermediate_type>(value));
         } // forward_transform(...)
 
         /** Sends transformed points back to to where they came from. */
         value_type backward_transform(const intermediate_type& transformed_value) const noexcept
         {
-            if constexpr (std::is_same_v<intermediate_type, value_type>) return std::pow(this->m_log_base, transformed_value);
+            if constexpr (std::same_as<intermediate_type, value_type>) return std::pow(this->m_log_base, transformed_value);
             else return static_cast<value_type>(std::pow(this->m_log_base, transformed_value));
         } // backward_transform(...)
     }; // struct logarithmic_spacing
@@ -111,6 +118,8 @@ namespace ropufu::aftermath::algebra
         using type = exponential_spacing<t_value_type, t_intermediate_type>;
         using value_type = t_value_type;
         using intermediate_type = t_intermediate_type;
+        
+        static constexpr std::string_view name = "exponential";
 
     private:
         intermediate_type m_log_base = std::numbers::e_v<intermediate_type>;
@@ -128,14 +137,14 @@ namespace ropufu::aftermath::algebra
         /** Sends data points to where they are linearly spaced. */
         intermediate_type forward_transform(const value_type& value) const noexcept
         {
-            if constexpr (std::is_same_v<intermediate_type, value_type>) return std::pow(this->m_log_base, value);
+            if constexpr (std::same_as<intermediate_type, value_type>) return std::pow(this->m_log_base, value);
             else return std::pow(this->m_log_base, static_cast<intermediate_type>(value));
         } // forward_transform(...)
 
         /** Sends transformed points back to to where they came from. */
         value_type backward_transform(const intermediate_type& transformed_value) const noexcept
         {
-            if constexpr (std::is_same_v<intermediate_type, value_type>) return this->m_log_factor * std::log(transformed_value);
+            if constexpr (std::same_as<intermediate_type, value_type>) return this->m_log_factor * std::log(transformed_value);
             else return static_cast<value_type>(this->m_log_factor * std::log(transformed_value));
         } // backward_transform(...)
     }; // struct exponential_spacing

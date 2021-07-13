@@ -16,11 +16,11 @@
 #include <string>     // std::string
 #include <vector>     // std::vector
 
-#define ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_XLL_TYPES   \
+#define ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_FLOAT_TYPES    \
     ropufu::aftermath::algebra::interval<float>,            \
     ropufu::aftermath::algebra::interval<double>            \
 
-#define ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES   \
+#define ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES      \
     ropufu::aftermath::algebra::interval<std::size_t>,      \
     ropufu::aftermath::algebra::interval<std::uint16_t>,    \
     ropufu::aftermath::algebra::interval<std::int16_t>,     \

@@ -523,7 +523,7 @@ namespace Ropufu.JsonSchemaToHpp
         {
             yield return this.MakeStructBody();
             yield return this.MakeNoexceptJson();
-            yield return this.MakeHash();
+            if (!this.ValidatedSchema.HasFlag(HppGeneratorOptions.SkipHash)) yield return this.MakeHash();
         } // MakeInner(...)
     } // class HppStructGenerator
 } // namespace Ropufu.JsonSchemaToHpp

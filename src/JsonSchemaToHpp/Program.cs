@@ -106,7 +106,6 @@ namespace Ropufu.JsonSchemaToHpp
                     var text = jsonSchemaTexts[i];
                     var jsonSchema = JsonSchema.Parse(text);
                     jsonSchema.SchemaFileName = System.IO.Path.GetFileName(jsonSchemaPaths[i]);
-                    var cppSchema = jsonSchema.ToCppType();
 
                     if (jsonSchema.HppTargetPath is null)
                     {
@@ -114,6 +113,13 @@ namespace Ropufu.JsonSchemaToHpp
                         continue;
                     } // if (...)
 
+                    if (jsonSchema.HasFlag(HppGeneratorOptions.Ignore))
+                    {
+                        System.Console.WriteLine($"Skipping {jsonSchema.SchemaFileName}: ignore flag encountered.");
+                        continue;
+                    } // if (...)
+
+                    var cppSchema = jsonSchema.ToCppType();
                     if (!cppSchema.DoesSupportCodeGeneration)
                     {
                         System.Console.WriteLine($"Skipping {jsonSchema.SchemaFileName}: code generation are supported.");

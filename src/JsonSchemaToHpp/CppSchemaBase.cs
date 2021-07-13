@@ -7,12 +7,15 @@ namespace Ropufu.JsonSchemaToHpp
 {
     public abstract class CppSchemaBase : ICppSchema
     {
+        private readonly HppGeneratorOptions options = HppGeneratorOptions.None;
         private readonly String trivialValueCode;
         private readonly List<CodeLine> validationFormats = new();
         private readonly List<String> permissibleValueCodes = new();
         private readonly List<HppInclude> includes = null;
         private readonly List<ICppSchema> definitions = null;
         private readonly List<String> extensions = null;
+
+        public Boolean HasFlag(HppGeneratorOptions flag) => (this.options & flag) != HppGeneratorOptions.None;
 
         public String PropertyName { get; private init; }
 
@@ -60,7 +63,9 @@ namespace Ropufu.JsonSchemaToHpp
         {
             if (jsonSchema is null) throw new ArgumentNullException(nameof(jsonSchema));
             if (jsonSchema.SchemaKind != valueKind) throw new SchemaException(jsonSchema, nameof(jsonSchema.SchemaKind), "\"{0}\" mismatch.");
-            
+            if (jsonSchema.HasFlag(HppGeneratorOptions.Ignore)) throw new SchemaException(jsonSchema, nameof(jsonSchema.HppOptions), "\"{0}\" is not supposed to be processed.");
+
+            this.options = jsonSchema.Options;
             this.PropertyName = jsonSchema.PropertyName?.Trim().Nullify();
             this.Description = jsonSchema.Description?.Trim().Nullify();
             this.IsPropertyInherited = jsonSchema.HppIsInherited;
@@ -103,7 +108,8 @@ namespace Ropufu.JsonSchemaToHpp
                 this.definitions = new(jsonSchema.Definitions.Count);
                 foreach (var x in jsonSchema.Definitions)
                     if (x.Value?.HppTypename is not null)
-                        this.definitions.Add(x.Value.ToCppType());
+                        if (!x.Value.HasFlag(HppGeneratorOptions.Ignore))
+                            this.definitions.Add(x.Value.ToCppType());
             } // if (...)
             
             // ~~ Extensions ~~

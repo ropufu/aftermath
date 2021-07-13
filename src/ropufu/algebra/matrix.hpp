@@ -11,11 +11,12 @@
 
 #include <concepts>  // std::same_as, std::default_initializable, std::equality_comparable
 #include <cstddef>   // std::size_t, std::nullptr_t
+#include <limits>    // std::numeric_limits
 #include <memory>    // std::allocator, std::allocator_traits
 #include <ranges>    // std::ranges:range
 #include <stdexcept> // std::out_of_range, std::logic_error
 #include <type_traits> // std::void_t, std::is_convertible_v
-#include <utility>   // std::move
+#include <utility>   // std::move, std::swap
 #include <vector>    // std::vector
 
 #define ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(BINOP, OPNAME)                                        \
@@ -122,6 +123,18 @@ namespace ropufu::aftermath::algebra
                 that->m_container.wipe();
             } // wipe(...)
 
+            void make_diagonal(value_type value) noexcept
+            {
+                derived_type& self = static_cast<derived_type&>(*this);
+
+                size_type m = self.height();
+                size_type n = self.width();
+                size_type k = (m > n) ? (n) : (m);
+
+                this->wipe();
+                for (size_type i = 0; i < k; ++i) self(i, i) = value;
+            } // make_diagonal(...)
+
             /** Creates an uninitialized matrix. */
             static derived_type uninitialized(size_type height, size_type width) noexcept
             {
@@ -184,6 +197,47 @@ namespace ropufu::aftermath::algebra
             } // operator !=(...)
         }; // struct equality_op_module
         
+        template <typename t_derived_type, typename t_value_type, typename t_size_type>
+        struct matrix_multiplication_module { };
+
+        template <typename t_derived_type, ropufu::arithmetic t_value_type, typename t_size_type>
+        struct matrix_multiplication_module<t_derived_type, t_value_type, t_size_type>
+        {
+        private:
+            using matrix_type = t_derived_type;
+            using scalar_type = t_value_type;
+            using size_type = t_size_type;
+        
+        public:
+            static matrix_type matrix_multiply(const matrix_type& left, const matrix_type& right)
+            {
+                matrix_type destination(left.height(), right.width());
+                matrix_type::matrix_multiply(&destination, left, right);
+                return destination;
+            } // matrix_multiply(...)
+
+            static void matrix_multiply(matrix_type* destination, const matrix_type& left, const matrix_type& right)
+            {
+                size_type m = left.height();
+                size_type n = right.width();
+                size_type k = right.height();
+
+                if (left.width() != k) throw std::logic_error("Matrices incompatible.");
+                if (destination->height() != m) throw std::logic_error("Sorage matrix height incompatible.");
+                if (destination->width() != n) throw std::logic_error("Sorage matrix width incompatible.");
+
+                for (size_type i = 0; i < m; ++i)
+                {
+                    for (size_type j = 0; j < n; ++j)
+                    {
+                        scalar_type& x = destination->operator ()(i, j);
+                        x = 0;
+                        for (size_type r = 0; r < k; ++r) x += left(i, r) * right(r, j);
+                    } // for (...)
+                } // for (...)
+            } // matrix_multiply(...)
+        }; // struct matrix_multiplication_module
+        
         ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(+, addition)
         ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(-, subtraction)
         ROPUFU_AFTERMATH_ALGEBRA_MATRIX_OP_MODULE(*, multiplication)
@@ -223,6 +277,10 @@ namespace ropufu::aftermath::algebra
         public detail::matrix_inequality_op_module<
             matrix<t_value_type, t_allocator_type, t_arrangement_type>,
             t_value_type>,
+        public detail::matrix_multiplication_module<
+            matrix<t_value_type, t_allocator_type, t_arrangement_type>,
+            t_value_type,
+            typename simple_vector<t_value_type, t_allocator_type>::size_type>,
         public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(addition),
         public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(subtraction),
         public detail::ROPUFU_AFTERMATH_ALGEBRA_MATRIX_INHERIT_OP_MODULE(multiplication),
@@ -265,6 +323,22 @@ namespace ropufu::aftermath::algebra
         container_t<> m_container = {}; // Flat data.
         arrangement_type m_arrangement = {}; // Dimensions and structure of the matrix.
 
+        bool is_valid_row_index(size_type index) const noexcept
+        {
+            if constexpr (std::numeric_limits<size_type>::is_signed)
+                if (index < 0) return false;
+            if (index >= this->height()) return false;
+            return true;
+        } // is_valid_row_index(...)
+
+        bool is_valid_column_index(size_type index) const noexcept
+        {
+            if constexpr (std::numeric_limits<size_type>::is_signed)
+                if (index < 0) return false;
+            if (index >= this->width()) return false;
+            return true;
+        } // is_valid_column_index(...)
+
     public:
         /** @brief Creates a matrix by stealing from \p other. */
         matrix(type&& other) noexcept
@@ -296,6 +370,30 @@ namespace ropufu::aftermath::algebra
         {
         } // matrix(...)
 
+        /** @brief Creates a matrix from a list of rows. */
+        matrix(std::initializer_list<std::initializer_list<value_type>> values)
+        {
+            size_type m = values.size();
+            size_type n = 0;
+            for (const std::initializer_list<value_type>& row : values) if (n < row.size()) n = row.size();
+            for (const std::initializer_list<value_type>& row : values) if (n != row.size()) throw std::logic_error("Rows have to be of the same size.");
+
+            this->m_container = container_t<>(m * n);
+            this->m_arrangement = arrangement_type(m, n);
+
+            size_type i = 0;
+            for (const std::initializer_list<value_type>& row : values)
+            {
+                size_type j = 0;
+                for (const value_type& x : row)
+                {
+                    this->operator ()(i, j) = x;
+                    ++j;
+                } // for (...)
+                ++i;
+            } // for (...)
+        } // matrix(...)
+
         /** @brief Creates a matrix of a given size with values generatred by \c generator: (row_index, column_index) -> value. */
         template <typename t_generator_type>
             requires detail::has_two_dimensional_indexer_v<t_generator_type&&, value_type, size_type>
@@ -304,12 +402,12 @@ namespace ropufu::aftermath::algebra
             type result { height, width };
             for (size_type i = 0; i < height; ++i)
                 for (size_type j = 0; j < width; ++j)
-                    result.m_container[result.m_arrangement.flatten(i, j)] = generator(i, j);
+                    result(i, j) = generator(i, j);
             return result;
         } // generate(...)
 
         /** @brief Creates a matrix from another sequence. */
-        template <std::ranges::range t_container_type>
+        template <std::ranges::sized_range t_container_type>
             requires std::same_as<typename t_container_type::value_type, value_type>
         static type column_vector(const t_container_type& container)
         {
@@ -320,7 +418,7 @@ namespace ropufu::aftermath::algebra
         } // column_vector(...)
 
         /** @brief Creates a matrix from another sequence. */
-        template <std::ranges::range t_container_type>
+        template <std::ranges::sized_range t_container_type>
             requires std::same_as<typename t_container_type::value_type, value_type>
         static type row_vector(const t_container_type& container)
         {
@@ -396,8 +494,47 @@ namespace ropufu::aftermath::algebra
         /** Checks if the matrix is empty. */
         bool empty() const noexcept { return this->m_arrangement.empty(); }
 
+        const value_type* data() const noexcept { return this->m_container.data(); }
+        value_type* data() noexcept { return this->m_container.data(); }
+
         /** Checks if the matrix is a square matrix. */
         bool square() const noexcept { return this->m_arrangement.square(); }
+
+        /** Checks if the matrix is lower-triangular. */
+        bool lower_triangular() const noexcept
+        {
+            size_type m = this->height();
+            size_type n = this->width();
+            size_type s = (m < n) ? (m) : (n);
+            
+            for (size_type j = 0; j < s; ++j)
+                for (size_type i = 0; i < j; ++i)
+                    if (this->operator ()(i, j) != 0) return false;
+
+            for (size_type j = s; j < n; ++j)
+                for (size_type i = 0; i < m; ++i)
+                    if (this->operator ()(i, j) != 0) return false;
+
+            return true;
+        } // lower_triangular(...)
+
+        /** Checks if the matrix is upper-triangular. */
+        bool upper_triangular() const noexcept
+        {
+            size_type m = this->height();
+            size_type n = this->width();
+            size_type s = (m < n) ? (m) : (n);
+
+            for (size_type i = 0; i < s; ++i)
+                for (size_type j = 0; j < i; ++j)
+                    if (this->operator ()(i, j) != 0) return false;
+
+            for (size_type i = s; i < m; ++i)
+                for (size_type j = 0; j < n; ++j)
+                    if (this->operator ()(i, j) != 0) return false;
+
+            return true;
+        } // upper_triangular(...)
 
         /** @brief Re-shape the matrix.
          *  @remark The behavior of this operation may depend on \c arrangement_type of this matrix.
@@ -407,17 +544,57 @@ namespace ropufu::aftermath::algebra
             return this->m_arrangement.try_reshape(height, width);
         } // reshape(...)
 
+        bool try_swap_rows(size_type index_a, size_type index_b) noexcept
+        {
+            if (!this->is_valid_row_index(index_a)) return false;
+            if (!this->is_valid_row_index(index_b)) return false;
+
+            if (index_a == index_b) return true;
+
+            auto a = this->row(index_a);
+            auto b = this->row(index_b);
+
+            auto it = b.begin();
+            for (value_type& x : a)
+            {
+                std::swap(x, *it);
+                ++it;
+            } // for (...)
+
+            return true;
+        } // try_swap_rows(...)
+
+        bool try_swap_columns(size_type index_a, size_type index_b) noexcept
+        {
+            if (!this->is_valid_column_index(index_a)) return false;
+            if (!this->is_valid_column_index(index_b)) return false;
+
+            if (index_a == index_b) return true;
+
+            auto a = this->column(index_a);
+            auto b = this->column(index_b);
+
+            auto it = b.begin();
+            for (value_type& x : a)
+            {
+                std::swap(x, *it);
+                ++it;
+            } // for (...)
+
+            return true;
+        } // try_swap_columns(...)
+
         /** @brief Create a mask where every element is either
          *  marked (if \p value = true) or unmarked (if \p value = false). */
         mask_type make_mask(bool value = false) const noexcept
         {
-            return {this->m_arrangement.height(), this->m_arrangement.width(), value};
+            return {this->height(), this->width(), value};
         } // make_mask(...)
 
         /** @brief Checks if the index is within matrix bounds. */
-        bool within_bounds(size_type row_index, size_type column_index) const noexcept { return row_index < this->m_arrangement.height() && column_index < this->m_arrangement.width(); }
+        bool within_bounds(size_type row_index, size_type column_index) const noexcept { return this->is_valid_row_index(row_index) && this->is_valid_column_index(column_index); }
         /** @brief Checks if the index is within matrix bounds. */
-        bool within_bounds(const index_type& index) const noexcept { return index.row < this->m_arrangement.height() && index.column < this->m_arrangement.width(); }
+        bool within_bounds(const index_type& index) const noexcept { return this->is_valid_row_index(index.row) && this->is_valid_column_index(index.column); }
 
         /** @brief Access matrix elements. No bound checks are performed. */
         const value_type& operator ()(size_type row_index, size_type column_index) const
@@ -445,8 +622,8 @@ namespace ropufu::aftermath::algebra
          */
         const value_type& at(size_type row_index, size_type column_index) const
         {
-            if (row_index >= this->m_arrangement.height()) throw std::out_of_range("Row index must be less than the height of the matrix.");
-            if (column_index >= this->m_arrangement.width()) throw std::out_of_range("Column index must be less than the width of the matrix.");
+            if (!this->is_valid_row_index(row_index)) throw std::out_of_range("Row index must be less than the height of the matrix.");
+            if (!this->is_valid_column_index(column_index)) throw std::out_of_range("Column index must be less than the width of the matrix.");
             return this->operator ()(row_index, column_index);
         } // at(...)
         /** @brief Access matrix elements.
@@ -454,8 +631,8 @@ namespace ropufu::aftermath::algebra
          */
         value_type& at(size_type row_index, size_type column_index)
         {
-            if (row_index >= this->m_arrangement.height()) throw std::out_of_range("Row index must be less than the height of the matrix.");
-            if (column_index >= this->m_arrangement.width()) throw std::out_of_range("Column index must be less than the width of the matrix.");
+            if (!this->is_valid_row_index(row_index)) throw std::out_of_range("Row index must be less than the height of the matrix.");
+            if (!this->is_valid_column_index(column_index)) throw std::out_of_range("Column index must be less than the width of the matrix.");
             return this->operator ()(row_index, column_index);
         } // at(...)
         
@@ -472,8 +649,8 @@ namespace ropufu::aftermath::algebra
         static bool compatible(const type& left, const type& right) noexcept
         {
             return
-                (left.m_arrangement.height() == right.m_arrangement.height()) &&
-                (left.m_arrangement.width() == right.m_arrangement.width());
+                (left.height() == right.height()) &&
+                (left.width() == right.width());
         } // compatible(...)
 
         const_iterator_type cbegin() const noexcept { return this->m_container.cbegin(); }
@@ -490,7 +667,7 @@ namespace ropufu::aftermath::algebra
          */
         decltype(auto) operator ()(const mask_type& mask) const
         {
-            if (this->m_arrangement.height() != mask.height() || this->m_arrangement.width() != mask.width())
+            if (this->height() != mask.height() || this->width() != mask.width())
                 throw std::logic_error("Matrices incompatible.");
             return mask.slice(this->m_container.data());
         } // operator ()(...)
@@ -500,7 +677,7 @@ namespace ropufu::aftermath::algebra
          */
         decltype(auto) operator ()(const mask_type& mask)
         {
-            if (this->m_arrangement.height() != mask.height() || this->m_arrangement.width() != mask.width())
+            if (this->height() != mask.height() || this->width() != mask.width())
                 throw std::logic_error("Matrices incompatible.");
             return mask.slice(this->m_container.data());
         } // operator ()(...)

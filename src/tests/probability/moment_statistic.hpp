@@ -29,7 +29,8 @@ TEST_CASE_TEMPLATE("testing moment statistic for scalar types", pair_t, ROPUFU_A
     using tested_type_c = ropufu::aftermath::probability::moment_statistic<observation_type, statistic_type, 8>;
     
     // 0, 1, 2, ..., 194.
-    std::vector<std::size_t> data = ropufu::aftermath::algebra::identity_permutation(195);
+    std::vector<std::size_t> data(195);
+    ropufu::aftermath::algebra::make_identity_permutation(data);
     double mean = 97;
     double var = 3185;
     for (statistic_type anticipated_mean = 0; anticipated_mean < 100; anticipated_mean += 13)
@@ -63,7 +64,8 @@ TEST_CASE_TEMPLATE("testing moment statistic for matrix types", pair_t, ROPUFU_A
     using tested_type = ropufu::aftermath::probability::moment_statistic<observation_type, statistic_type>;
     
     // 0, 1, 2, ..., 194.
-    std::vector<std::size_t> data = ropufu::aftermath::algebra::identity_permutation(195);
+    std::vector<std::size_t> data(195);
+    ropufu::aftermath::algebra::make_identity_permutation(data);
     double mean = 97;
     double var = 3185;
 

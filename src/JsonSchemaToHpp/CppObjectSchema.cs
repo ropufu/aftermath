@@ -60,7 +60,9 @@ namespace Ropufu.JsonSchemaToHpp
                 this.properties = new(jsonSchema.Properties.Count);
                 foreach (var x in jsonSchema.Properties)
                 {
-                    var item = x.Value?.ToCppType() ?? throw new SchemaException(jsonSchema, nameof(jsonSchema.Properties), $"Property \"{x.Key}\" cannot be null.");
+                    if (x.Value is null) throw new SchemaException(jsonSchema, nameof(jsonSchema.Properties), $"Property \"{x.Key}\" cannot be null.");
+                    if (x.Value.HasFlag(HppGeneratorOptions.Ignore)) continue;
+                    var item = x.Value.ToCppType();
                     if (item.PropertyName is null) throw new SchemaException(jsonSchema, nameof(jsonSchema.Properties), "Property key cannot be empty.");
 
                     var isRequired = false;

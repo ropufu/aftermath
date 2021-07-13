@@ -12,6 +12,7 @@
 #include "algebra/interval.hpp"
 
 #include "algorithm/fuzzy.hpp"
+#include "algorithm/lower_upper_decomposition.hpp"
 #include "algorithm/pathfinder.hpp"
 
 #include "format/mat4_stream_base.hpp"

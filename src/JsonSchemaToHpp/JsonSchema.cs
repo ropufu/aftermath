@@ -9,6 +9,7 @@ namespace Ropufu.JsonSchemaToHpp
     public partial class JsonSchema
     {
         private String schemaFileName = null;
+        private HppGeneratorOptions options = HppGeneratorOptions.None;
 
         [JsonIgnore]
         public String SchemaFileName
@@ -20,6 +21,9 @@ namespace Ropufu.JsonSchemaToHpp
                 this.Populate();
             } // set
         } // SchemaFileName
+
+        [JsonIgnore]
+        public HppGeneratorOptions Options => this.options;
 
         /// <summary>
         /// If this schema describes a property in another schema, name of the property.
@@ -45,8 +49,27 @@ namespace Ropufu.JsonSchemaToHpp
                 _ => throw new NotImplementedException("JSON schema value kind not recognized.")
             };
 
+        public Boolean HasFlag(HppGeneratorOptions flag) => (this.options & flag) != HppGeneratorOptions.None;
+
+        private static String GetEnumJsonName<T>(T enumValue)
+            where T : System.Enum
+        {
+            var enumType = typeof(T);
+            var info = enumType.GetMember(enumValue.ToString())[0];
+            var attributes = info.GetCustomAttributes(typeof(JsonPropertyNameAttribute), false);
+            if (attributes is null) return null;
+            if (attributes.Length != 1) return null;
+            return ((JsonPropertyNameAttribute)attributes[0]).Name;
+        } // GetEnumJsonName(...)
+
         private void Populate()
         {
+            if (this.HppOptions is not null)
+                foreach (var e in Enum.GetValues<HppGeneratorOptions>())
+                    foreach (var x in this.HppOptions)
+                        if (GetEnumJsonName(e) == x)
+                            this.options |= e;
+
             if (this.ItemSchema is not null)
             {
                 this.ItemSchema.SchemaFileName = this.SchemaFileName;

@@ -262,7 +262,13 @@ namespace ropufu
 
             if (j.is_discarded()) return false;
 
-            if constexpr (ropufu::json_noexcept<value_type>) // First clause: type is already noexcept-ready (specialized noexcept_json_serializer).
+
+            if constexpr (std::same_as<value_type, nlohmann::json>) // Trivial clause.
+            {
+                result = j;
+                return true;
+            } // if constexpr (...)
+            else if constexpr (ropufu::json_noexcept<value_type>) // First clause: type is already noexcept-ready (specialized noexcept_json_serializer).
             {
                 return serializer_type::try_get(j, result);
             } // if constexpr (...)

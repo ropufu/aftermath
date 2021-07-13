@@ -481,9 +481,12 @@ namespace ropufu::aftermath::probability
         using sum_type = t_sum_type;
         using mean_type = t_mean_type;
 
+        using core_type = detail::empirical_measure_core<type, t_key_type, t_count_type, t_probability_type>;
         using ordering_module = detail::empirical_measure_ordering_module<type, t_key_type, t_count_type, t_probability_type>;
         using linear_module = detail::empirical_measure_linear_module<type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
         using variance_module = detail::empirical_measure_variance_module<type, t_key_type, t_count_type, t_sum_type, t_mean_type>;
+
+        using dictionary_type = typename core_type::dictionary_type;
 
         template <ropufu::hashable, typename, typename, typename, typename>
         friend struct empirical_measure;
@@ -518,7 +521,7 @@ namespace ropufu::aftermath::probability
         template <typename t_dictionary_type>
         /*implicit*/ empirical_measure(const t_dictionary_type& data) noexcept
         {
-            for (const auto& item : data) this->observe(item.first, item.second);
+            for (const auto& [key, value] : data) this->observe(key, value);
         } // empirical_measure(...)
 
         /** @brief Construct an empirical measure.

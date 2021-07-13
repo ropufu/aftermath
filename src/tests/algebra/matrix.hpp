@@ -4,6 +4,7 @@
 
 #include <doctest/doctest.h>
 
+#include "../core.hpp"
 #include "../../ropufu/algebra/matrix.hpp"
 #include "../../ropufu/algebra/matrix_mask.hpp"
 
@@ -14,55 +15,6 @@
 #include <memory>    // std::allocator
 #include <unordered_set> // std::unordered_set
 #include <vector>    // std::vector
-
-namespace ropufu::tests
-{
-    template <typename t_left_matrix_type, typename t_right_matrix_type>
-    long double matrix_distance(const t_left_matrix_type& left, const t_right_matrix_type& right) noexcept
-    {
-        long double result = std::numeric_limits<long double>::infinity();
-        if (left.width() != right.width()) return result;
-        if (left.height() != right.height()) return result;
-
-        result = 0;
-        for (std::size_t i = 0; i < left.height(); ++i)
-        {
-            for (std::size_t j = 0; j < left.width(); ++j)
-            {
-                long double diff = static_cast<long double>(left(i, j)) - static_cast<long double>(right(i, j));
-                if (diff < 0) diff = -diff;
-                if (diff > result) result = diff;
-            } // for (...)
-        } // for (...)
-
-        return result;
-    } // matrix_distance(...)
-
-    template <typename t_matrix_type>
-    t_matrix_type zeros_matrix(std::size_t height, std::size_t width) noexcept
-    {
-        return t_matrix_type(height, width);
-    } // zero_matrix(...)
-
-    template <typename t_matrix_type>
-    t_matrix_type ones_matrix(std::size_t height, std::size_t width) noexcept
-    {
-        return t_matrix_type(height, width, 1);
-    } // ones_matrix(...)
-
-    template <typename t_matrix_type>
-    t_matrix_type non_negative_matrix_b(std::size_t height, std::size_t width) noexcept
-    {
-        using scalar_t = typename t_matrix_type::value_type;
-        t_matrix_type result { height, width };
-
-        for (std::size_t i = 0; i < height; ++i) 
-            for (std::size_t j = 0; j < width; ++j)
-                result(i, j) = static_cast<scalar_t>(i + (j % 2));
-
-        return result;
-    } // initialize_matrix_one(...)
-} // namespace ropufu::tests
 
 // Note: std::int16_t and std::uint16_t are not closed under addition.
 #define ROPUFU_AFTERMATH_TESTS_ALGEBRA_MATRIX_ARITHMETIC_TYPES \

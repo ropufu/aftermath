@@ -35,14 +35,17 @@ namespace Ropufu.JsonSchemaToHpp
             if (schema.MaxItems is not null)
                 result.Add(String.Concat("if ({0}.size() > ", schema.MaxItems.Value.ToString(), ") return \"", validationMessage, "\";"));
 
-            var itemsSchema = schema.ItemSchema.ToCppType();
-            if (itemsSchema.DoesRequireValidation)
+            if (!schema.ItemSchema.HasFlag(HppGeneratorOptions.Ignore))
             {
-                result.Add("for (const auto& x : {0})");
-                result.Add("{{");
-                foreach (var x in itemsSchema.ValidationFormats)
-                    result.Add(new(String.Format(x.Code, "x"), x.TabOffset + 1));
-                result.Add("}} // for (...)");
+                var itemsSchema = schema.ItemSchema.ToCppType();
+                if (itemsSchema.DoesRequireValidation)
+                {
+                    result.Add("for (const auto& x : {0})");
+                    result.Add("{{");
+                    foreach (var x in itemsSchema.ValidationFormats)
+                        result.Add(new(String.Format(x.Code, "x"), x.TabOffset + 1));
+                    result.Add("}} // for (...)");
+                } // if (...)
             } // if (...)
 
             return result;

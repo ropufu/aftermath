@@ -8,6 +8,8 @@ namespace Ropufu.JsonSchemaToHpp
 {
     public partial class JsonSchema
     {
+        [JsonPropertyName("@ropufu-options")]
+        public List<String> HppOptions { get; set; } = new();
         [JsonPropertyName("@ropufu-namespace")]
         public String HppNamespace { get; set; }
         [JsonPropertyName("@ropufu-typename")]
