@@ -79,6 +79,10 @@ namespace ropufu::aftermath::random
         {
         } // ziggurat_sampler(...)
 
+        // @todo Implement rejection probability upper bound.
+        // /** Upper bound on the rejection probability. */
+        // probability_type rejection_probability() const noexcept { return ??; }
+
         const distribution_type& distribution() const noexcept { return this->m_distribution; }
 
         /** @todo Think about inequalities (strict vs. non-strict) in the \c u2 comparisons. */

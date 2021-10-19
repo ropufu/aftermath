@@ -1,13 +1,13 @@
 
-#ifndef ROPUFU_AFTERMATH_TESTS_RANDOM_NORMAL_SAMPLER_512_HPP_INCLUDED
-#define ROPUFU_AFTERMATH_TESTS_RANDOM_NORMAL_SAMPLER_512_HPP_INCLUDED
+#ifndef ROPUFU_AFTERMATH_TESTS_RANDOM_STANDARD_NORMAL_SAMPLER_512_HPP_INCLUDED
+#define ROPUFU_AFTERMATH_TESTS_RANDOM_STANDARD_NORMAL_SAMPLER_512_HPP_INCLUDED
 
 #include <doctest/doctest.h>
 #include "../benchmark_reporter.hpp"
 
 #include "../core.hpp"
 #include "../../ropufu/probability/standard_normal_distribution.hpp"
-#include "../../ropufu/random/normal_sampler_512.hpp"
+#include "../../ropufu/random/standard_normal_sampler_512.hpp"
 
 #include <array>      // std::array
 #include <cmath>      // std::log
@@ -40,13 +40,13 @@
     ropufu::tests::engine_distribution_tuple<std::mt19937_64, double, double, double>   \
 
 
-TEST_CASE_TEMPLATE("testing (randomized) normal_sampler_512 Anderson-Darling", tested_t, ROPUFU_AFTERMATH_TESTS_RANDOM_NORMAL_SAMPLER_512_ALL_TYPES)
+TEST_CASE_TEMPLATE("testing (randomized) standard_normal_sampler_512 Anderson-Darling", tested_t, ROPUFU_AFTERMATH_TESTS_RANDOM_NORMAL_SAMPLER_512_ALL_TYPES)
 {
     using engine_type = typename tested_t::engine_type;
     using value_type = typename tested_t::value_type;
     using probability_type = typename tested_t::probability_type;
     using expectation_type = typename tested_t::expectation_type;
-    using sampler_type = ropufu::aftermath::random::normal_sampler_512<engine_type, value_type, probability_type, expectation_type>;
+    using sampler_type = ropufu::aftermath::random::standard_normal_sampler_512<engine_type, value_type, probability_type, expectation_type>;
     using distribution_type = typename sampler_type::distribution_type;
 
     std::string engine_name {tested_t::engine_name()};
@@ -96,13 +96,13 @@ TEST_CASE_TEMPLATE("testing (randomized) normal_sampler_512 Anderson-Darling", t
 
 TEST_SUITE("Benchmarks")
 {
-    TEST_CASE_TEMPLATE("normal_sampler_512 vs STL", tested_t, ROPUFU_AFTERMATH_TESTS_RANDOM_NORMAL_SAMPLER_512_ALL_TYPES)
+    TEST_CASE_TEMPLATE("standard_normal_sampler_512 vs STL", tested_t, ROPUFU_AFTERMATH_TESTS_RANDOM_NORMAL_SAMPLER_512_ALL_TYPES)
     {
         using engine_type = typename tested_t::engine_type;
         using value_type = typename tested_t::value_type;
         using probability_type = typename tested_t::probability_type;
         using expectation_type = typename tested_t::expectation_type;
-        using sampler_type = ropufu::aftermath::random::normal_sampler_512<engine_type, value_type, probability_type, expectation_type>;
+        using sampler_type = ropufu::aftermath::random::standard_normal_sampler_512<engine_type, value_type, probability_type, expectation_type>;
         using distribution_type = typename sampler_type::distribution_type;
         using builtin_sampler_type = typename distribution_type::std_type;
         
@@ -127,4 +127,4 @@ TEST_SUITE("Benchmarks")
     } // TEST_CASE_TEMPLATE(...)
 } // TEST_SUITE(..)
 
-#endif // ROPUFU_AFTERMATH_TESTS_RANDOM_NORMAL_SAMPLER_512_HPP_INCLUDED
+#endif // ROPUFU_AFTERMATH_TESTS_RANDOM_STANDARD_NORMAL_SAMPLER_512_HPP_INCLUDED
