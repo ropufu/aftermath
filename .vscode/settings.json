@@ -95,6 +95,7 @@
         "variant": "cpp",
         "span": "cpp",
         "charconv": "cpp",
-        "format": "cpp"
+        "format": "cpp",
+        "semaphore": "cpp"
     }
 }

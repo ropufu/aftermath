@@ -21,6 +21,7 @@
 #include "format.hpp"
 #include "probability.hpp"
 #include "random.hpp"
+#include "sequential.hpp"
 
 namespace ropufu
 {
