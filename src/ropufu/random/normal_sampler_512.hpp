@@ -46,6 +46,9 @@ namespace ropufu::aftermath::random
         {
         } // normal_sampler_512(...)
 
+        value_type shift() const noexcept { return this->m_shift; }
+        value_type scale() const noexcept { return this->m_scale; }
+
         // @todo Implement rejection probability upper bound.
         // /** Upper bound on the rejection probability. */
         // probability_type rejection_probability() const noexcept { return ??; }
