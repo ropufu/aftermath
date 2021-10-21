@@ -37,7 +37,7 @@ namespace ropufu::aftermath::sequential
         } // make_engine(...)
 
     protected:
-        void on_clear() noexcept override {}
+        void on_clear() noexcept override { }
 
         value_type on_next() noexcept override
         {

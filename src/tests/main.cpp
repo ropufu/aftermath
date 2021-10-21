@@ -36,7 +36,7 @@
 #include "ropufu/simple_vector.hpp"
 #include "ropufu/sliding_array.hpp"
 
-#include "json_schema_to_hpp/generated_code.hpp"
+//#include "json_schema_to_hpp/generated_code.hpp"
 
 #include "../ropufu/concepts.hpp"
 #include "../ropufu/metadata.hpp"

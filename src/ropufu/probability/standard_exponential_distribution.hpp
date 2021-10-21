@@ -2,6 +2,9 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_STANDARD_EXPONENTIAL_DISTRIBUTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_STANDARD_EXPONENTIAL_DISTRIBUTION_HPP_INCLUDED
 
+#include <nlohmann/json.hpp>
+#include "../noexcept_json.hpp"
+
 #include "../number_traits.hpp"
 #include "concepts.hpp"
 
@@ -10,6 +13,7 @@
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <limits>      // std::numeric_limits
+#include <optional>    // std::optional, std::nullopt
 #include <random>      // std::exponential_distribution
 #include <stdexcept>   // std::logic_error
 #include <string_view> // std::string_view
@@ -18,7 +22,11 @@
 #ifdef ROPUFU_TMP_TYPENAME
 #undef ROPUFU_TMP_TYPENAME
 #endif
+#ifdef ROPUFU_TMP_TEMPLATE_SIGNATURE
+#undef ROPUFU_TMP_TEMPLATE_SIGNATURE
+#endif
 #define ROPUFU_TMP_TYPENAME standard_exponential_distribution<t_value_type, t_probability_type, t_expectation_type>
+#define ROPUFU_TMP_TEMPLATE_SIGNATURE template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
 
 namespace ropufu::aftermath::probability
 {
@@ -28,14 +36,19 @@ namespace ropufu::aftermath::probability
         std::floating_point t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
     struct standard_exponential_distribution;
 
-    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    void to_json(nlohmann::json& j, const ROPUFU_TMP_TYPENAME& x) noexcept;
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    void from_json(const nlohmann::json& j, ROPUFU_TMP_TYPENAME& x);
+
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct is_continuous<ROPUFU_TMP_TYPENAME>
     {
         using distribution_type = ROPUFU_TMP_TYPENAME;
         static constexpr bool value = true;
     }; // struct is_continuous
 
-    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct has_right_tail<ROPUFU_TMP_TYPENAME>
     {
         using distribution_type = ROPUFU_TMP_TYPENAME;
@@ -43,7 +56,7 @@ namespace ropufu::aftermath::probability
     }; // struct has_right_tail
 
     /** @brief Exponential distribution with unit mean / rate. */
-    template <std::floating_point t_value_type, std::floating_point t_probability_type, std::floating_point t_expectation_type>
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct standard_exponential_distribution : distribution_base<ROPUFU_TMP_TYPENAME>
     {
         using type = ROPUFU_TMP_TYPENAME;
@@ -52,9 +65,23 @@ namespace ropufu::aftermath::probability
         using expectation_type = t_expectation_type;
         using std_type = std::exponential_distribution<t_value_type>;
 
-        static constexpr std::string_view name = "std exp";
+        static constexpr std::string_view name = "std exponential";
+        static constexpr std::size_t parameter_dim = 0;
+        
+        // ~~ Json names ~~
+        static constexpr std::string_view jstr_type = "type";
+        
+        friend ropufu::noexcept_json_serializer<type>;
+        friend std::hash<type>;
 
     private:
+        /** @brief Validates the structure and returns an error message, if any. */
+        constexpr std::optional<std::string> error_message() const noexcept
+        {
+            return std::nullopt;
+        } // error_message(...)
+        
+        constexpr void validate() const noexcept { }
 
     public:
         /** Default constructor with zero mean and unit variance. */
@@ -122,8 +149,36 @@ namespace ropufu::aftermath::probability
         {
             return !this->operator ==(other);
         } // operator !=(...)
+
+        friend void to_json(nlohmann::json& j, const type& x) noexcept
+        {
+            j = nlohmann::json{
+                {type::jstr_type, type::name}
+            };
+        } // to_json(...)
+
+        friend void from_json(const nlohmann::json& j, type& x) noexcept { }
     }; // struct standard_exponential_distribution
 } // namespace ropufu::aftermath::probability
+
+namespace ropufu
+{
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    struct noexcept_json_serializer<ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME>
+    {
+        using result_type = ropufu::aftermath::probability::ROPUFU_TMP_TYPENAME;
+        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        {
+            std::string distribution_name;
+
+            if (!noexcept_json::required(j, result_type::jstr_type, distribution_name)) return false;
+
+            if (distribution_name != result_type::name) return false;
+
+            return true;
+        } // try_get(...)
+    }; // struct noexcept_json_serializer<...>
+} // namespace ropufu
 
 namespace std
 {
@@ -135,7 +190,7 @@ namespace std
 
         result_type operator ()(argument_type const& x) const noexcept
         {
-            return 1;
+            return 0;
         } // operator ()(...)
     }; // struct hash<...>
 } // namespace std
