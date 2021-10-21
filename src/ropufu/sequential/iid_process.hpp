@@ -42,7 +42,7 @@ namespace ropufu::aftermath::sequential
         value_type on_next() noexcept override
         {
             return this->m_sampler(this->m_engine);
-        } // next(...)
+        } // on_next(...)
 
         template <std::ranges::random_access_range t_container_type>
             requires std::same_as<std::ranges::range_value_t<t_container_type>, value_type>

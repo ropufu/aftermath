@@ -18,13 +18,13 @@ namespace ropufu::aftermath::sequential
         std::size_t m_count = 0;
 
     protected:
-        /** Called when the process should be cleared. Count has already set to zero. */
+        /** Called when the process should be cleared. */
         virtual void on_clear() noexcept = 0;
 
-        /** Called when a single observation is to be generated. Count has already been updated. */
+        /** Called when a single observation is to be generated. */
         virtual value_type on_next() noexcept = 0;
 
-        /** Called when a block of observations is to be generated. Count has already been updated. */
+        /** Called when a block of observations is to be generated. */
         template <std::ranges::random_access_range t_container_type>
             requires std::same_as<std::ranges::range_value_t<t_container_type>, value_type>
         virtual void on_next(t_container_type& values) noexcept = 0;
@@ -33,8 +33,8 @@ namespace ropufu::aftermath::sequential
         /** Purges past observations. */
         void clear() noexcept
         {
-            this->m_count = 0;
             this->on_clear();
+            this->m_count = 0;
         } // clear(...)
 
         /** Number of observations generated so far. */
@@ -43,8 +43,9 @@ namespace ropufu::aftermath::sequential
         /** Generate a single observation. */
         value_type next() noexcept
         {
+            value_type result = this->on_next();
             ++this->m_count;
-            return this->on_next();
+            return result;
         } // next(...)
 
         /** Generate a block of observation. */
@@ -52,8 +53,8 @@ namespace ropufu::aftermath::sequential
             requires std::same_as<std::ranges::range_value_t<t_container_type>, value_type>
         void next(t_container_type& values) noexcept
         {
-            this->m_count += std::ranges::size(values);
             this->on_next(values);
+            this->m_count += std::ranges::size(values);
         } // next(...)
     }; // struct scalar_process
 } // namespace ropufu::aftermath::sequential
