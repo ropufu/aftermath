@@ -5,8 +5,7 @@
             "includePath": [
                 "/usr/local/Cellar/gcc/11.2.0/include/**",
                 "${workspaceRoot}",
-                "${workspaceRoot}/../../include",
-                "${workspaceRoot}/../aftermath/src"
+                "${workspaceRoot}/../../include"
             ],
             "defines": [],
             "intelliSenseMode": "gcc-x64",
@@ -15,8 +14,7 @@
                 "path": [
                     "/usr/local/Cellar/gcc/11.2.0/include/**",
                     "${workspaceRoot}",
-                    "${workspaceRoot}/../../include",
-                    "${workspaceRoot}/../aftermath/src"
+                    "${workspaceRoot}/../../include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -33,8 +31,7 @@
                 "/usr/local/include",
                 "/usr/include",
                 "${workspaceRoot}",
-                "${workspaceRoot}/../../include",
-                "${workspaceRoot}/../aftermath/src"
+                "${workspaceRoot}/../../include"
             ],
             "defines": [],
             "intelliSenseMode": "gcc-x64",
@@ -46,8 +43,7 @@
                     "/usr/local/include",
                     "/usr/include",
                     "${workspaceRoot}",
-                    "${workspaceRoot}/../../include",
-                    "${workspaceRoot}/../aftermath/src"
+                    "${workspaceRoot}/../../include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -59,8 +55,7 @@
                 "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30037/include",
                 "C:/Program Files (x86)/Windows Kits/10/Include/10.0.18362.0/ucrt",
                 "${workspaceRoot}",
-                "${workspaceRoot}/../../include",
-                "${workspaceRoot}/../aftermath/src"
+                "${workspaceRoot}/../../include"
             ],
             "defines": [
                 "_DEBUG",
@@ -73,8 +68,7 @@
                     "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30037/include/*",
                     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.18362.0/ucrt/*",
                     "${workspaceRoot}",
-                    "${workspaceRoot}/../../include",
-                    "${workspaceRoot}/../aftermath/src"
+                    "${workspaceRoot}/../../include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""

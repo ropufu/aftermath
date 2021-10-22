@@ -10,7 +10,6 @@
                 "-std=c++2a",
                 "-Wall",
                 "-I${workspaceRoot}/../../include",
-                "-I${workspaceRoot}/../aftermath/src",
                 "${workspaceFolder}/src/tests/main.cpp",
                 "-o",
                 "${workspaceFolder}/src/tests/tests.out",
@@ -41,7 +40,6 @@
                 "-std=c++2a",
                 "-Wall",
                 "-I${workspaceRoot}/../../include",
-                "-I${workspaceRoot}/../aftermath/src",
                 "${workspaceFolder}/src/tests/main.cpp",
                 "-o",
                 "${workspaceFolder}/src/tests/tests.out"
