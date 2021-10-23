@@ -2,7 +2,9 @@
 #ifndef ROPUFU_AFTERMATH_TESTS_MYSTRUCT_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_TESTS_MYSTRUCT_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
+#endif
 
 #include "../ropufu/enum_parser.hpp"
 #include "../ropufu/enum_array.hpp"
@@ -23,9 +25,11 @@ namespace ropufu::tests
     // static constexpr std::size_t mystruct_first_index = 0;
     // static constexpr std::size_t mystruct_last_index = 3;
 
+#ifndef ROPUFU_NO_JSON
     void to_json(nlohmann::json& j, const mystruct& x) noexcept;
 
     void from_json(const nlohmann::json& j, mystruct& x);
+#endif
 } // namespace ropufu::tests
 
 namespace std
@@ -73,6 +77,7 @@ namespace ropufu::aftermath::detail
     }; // struct enum_parser<...>
 } // namespace ropufu::aftermath::detail
 
+#ifndef ROPUFU_NO_JSON
 namespace ropufu::tests
 {
     void to_json(nlohmann::json& j, const mystruct& x) noexcept
@@ -87,5 +92,6 @@ namespace ropufu::tests
         if (!aftermath::detail::try_parse_enum(s, x)) throw std::runtime_error("<mystruct> not recognized: " + j.dump());
     } // from_json(...)
 } // namespace ropufu::tests
+#endif
 
 #endif // ROPUFU_AFTERMATH_TESTS_MYSTRUCT_HPP_INCLUDED

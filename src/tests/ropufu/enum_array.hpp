@@ -2,8 +2,10 @@
 #ifndef ROPUFU_AFTERMATH_TESTS_ROPUFU_ENUM_ARRAY_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_TESTS_ROPUFU_ENUM_ARRAY_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
 #include <doctest/doctest.h>
 #include <nlohmann/json.hpp>
+#endif
 
 #include "../../ropufu/enum_array.hpp"
 #include "../core.hpp"
@@ -26,6 +28,7 @@
     ropufu::aftermath::enum_array<ropufu::tests::mystruct, std::size_t>  \
 
 
+#ifndef ROPUFU_NO_JSON
 TEST_CASE_TEMPLATE("testing enum_array json", tested_t, ROPUFU_AFTERMATH_TESTS_ENUM_ARRAY_MAP_TYPES)
 {
     tested_t tested {};
@@ -38,6 +41,7 @@ TEST_CASE_TEMPLATE("testing enum_array json", tested_t, ROPUFU_AFTERMATH_TESTS_E
     ropufu::tests::does_json_round_trip(tested, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 } // TEST_CASE_TEMPLATE(...)
+#endif
 
 TEST_CASE_TEMPLATE("testing enum_array flags", tested_t,
     ropufu::aftermath::enum_array<ropufu::tests::mystruct, bool>)
@@ -56,11 +60,6 @@ TEST_CASE_TEMPLATE("testing enum_array flags", tested_t,
     for (enum_type x : tested) aggregate += static_cast<underlying_type>(x);
     underlying_type expected_aggregate = static_cast<underlying_type>(enum_type::perhaps) + static_cast<underlying_type>(enum_type::surely);
 
-    std::string xxx {};
-    std::string yyy {};
-    
-    ropufu::tests::does_json_round_trip(tested, xxx, yyy);
-    CHECK_EQ(xxx, yyy);
     CHECK_EQ(aggregate, expected_aggregate);
 } // TEST_CASE_TEMPLATE(...)
 
@@ -79,11 +78,6 @@ TEST_CASE_TEMPLATE("testing enum_array void", tested_t,
         static_cast<underlying_type>(enum_type::almost_surely) +
         static_cast<underlying_type>(enum_type::surely);
     
-    std::string xxx {};
-    std::string yyy {};
-    
-    ropufu::tests::does_json_round_trip(tested, xxx, yyy);
-    CHECK_EQ(xxx, yyy);
     CHECK_EQ(aggregate, expected_aggregate);
 } // TEST_CASE_TEMPLATE(...)
 

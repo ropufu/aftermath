@@ -2,8 +2,10 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_UNIFORM_INT_DISTRIBUTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_UNIFORM_INT_DISTRIBUTION_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
 #include "../noexcept_json.hpp"
+#endif
 
 #include "../number_traits.hpp"
 #include "../math_constants.hpp"
@@ -39,10 +41,12 @@ namespace ropufu::aftermath::probability
         std::floating_point t_expectation_type = t_probability_type>
     struct uniform_int_distribution;
 
+#ifndef ROPUFU_NO_JSON
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     void to_json(nlohmann::json& j, const ROPUFU_TMP_TYPENAME& x) noexcept;
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     void from_json(const nlohmann::json& j, ROPUFU_TMP_TYPENAME& x);
+#endif
 
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct is_discrete<ROPUFU_TMP_TYPENAME>
@@ -71,7 +75,9 @@ namespace ropufu::aftermath::probability
         static constexpr std::string_view jstr_min = "min";
         static constexpr std::string_view jstr_max = "max";
         
+#ifndef ROPUFU_NO_JSON
         friend ropufu::noexcept_json_serializer<type>;
+#endif
         friend std::hash<type>;
 
     private:
@@ -189,6 +195,7 @@ namespace ropufu::aftermath::probability
         /** Checks if the two distributions are different. */
         bool operator !=(const type& other) const noexcept { return !this->operator ==(other); }
 
+#ifndef ROPUFU_NO_JSON
         friend void to_json(nlohmann::json& j, const type& x) noexcept
         {
             j = nlohmann::json{
@@ -206,9 +213,11 @@ namespace ropufu::aftermath::probability
             if (!noexcept_json::try_get(j, x))
                 throw std::runtime_error("Parsing <uniform_int_distribution> failed: " + j.dump());
         } // from_json(...)
+#endif
     }; // struct uniform_int_distribution
 } // namespace ropufu::aftermath::probability
 
+#ifndef ROPUFU_NO_JSON
 namespace ropufu
 {
     ROPUFU_TMP_TEMPLATE_SIGNATURE
@@ -230,6 +239,7 @@ namespace ropufu
         } // try_get(...)
     }; // struct noexcept_json_serializer<...>
 } // namespace ropufu
+#endif
 
 namespace std
 {

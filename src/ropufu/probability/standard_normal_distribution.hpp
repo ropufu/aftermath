@@ -2,8 +2,10 @@
 #ifndef ROPUFU_AFTERMATH_PROBABILITY_STANDARD_NORMAL_DISTRIBUTION_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_PROBABILITY_STANDARD_NORMAL_DISTRIBUTION_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
 #include "../noexcept_json.hpp"
+#endif
 
 #include "../math_constants.hpp"
 #include "../number_traits.hpp"
@@ -38,10 +40,12 @@ namespace ropufu::aftermath::probability
         std::floating_point t_expectation_type = decltype(std::declval<t_value_type>() * std::declval<t_probability_type>())>
     struct standard_normal_distribution;
 
+#ifndef ROPUFU_NO_JSON
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     void to_json(nlohmann::json& j, const ROPUFU_TMP_TYPENAME& x) noexcept;
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     void from_json(const nlohmann::json& j, ROPUFU_TMP_TYPENAME& x);
+#endif
 
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct is_continuous<ROPUFU_TMP_TYPENAME>
@@ -80,7 +84,9 @@ namespace ropufu::aftermath::probability
         // ~~ Json names ~~
         static constexpr std::string_view jstr_type = "type";
         
+#ifndef ROPUFU_NO_JSON
         friend ropufu::noexcept_json_serializer<type>;
+#endif
         friend std::hash<type>;
 
     private:
@@ -166,6 +172,7 @@ namespace ropufu::aftermath::probability
             return !this->operator ==(other);
         } // operator !=(...)
 
+#ifndef ROPUFU_NO_JSON
         friend void to_json(nlohmann::json& j, const type& x) noexcept
         {
             j = nlohmann::json{
@@ -174,9 +181,11 @@ namespace ropufu::aftermath::probability
         } // to_json(...)
 
         friend void from_json(const nlohmann::json& j, type& x) noexcept { }
+#endif
     }; // struct standard_normal_distribution
 } // namespace ropufu::aftermath::probability
 
+#ifndef ROPUFU_NO_JSON
 namespace ropufu
 {
     ROPUFU_TMP_TEMPLATE_SIGNATURE
@@ -195,6 +204,7 @@ namespace ropufu
         } // try_get(...)
     }; // struct noexcept_json_serializer<...>
 } // namespace ropufu
+#endif
 
 namespace std
 {

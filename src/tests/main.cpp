@@ -1,5 +1,6 @@
 
 #define DOCTEST_CONFIG_IMPLEMENT
+// #define ROPUFU_NO_JSON
 #include <doctest/doctest.h>
 #include "benchmark_reporter.hpp"
 

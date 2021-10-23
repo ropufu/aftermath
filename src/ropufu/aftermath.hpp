@@ -2,6 +2,9 @@
 #ifndef ROPUFU_AFTERMATH_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_HPP_INCLUDED
 
+// To de-couple from <nlohmann/json.hpp> define ROPUFU_NO_JSON in your code.
+// #define ROPUFU_NO_JSON
+
 #include "P0870.hpp"
 
 #include "concepts.hpp"

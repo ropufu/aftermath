@@ -3,7 +3,9 @@
 #define ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_HPP_INCLUDED
 
 #include <doctest/doctest.h>
+#ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
+#endif
 
 #include "../core.hpp"
 #include "../../ropufu/algebra/interval.hpp"
@@ -29,7 +31,7 @@
     ropufu::aftermath::algebra::interval<float>,            \
     ropufu::aftermath::algebra::interval<double>            \
 
-
+#ifndef ROPUFU_NO_JSON
 TEST_CASE_TEMPLATE("testing interval json", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {
     interval_type a {1, 1729};
@@ -48,7 +50,9 @@ TEST_CASE_TEMPLATE("testing interval json", interval_type, ROPUFU_AFTERMATH_TEST
     ropufu::tests::does_json_round_trip(c, xxx, yyy);
     CHECK_EQ(xxx, yyy);
 } // TEST_CASE_TEMPLATE(...)
+#endif
 
+#ifndef ROPUFU_NO_JSON
 TEST_CASE_TEMPLATE("testing interval noexcept json", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {
     interval_type a {1, 1729};
@@ -69,6 +73,7 @@ TEST_CASE_TEMPLATE("testing interval noexcept json", interval_type, ROPUFU_AFTER
     CHECK_EQ(m["b"], b);
     CHECK_EQ(m["gamma"], c);
 } // TEST_CASE_TEMPLATE(...)
+#endif
 
 TEST_CASE_TEMPLATE("testing interval explosion", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {

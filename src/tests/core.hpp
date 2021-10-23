@@ -2,8 +2,10 @@
 #ifndef ROPUFU_AFTERMATH_TESTS_CORE_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_TESTS_CORE_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
 #include "../ropufu/noexcept_json.hpp"
+#endif
 #include "../ropufu/metadata.hpp"
 
 #include <array>   // std::array
@@ -98,6 +100,7 @@ namespace ropufu::tests
         using right_type = t_right_type;
     }; // struct type_triplet
 
+#ifndef ROPUFU_NO_JSON
     template <typename t_type>
     bool does_json_round_trip(const t_type& x, std::string& a, std::string& b) noexcept
     {
@@ -115,6 +118,7 @@ namespace ropufu::tests
 
         return x == y;
     } // does_json_round_trip(...)
+#endif
 
     template <typename t_type>
     bool are_ostream_equal(const t_type& x, const t_type& y) noexcept

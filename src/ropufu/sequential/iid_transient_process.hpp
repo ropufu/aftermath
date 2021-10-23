@@ -2,8 +2,10 @@
 #ifndef ROPUFU_AFTERMATH_SEQUENTIAL_IID_TRANSIENT_PROCESS_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_SEQUENTIAL_IID_TRANSIENT_PROCESS_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
 #include "../noexcept_json.hpp"
+#endif
 
 #include "scalar_process.hpp"
 
@@ -32,11 +34,13 @@ namespace ropufu::aftermath::sequential
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct iid_transient_process;
 
+#ifndef ROPUFU_NO_JSON
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     void to_json(nlohmann::json& j, const ROPUFU_TMP_TYPENAME& x) noexcept;
     
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     void from_json(const nlohmann::json& j, ROPUFU_TMP_TYPENAME& x);
+#endif
 
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct iid_transient_process : public scalar_process<typename t_no_change_sampler_type::value_type>
@@ -62,7 +66,9 @@ namespace ropufu::aftermath::sequential
         static constexpr std::string_view jstr_last_under_change_index = "last under-change index";
         static constexpr std::string_view jstr_change_duration = "change duration";
         
+#ifndef ROPUFU_NO_JSON
         friend ropufu::noexcept_json_serializer<type>;
+#endif
         friend std::hash<type>;
 
     private:
@@ -137,6 +143,7 @@ namespace ropufu::aftermath::sequential
             if (change_duration == 0) throw std::logic_error("Change duration cannot be zero.");
         } // iid_transient_process(...)
 
+#ifndef ROPUFU_NO_JSON
         friend void to_json(nlohmann::json& j, const type& x) noexcept
         {
             j = nlohmann::json{
@@ -153,9 +160,11 @@ namespace ropufu::aftermath::sequential
             if (!noexcept_json::try_get(j, x))
                 throw std::runtime_error("Parsing <iid_transient_process> failed: " + j.dump());
         } // from_json(...)
+#endif
     }; // struct iid_transient_process
 } // namespace ropufu::aftermath::sequential
 
+#ifndef ROPUFU_NO_JSON
 namespace ropufu
 {
     ROPUFU_TMP_TEMPLATE_SIGNATURE
@@ -195,6 +204,7 @@ namespace ropufu
         } // try_get(...)
     }; // struct noexcept_json_serializer<...>
 } // namespace ropufu
+#endif
 
 namespace std
 {

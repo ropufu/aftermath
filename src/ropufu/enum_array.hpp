@@ -2,8 +2,10 @@
 #ifndef ROPUFU_AFTERMATH_ENUM_ARRAY_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_ENUM_ARRAY_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
 #include "noexcept_json.hpp"
+#endif
 
 #include "concepts.hpp"
 #include "enum_parser.hpp"
@@ -245,7 +247,9 @@ namespace ropufu::aftermath
         static constexpr underlying_type first_index = helper_type::first_index;
         static constexpr underlying_type past_the_last_index = helper_type::past_the_last_index;
         
+#ifndef ROPUFU_NO_JSON
         friend struct ropufu::noexcept_json_serializer<type>;
+#endif
 
         enum_array() noexcept { }
         explicit enum_array(const value_type& value) noexcept { this->m_collection.fill(value); }
@@ -270,12 +274,6 @@ namespace ropufu::aftermath
             } // for (...)
             return result;
         } // get_hash(...)
-
-        friend std::ostream& operator <<(std::ostream& os, const type& self) noexcept
-        {
-            nlohmann::json j = self;
-            return os << j;
-        } // operator <<(...)
     }; // struct enum_array
 
     /** @brief Masks enumerable keys of \tparam t_enum_type. */
@@ -299,7 +297,9 @@ namespace ropufu::aftermath
         static constexpr underlying_type first_index = helper_type::first_index;
         static constexpr underlying_type past_the_last_index = helper_type::past_the_last_index;
 
+#ifndef ROPUFU_NO_JSON
         friend struct ropufu::noexcept_json_serializer<type>;
+#endif
 
         enum_array() noexcept { }
 
@@ -390,12 +390,6 @@ namespace ropufu::aftermath
             } // for (...)
             return result;
         } // get_hash(...)
-
-        friend std::ostream& operator <<(std::ostream& os, const type& self) noexcept
-        {
-            nlohmann::json j = self;
-            return os << j;
-        } // operator <<(...)
     }; // struct enum_array<...>
 
     /** @brief Lists enumerable keys of \tparam t_enum_type. */
@@ -413,7 +407,9 @@ namespace ropufu::aftermath
         static constexpr underlying_type first_index = helper_type::first_index;
         static constexpr underlying_type past_the_last_index = helper_type::past_the_last_index;
 
+#ifndef ROPUFU_NO_JSON
         friend struct ropufu::noexcept_json_serializer<type>;
+#endif
 
     private:
         std::array<value_type, type::capacity> m_collection = { };
@@ -450,14 +446,9 @@ namespace ropufu::aftermath
         bool operator ==(const type& other) const noexcept { return this->m_collection == other.m_collection; }
 
         constexpr std::size_t get_hash() const noexcept { return 0; }
-
-        friend std::ostream& operator <<(std::ostream& os, const type& self) noexcept
-        {
-            nlohmann::json j = self;
-            return os << j;
-        } // operator <<(...)
     }; // struct enum_array<...>
 
+#ifndef ROPUFU_NO_JSON
     /** Store as an object { ..., "<enum key>": value, ... }. */
     template <ropufu::enumeration t_enum_type, typename t_value_type>
     void to_json(nlohmann::json& j, const enum_array<t_enum_type, t_value_type>& x) noexcept
@@ -496,8 +487,10 @@ namespace ropufu::aftermath
     {
         if (!noexcept_json::try_get(j, x)) throw std::runtime_error("Parsing <interval> failed: " + j.dump());
     } // from_json(...)
+#endif
 } // namespace ropufu::aftermath
 
+#ifndef ROPUFU_NO_JSON
 namespace ropufu
 {
     template <ropufu::enumeration t_enum_type, typename t_value_type>
@@ -571,15 +564,18 @@ namespace ropufu
         } // try_get(...)
     }; // struct noexcept_json_serializer<...>
 } // namespace ropufu
+#endif
 
 namespace std
 {
+#ifndef ROPUFU_NO_JSON
     template <ropufu::enumeration t_enum_type, typename t_value_type>
     std::string to_string(const ropufu::aftermath::enum_array<t_enum_type, t_value_type>& value) noexcept
     {
         nlohmann::json j = value;
         return j.dump();
     } // to_string(...)
+#endif
 
     template <ropufu::enumeration t_enum_type, typename t_value_type>
     struct hash<ropufu::aftermath::enum_array<t_enum_type, t_value_type>>

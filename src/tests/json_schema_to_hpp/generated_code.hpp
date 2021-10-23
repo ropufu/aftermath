@@ -1,6 +1,7 @@
 
 #ifndef ROPUFU_AFTERMATH_TESTS_JSON_SCHEMA_TO_HPP_GENERATED_CODE_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_TESTS_JSON_SCHEMA_TO_HPP_GENERATED_CODE_HPP_INCLUDED
+#ifndef ROPUFU_NO_JSON
 
 #include <doctest/doctest.h>
 #include <nlohmann/json.hpp>
@@ -109,4 +110,5 @@ TEST_CASE("generated json roundtrip schema D")
     CHECK_EQ(xxx, yyy);
 } // TEST_CASE(...)
 
+#endif // ROPUFU_NO_JSON
 #endif // ROPUFU_AFTERMATH_TESTS_JSON_SCHEMA_TO_HPP_GENERATED_CODE_HPP_INCLUDED

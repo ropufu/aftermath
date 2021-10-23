@@ -1,6 +1,7 @@
 
 #ifndef ROPUFU_AFTERMATH_TESTS_ROPUFU_NOEXCEPT_JSON_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_TESTS_ROPUFU_NOEXCEPT_JSON_HPP_INCLUDED
+#ifndef ROPUFU_NO_JSON
 
 #include <doctest/doctest.h>
 #include <nlohmann/json.hpp>
@@ -112,4 +113,5 @@ TEST_CASE("noexcept json std::optional not null")
     REQUIRE(!x.has_value());
 } // TEST_CASE(...)
 
+#endif // ROPUFU_NO_JSON
 #endif // ROPUFU_AFTERMATH_TESTS_ROPUFU_NOEXCEPT_JSON_HPP_INCLUDED

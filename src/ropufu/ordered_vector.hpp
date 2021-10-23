@@ -2,8 +2,10 @@
 #ifndef ROPUFU_SEQUENTIAL_INTERMITTENT_ORDERED_VECTOR_HPP_INCLUDED
 #define ROPUFU_SEQUENTIAL_INTERMITTENT_ORDERED_VECTOR_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
 #include "noexcept_json.hpp"
+#endif
 
 #include "algebra/interval.hpp"
 #include "algebra/interval_spacing.hpp"
@@ -23,10 +25,12 @@ namespace ropufu
     template <std::totally_ordered t_value_type, typename t_allocator_type = std::allocator<t_value_type>>
     struct ordered_vector;
 
+#ifndef ROPUFU_NO_JSON
     template <std::totally_ordered t_value_type, typename t_allocator_type>
     void to_json(nlohmann::json& j, const ordered_vector<t_value_type, t_allocator_type>& x) noexcept;
     template <std::totally_ordered t_value_type, typename t_allocator_type>
     void from_json(const nlohmann::json& j, ordered_vector<t_value_type, t_allocator_type>& x);
+#endif
 
     template <std::totally_ordered t_value_type, typename t_allocator_type>
     struct ordered_vector : public std::vector<t_value_type, t_allocator_type>
@@ -90,6 +94,7 @@ namespace ropufu
             return false;
         } // contains(...)
 
+#ifndef ROPUFU_NO_JSON
         friend void to_json(nlohmann::json& j, const type& x) noexcept
         {
             if (!x.is_range_based()) j = static_cast<const base_type&>(x);
@@ -106,9 +111,11 @@ namespace ropufu
             if (!ropufu::noexcept_json::try_get(j, x))
                 throw std::runtime_error("Parsing <ordered_vector> failed: " + j.dump());
         } // from_json(...)
+#endif
     }; // struct ordered_vector
 } // namespace ropufu
 
+#ifndef ROPUFU_NO_JSON
 namespace ropufu
 {
     template <std::totally_ordered t_value_type, typename t_allocator_type>
@@ -146,5 +153,6 @@ namespace ropufu
         } // try_get(...)
     }; // struct noexcept_json_serializer<...>
 } // namespace ropufu
+#endif
 
 #endif // ROPUFU_SEQUENTIAL_INTERMITTENT_ORDERED_VECTOR_HPP_INCLUDED

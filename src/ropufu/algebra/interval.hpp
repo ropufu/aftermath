@@ -2,7 +2,9 @@
 #ifndef ROPUFU_AFTERMATH_ALGEBRA_INTERVAL_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_ALGEBRA_INTERVAL_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
+#endif
 #include "../noexcept_json.hpp"
 
 #include "interval_spacing.hpp"
@@ -23,10 +25,12 @@ namespace ropufu::aftermath::algebra
     template <std::totally_ordered t_value_type>
     struct interval;
 
+#ifndef ROPUFU_NO_JSON
     template <std::totally_ordered t_value_type>
     void to_json(nlohmann::json& j, const interval<t_value_type>& x) noexcept;
     template <std::totally_ordered t_value_type>
     void from_json(const nlohmann::json& j, interval<t_value_type>& x);
+#endif
 
     /** @brief Inspired by MATLAB's linspace function. */
     template <std::totally_ordered t_value_type>
@@ -39,7 +43,9 @@ namespace ropufu::aftermath::algebra
         static constexpr std::string_view jstr_from = "from";
         static constexpr std::string_view jstr_to = "to";
         
+#ifndef ROPUFU_NO_JSON
         friend ropufu::noexcept_json_serializer<type>;
+#endif
 
     private:
         value_type m_from = {};
@@ -72,25 +78,23 @@ namespace ropufu::aftermath::algebra
         {
             return os << self.m_from << "--" << self.m_to;
         } // operator <<(...)
-    }; // struct interval
-    
-    template <std::totally_ordered t_value_type>
-    void to_json(nlohmann::json& j, const interval<t_value_type>& x) noexcept
-    {
-        using type = interval<t_value_type>;
 
+#ifndef ROPUFU_NO_JSON
+    friend void to_json(nlohmann::json& j, const type& x) noexcept
+    {
         j = nlohmann::json{
             {type::jstr_from, x.from()},
             {type::jstr_to, x.to()}
         };
     } // to_json(...)
 
-    template <std::totally_ordered t_value_type>
-    void from_json(const nlohmann::json& j, interval<t_value_type>& x)
+    friend void from_json(const nlohmann::json& j, type& x)
     {
         if (!noexcept_json::try_get(j, x)) throw std::runtime_error("Parsing <interval> failed: " + j.dump());
     } // from_json(...)
-
+#endif
+    }; // struct interval
+    
     template <ropufu::spacing t_spacing_type, std::totally_ordered t_value_type, typename t_allocator_type>
     void explode(const interval<t_value_type>& interval, std::vector<t_value_type, t_allocator_type>& container, std::size_t count, const t_spacing_type& spacing)
     {
@@ -124,6 +128,7 @@ namespace ropufu::aftermath::algebra
     } // explode(...)
 } // namespace ropufu::aftermath::algebra
 
+#ifndef ROPUFU_NO_JSON
 namespace ropufu
 {
     template <std::totally_ordered t_value_type>
@@ -153,6 +158,7 @@ namespace ropufu
         } // try_get(...)
     }; // struct noexcept_json_serializer<...>
 } // namespace ropufu
+#endif
 
 namespace std
 {

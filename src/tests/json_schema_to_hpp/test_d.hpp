@@ -1,6 +1,7 @@
 
 #ifndef ROPUFU_TESTS_JSON_SCHEMA_TO_HPP_TEST_D_HPP_INCLUDED
 #define ROPUFU_TESTS_JSON_SCHEMA_TO_HPP_TEST_D_HPP_INCLUDED
+#ifndef ROPUFU_NO_JSON
 
 #if __has_include("test_d.g.hpp")
 #include "test_d.g.hpp"
@@ -76,4 +77,5 @@ namespace std
 } // namespace std
 
 #endif // __has_include("test_d.g.hpp")
+#endif // ROPUFU_NO_JSON
 #endif // ROPUFU_TESTS_JSON_SCHEMA_TO_HPP_TEST_D_HPP_INCLUDED

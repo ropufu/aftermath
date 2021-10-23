@@ -2,6 +2,7 @@
 #ifndef ROPUFU_AFTERMATH_TRY_JSON_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_TRY_JSON_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
 
 #include "concepts.hpp"
@@ -350,4 +351,5 @@ namespace ropufu
     }; // struct noexcept_json
 } // namespace ropufu
 
+#endif // ROPUFU_NO_JSON
 #endif // ROPUFU_AFTERMATH_TRY_JSON_HPP_INCLUDED
