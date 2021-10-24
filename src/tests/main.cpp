@@ -38,6 +38,7 @@
 #include "ropufu/simple_vector.hpp"
 #include "ropufu/sliding_array.hpp"
 
+#include "sequential/iid_persistent_process.hpp"
 #include "sequential/iid_process.hpp"
 #include "sequential/iid_transient_process.hpp"
 
