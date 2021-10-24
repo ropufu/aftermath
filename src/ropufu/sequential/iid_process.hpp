@@ -7,9 +7,11 @@
 #include "../noexcept_json.hpp"
 #endif
 
-#include "scalar_process.hpp"
+#include "../simple_vector.hpp"
+#include "discrete_process.hpp"
 
 #include <chrono>      // std::chrono::system_clock
+#include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <random>      // std::seed_seq
@@ -22,13 +24,21 @@
 #ifdef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #undef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #endif
-#define ROPUFU_TMP_TYPENAME iid_process<t_engine_type, t_sampler_type>
-#define ROPUFU_TMP_TEMPLATE_SIGNATURE template <typename t_engine_type, typename t_sampler_type> \
-                                      requires std::totally_ordered<typename t_sampler_type::value_type>
+#define ROPUFU_TMP_TYPENAME iid_process<t_sampler_type, t_container_type>
+#define ROPUFU_TMP_TEMPLATE_SIGNATURE \
+    template <typename t_sampler_type, std::ranges::random_access_range t_container_type> \
+        requires \
+            std::totally_ordered<typename t_sampler_type::value_type> && \
+            std::same_as<std::ranges::range_value_t<t_container_type>, typename t_sampler_type::value_type>
 
 namespace ropufu::aftermath::sequential
 {
-    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    /** Independent identically distributed (iid) sequence of observations. */
+    template <typename t_sampler_type,
+        std::ranges::random_access_range t_container_type = aftermath::simple_vector<typename t_sampler_type::value_type>>
+        requires
+            std::totally_ordered<typename t_sampler_type::value_type> &&
+            std::same_as<std::ranges::range_value_t<t_container_type>, typename t_sampler_type::value_type>
     struct iid_process;
 
 #ifndef ROPUFU_NO_JSON
@@ -40,13 +50,14 @@ namespace ropufu::aftermath::sequential
 #endif
 
     ROPUFU_TMP_TEMPLATE_SIGNATURE
-    struct iid_process : public scalar_process<typename t_sampler_type::value_type>
+    struct iid_process : public discrete_process<typename t_sampler_type::value_type, t_container_type>
     {
         using type = ROPUFU_TMP_TYPENAME;
-        using base_type = scalar_process<typename t_sampler_type::value_type>;
-        using engine_type = t_engine_type;
+        using base_type = discrete_process<typename t_sampler_type::value_type, t_container_type>;
         using sampler_type = t_sampler_type;
+        using container_type = t_container_type;
 
+        using engine_type = typename sampler_type::engine_type;
 	    using distribution_type = typename sampler_type::distribution_type;
         using value_type = typename sampler_type::value_type;
 
@@ -85,9 +96,7 @@ namespace ropufu::aftermath::sequential
             return this->m_sampler(this->m_engine);
         } // on_next(...)
 
-        template <std::ranges::random_access_range t_container_type>
-            requires std::same_as<std::ranges::range_value_t<t_container_type>, value_type>
-        virtual void on_next(t_container_type& values) noexcept override
+        void on_next(container_type& values) noexcept override
         {
             for (value_type& x : values) x = this->m_sampler(this->m_engine);
         } // on_next(...)
@@ -102,6 +111,19 @@ namespace ropufu::aftermath::sequential
             : m_engine(type::make_engine()), m_sampler(dist), m_distribution(dist)
         {
         } // iid_process(...)
+
+        /** Check for parameter equality. */
+        bool operator ==(const type& other) const noexcept
+        {
+            return
+                this->m_distribution == other.m_distribution;
+        } // operator ==(...)
+
+        /** Check for parameter inequality. */
+        bool operator !=(const type& other) const noexcept
+        {
+            return !this->operator ==(other);
+        } // operator !=(...)
 
 #ifndef ROPUFU_NO_JSON
         friend void to_json(nlohmann::json& j, const type& x) noexcept

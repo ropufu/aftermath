@@ -1,5 +1,6 @@
 
 #define DOCTEST_CONFIG_IMPLEMENT
+#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
 // #define ROPUFU_NO_JSON
 #include <doctest/doctest.h>
 #include "benchmark_reporter.hpp"
@@ -36,6 +37,9 @@
 #include "ropufu/partitioned_vector.hpp"
 #include "ropufu/simple_vector.hpp"
 #include "ropufu/sliding_array.hpp"
+
+#include "sequential/iid_process.hpp"
+#include "sequential/iid_transient_process.hpp"
 
 //#include "json_schema_to_hpp/generated_code.hpp"
 

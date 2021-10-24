@@ -7,9 +7,11 @@
 #include "../noexcept_json.hpp"
 #endif
 
-#include "scalar_process.hpp"
+#include "../simple_vector.hpp"
+#include "discrete_process.hpp"
 
 #include <chrono>      // std::chrono::system_clock
+#include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <random>      // std::seed_seq
@@ -23,15 +25,23 @@
 #ifdef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #undef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #endif
-#define ROPUFU_TMP_TYPENAME iid_transient_process<t_engine_type, t_no_change_sampler_type, t_under_change_sampler_type>
-#define ROPUFU_TMP_TEMPLATE_SIGNATURE template <typename t_engine_type, typename t_no_change_sampler_type, typename t_under_change_sampler_type> \
-                                      requires \
-                                          std::totally_ordered<typename t_no_change_sampler_type::value_type> && \
-                                          std::same_as<typename t_no_change_sampler_type::value_type, typename t_under_change_sampler_type::value_type>
+#define ROPUFU_TMP_TYPENAME iid_transient_process<t_no_change_sampler_type, t_under_change_sampler_type, t_container_type>
+#define ROPUFU_TMP_TEMPLATE_SIGNATURE \
+    template <typename t_no_change_sampler_type, typename t_under_change_sampler_type, std::ranges::random_access_range t_container_type> \
+    requires \
+        std::totally_ordered<typename t_no_change_sampler_type::value_type> && \
+        std::same_as<typename t_no_change_sampler_type::value_type, typename t_under_change_sampler_type::value_type> && \
+        std::same_as<typename t_no_change_sampler_type::value_type, std::ranges::range_value_t<t_container_type>>
 
 namespace ropufu::aftermath::sequential
 {
-    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    /** Sequence of independent observations with two modes: no-change iid, under-change iid. */
+    template <typename t_no_change_sampler_type, typename t_under_change_sampler_type,
+        std::ranges::random_access_range t_container_type = aftermath::simple_vector<typename t_no_change_sampler_type::value_type>>
+    requires
+        std::totally_ordered<typename t_no_change_sampler_type::value_type> &&
+        std::same_as<typename t_no_change_sampler_type::value_type, typename t_under_change_sampler_type::value_type> &&
+        std::same_as<typename t_no_change_sampler_type::value_type, std::ranges::range_value_t<t_container_type>>
     struct iid_transient_process;
 
 #ifndef ROPUFU_NO_JSON
@@ -43,14 +53,16 @@ namespace ropufu::aftermath::sequential
 #endif
 
     ROPUFU_TMP_TEMPLATE_SIGNATURE
-    struct iid_transient_process : public scalar_process<typename t_no_change_sampler_type::value_type>
+    struct iid_transient_process : public discrete_process<typename t_no_change_sampler_type::value_type, t_container_type>
     {
-        using type = ROPUFU_TMP_TYPENAME
-        using base_type = scalar_process<typename t_no_change_sampler_type::value_type>;
-        using engine_type = t_engine_type;
+        using type = ROPUFU_TMP_TYPENAME;
+        using base_type = discrete_process<typename t_no_change_sampler_type::value_type, t_container_type>;
         using no_change_sampler_type = t_no_change_sampler_type;
         using under_change_sampler_type = t_under_change_sampler_type;
+        using container_type = t_container_type;
 
+        using no_change_engine_type = typename no_change_sampler_type::engine_type;
+        using under_change_engine_type = typename under_change_sampler_type::engine_type;
 	    using no_change_distribution_type = typename no_change_sampler_type::distribution_type;
 	    using under_change_distribution_type = typename under_change_sampler_type::distribution_type;
         using value_type = typename no_change_sampler_type::value_type;
@@ -61,7 +73,7 @@ namespace ropufu::aftermath::sequential
         // ~~ Json names ~~
         static constexpr std::string_view jstr_type = "type";
         static constexpr std::string_view jstr_no_change_distribution = "no-change distribution";
-        static constexpr std::string_view jstr_under_distribution = "under-change distribution";
+        static constexpr std::string_view jstr_under_change_distribution = "under-change distribution";
         static constexpr std::string_view jstr_first_under_change_index = "first under-change index";
         static constexpr std::string_view jstr_last_under_change_index = "last under-change index";
         static constexpr std::string_view jstr_change_duration = "change duration";
@@ -72,7 +84,8 @@ namespace ropufu::aftermath::sequential
         friend std::hash<type>;
 
     private:
-        engine_type m_engine;
+        no_change_engine_type m_no_change_engine;
+        under_change_engine_type m_under_change_engine;
         no_change_sampler_type m_no_change_sampler;
         under_change_sampler_type m_under_change_sampler;
         std::size_t m_first_under_change_index;
@@ -82,9 +95,10 @@ namespace ropufu::aftermath::sequential
         /** @todo Replace with parameter struct. */
         under_change_distribution_type m_under_change_distribution;
 
-        static engine_type make_engine() noexcept
+        template <typename t_engine_type>
+        static t_engine_type make_engine() noexcept
         {
-            engine_type result{};
+            t_engine_type result{};
             int time_seed = static_cast<int>(std::chrono::system_clock::now().time_since_epoch().count());
             std::seed_seq sequence{ 0, 1, 3, 6, 10, 15, 1729, time_seed };
             result.seed(sequence);
@@ -98,23 +112,21 @@ namespace ropufu::aftermath::sequential
         {
             std::size_t count = this->count();
             return (count >= this->m_first_under_change_index && count <= this->m_last_under_change_index) ?
-                this->m_under_change_sampler(this->m_engine) : this->m_no_change_sampler(this->m_engine);
+                this->m_under_change_sampler(this->m_under_change_engine) : this->m_no_change_sampler(this->m_no_change_engine);
         } // on_next(...)
 
-        template <std::ranges::random_access_range t_container_type>
-            requires std::same_as<std::ranges::range_value_t<t_container_type>, value_type>
-        virtual void on_next(t_container_type& values) noexcept override
+        void on_next(container_type& values) noexcept override
         {
             std::size_t count = this->count();
             std::size_t length = std::ranges::size(values);
             // @todo Consider hashing the change passed/in progress flags.
             if (count > this->m_last_under_change_index) // Change has passed.
             {
-                for (value_type& x : values) x = this->m_no_change_sampler(this->m_engine);
+                for (value_type& x : values) x = this->m_no_change_sampler(this->m_no_change_engine);
             } // if (...)
             else if (count + length <= this->m_first_under_change_index) // Change is in the distant future.
             {
-                for (value_type& x : values) x = this->m_under_change_sampler(this->m_engine);
+                for (value_type& x : values) x = this->m_under_change_sampler(this->m_under_change_engine);
             } // if (...)
             else
             {
@@ -123,9 +135,9 @@ namespace ropufu::aftermath::sequential
                 std::size_t post_size = (count + length > this->m_last_under_change_index + 1) ? count + length - this->m_last_under_change_index - 1 : 0;
                 std::size_t under_size = length - pre_size - post_size;
                 std::size_t pre_under_size = pre_size + under_size;
-                for (std::size_t i = 0; i < pre_size; ++i) values[i] = this->m_no_change_sampler(this->m_engine);
-                for (std::size_t i = pre_size; i < pre_under_size; ++i) values[i] = this->m_under_change_sampler(this->m_engine);
-                for (std::size_t i = pre_under_size; i < length; ++i) values[i] = this->m_no_change_sampler(this->m_engine);
+                for (std::size_t i = 0; i < pre_size; ++i) values[i] = this->m_no_change_sampler(this->m_no_change_engine);
+                for (std::size_t i = pre_size; i < pre_under_size; ++i) values[i] = this->m_under_change_sampler(this->m_under_change_engine);
+                for (std::size_t i = pre_under_size; i < length; ++i) values[i] = this->m_no_change_sampler(this->m_no_change_engine);
             } // else
         } // on_next(...)
 
@@ -137,11 +149,33 @@ namespace ropufu::aftermath::sequential
 
         iid_transient_process(const no_change_distribution_type& no_change_dist, const under_change_distribution_type& under_change_dist,
             std::size_t first_under_change_index, std::size_t change_duration)
-            : m_engine(type::make_engine()), m_no_change_sampler(no_change_dist), m_under_change_sampler(under_change_dist),
-            m_first_under_change_index(first_under_change_index), m_last_under_change_index(first_under_change_index + change_duration - 1)
+            : m_no_change_engine(type::make_engine<no_change_engine_type>()), m_under_change_engine(type::make_engine<under_change_engine_type>()),
+            m_no_change_sampler(no_change_dist), m_under_change_sampler(under_change_dist),
+            m_first_under_change_index(first_under_change_index), m_last_under_change_index(first_under_change_index + change_duration - 1),
+            m_no_change_distribution(no_change_dist), m_under_change_distribution(under_change_dist)
         {
             if (change_duration == 0) throw std::logic_error("Change duration cannot be zero.");
         } // iid_transient_process(...)
+
+        std::size_t first_under_change_index() const noexcept { return this->m_first_under_change_index; }
+        std::size_t last_under_change_index() const noexcept { return this->m_last_under_change_index; }
+        std::size_t change_duration() const noexcept { return this->m_last_under_change_index - this->m_first_under_change_index + 1; }
+
+        /** Check for parameter equality. */
+        bool operator ==(const type& other) const noexcept
+        {
+            return
+                this->m_no_change_distribution == other.m_no_change_distribution &&
+                this->m_under_change_distribution == other.m_under_change_distribution &&
+                this->m_first_under_change_index == other.m_first_under_change_index &&
+                this->m_last_under_change_index == other.m_last_under_change_index;
+        } // operator ==(...)
+
+        /** Check for parameter inequality. */
+        bool operator !=(const type& other) const noexcept
+        {
+            return !this->operator ==(other);
+        } // operator !=(...)
 
 #ifndef ROPUFU_NO_JSON
         friend void to_json(nlohmann::json& j, const type& x) noexcept
@@ -176,12 +210,12 @@ namespace ropufu
             std::string name;
 
             if (!noexcept_json::required(j, result_type::jstr_type, name)) return false;
-            if (!noexcept_json::required(j, result_type::m_no_change_distribution, x.jstr_no_change_distribution)) return false;
+            if (!noexcept_json::required(j, result_type::jstr_no_change_distribution, x.m_no_change_distribution)) return false;
             if (!noexcept_json::required(j, result_type::jstr_under_change_distribution, x.m_under_change_distribution)) return false;
             if (!noexcept_json::required(j, result_type::jstr_first_under_change_index, x.m_first_under_change_index)) return false;
 
-            bool has_duration = j.contains(type::jstr_change_duration);
-            bool has_last_index = j.contains(type::jstr_last_under_change_index);
+            bool has_duration = j.contains(result_type::jstr_change_duration);
+            bool has_last_index = j.contains(result_type::jstr_last_under_change_index);
             
             if (has_duration && has_last_index) return false;
             if (!has_duration && !has_last_index) return false;
