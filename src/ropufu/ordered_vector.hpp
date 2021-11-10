@@ -22,6 +22,11 @@
 
 namespace ropufu
 {
+    /** @brief A vector that supports ordering, and may accomodate range/spacing representation.
+     *  @example [1, 2, 3.4, 3, 0] is an \c ordered_vector<double>.
+     *  @example {"range": [1, 5], "spacing": "linear", "count": 3} is a representation of [1, 3, 5].
+     *  @note The collection is not(!) sorted automatically.
+     */
     template <std::totally_ordered t_value_type, typename t_allocator_type = std::allocator<t_value_type>>
     struct ordered_vector;
 

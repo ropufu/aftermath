@@ -33,6 +33,20 @@ namespace ropufu::aftermath::format
         detail::dog(stream, std::forward<t_arg_types>(args)...);
         return stream.str();
     } // cat(...)
+
+    /** A version of snake-case where all non-digit or non-latin letters are replaced with underscores. */
+    static std::string snake(const std::string& value) noexcept
+    {
+        std::string result = value;
+        for (char& c : result)
+        {
+            if (c >= '0' && c <= '9') continue; // Digit.
+            if (c >= 'a' && c <= 'z') continue; // Lowercase latin.
+            if (c >= 'A' && c <= 'Z') continue; // Uppercase latin.
+            c = '_';
+        } // for (...)
+        return result;
+    } // mat_name(...)
 } // namespace ropufu::aftermath::format
 
 #endif // ROPUFU_AFTERMATH_FORMAT_CAT_HPP_INCLUDED
