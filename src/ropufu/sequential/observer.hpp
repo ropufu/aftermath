@@ -25,7 +25,7 @@ namespace ropufu::aftermath::sequential
         /** Observe a block of values. */
         virtual void observe(const container_type& /*values*/) noexcept = 0;
 
-        virtual ~observer() noexcept { }
+        virtual ~observer() noexcept = default;
     }; // struct observer
 } // namespace ropufu::aftermath::sequential
 

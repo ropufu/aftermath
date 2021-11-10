@@ -3,7 +3,7 @@
         {
             "name": "Mac",
             "includePath": [
-                "/usr/local/Cellar/gcc/11.2.0/include/**",
+                "/usr/local/Cellar/gcc/11.2.0_1/include/**",
                 "${workspaceRoot}",
                 "${workspaceRoot}/../../include"
             ],
@@ -12,7 +12,7 @@
             "cppStandard": "c++20",
             "browse": {
                 "path": [
-                    "/usr/local/Cellar/gcc/11.2.0/include/**",
+                    "/usr/local/Cellar/gcc/11.2.0_1/include/**",
                     "${workspaceRoot}",
                     "${workspaceRoot}/../../include"
                 ],
