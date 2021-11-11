@@ -53,11 +53,15 @@ namespace ropufu::aftermath::sequential
 
         using thresholds_type = typename base_type::thresholds_type;
 
-        static constexpr std::string_view name = "CUSUM";
+        /** Names the stopping time type. */
+        constexpr std::string_view name() const noexcept override
+        {
+            return "CUSUM";
+        } // name(...)
+
         static constexpr std::size_t parameter_dim = 1;
 
         // ~~ Json names ~~
-        static constexpr std::string_view jstr_typename = "type";
         static constexpr std::string_view jstr_window_size = "window";
 
 #ifndef ROPUFU_NO_JSON
@@ -84,17 +88,9 @@ namespace ropufu::aftermath::sequential
         {
         } // cusum(...)
 
-        std::string name() const noexcept override
-        {
-            return std::string{type::typename_string};
-        } // name(...)
-
 #ifndef ROPUFU_NO_JSON
         friend void to_json(nlohmann::json& j, const type& x) noexcept
         {
-            j = nlohmann::json{
-                {type::jstr_typename, type::typename_string}
-            };
             x.serialize_core(j);
         } // to_json(...)
 
@@ -160,13 +156,10 @@ namespace ropufu
         using result_type = ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME;
         static bool try_get(const nlohmann::json& j, result_type& x) noexcept
         {
-            std::string typename_string;
             std::size_t window_size = 0;
 
-            if (!noexcept_json::required(j, result_type::jstr_typename, typename_string)) return false;
             if (!noexcept_json::optional(j, result_type::jstr_window_size, window_size)) return false;
 
-            if (typename_string != result_type::name) return false;
             if (window_size != 0) return false;
             
             if (!x.try_deserialize_core(j)) return false;

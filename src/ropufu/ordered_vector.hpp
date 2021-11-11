@@ -54,7 +54,9 @@ namespace ropufu
         static constexpr std::string_view jstr_spacing = "spacing";
         static constexpr std::string_view jstr_count = "count";
 
+#ifndef ROPUFU_NO_JSON
         friend ropufu::noexcept_json_serializer<type>;
+#endif
 
     private:
         interval_type m_range = {};

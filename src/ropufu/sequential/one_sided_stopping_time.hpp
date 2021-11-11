@@ -38,7 +38,11 @@ namespace ropufu::aftermath::sequential
         using thresholds_type = ropufu::ordered_vector<value_type>;
         using process_type = discrete_process<value_type, container_type>;
 
+        /** Names the stopping time type. */
+        constexpr virtual std::string_view name() const noexcept = 0;
+
         // ~~ Json names ~~
+        static constexpr std::string_view jstr_type = "type";
         static constexpr std::string_view jstr_thresholds = "thresholds";
 
     private:
@@ -154,8 +158,6 @@ namespace ropufu::aftermath::sequential
             this->m_count_observations += n;
         } // observe(...)
 
-        virtual std::string name() const noexcept = 0;
-
     protected:
         /** Processes the newest observation and returns the new value of detection statistic.
          *  @remark Observation counter has not been incremented yet.
@@ -176,8 +178,13 @@ namespace ropufu::aftermath::sequential
 
         bool try_deserialize_core(const nlohmann::json& j) noexcept
         {
-            thresholds_type thresholds {};
-            if (!ropufu::noexcept_json::required(j, type::jstr_thresholds, thresholds)) return false;
+            std::string_view stopping_time_name;
+            thresholds_type thresholds;
+
+            if (!noexcept_json::required(j, type::jstr_type, stopping_time_name)) return false;
+            if (!noexcept_json::required(j, type::jstr_thresholds, thresholds)) return false;
+            
+            if (stopping_time_name != this->name()) return false;
             this->initialize(std::move(thresholds));
 
             return true;
@@ -185,6 +192,7 @@ namespace ropufu::aftermath::sequential
 
         void serialize_core(nlohmann::json& j) const noexcept
         {
+            j[std::string{type::jstr_type}] = this->name();
             j[std::string{type::jstr_thresholds}] = this->m_thresholds;
         } // serialize_core(...)
 #endif
