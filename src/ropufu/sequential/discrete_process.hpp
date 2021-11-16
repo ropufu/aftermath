@@ -42,7 +42,7 @@ namespace ropufu::aftermath::sequential
         bool try_register_observer(observer_type* observer_ptr) noexcept
         {
             if (observer_ptr == nullptr) return false; // This observer is not an observer.
-            for (observer_type* x : this->this->m_observer_pointers)
+            for (observer_type* x : this->m_observer_pointers)
                 if (x == observer_ptr)
                     return false; // This observer has already been registered.
             this->m_observer_pointers.push_back(observer_ptr);

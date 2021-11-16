@@ -19,6 +19,7 @@
 #include <optional>    // std::optional, std::nullopt
 #include <random>      // std::uniform_int_distribution
 #include <stdexcept>   // std::logic_error, std::runtime_error
+#include <string>      // std::string
 #include <string_view> // std::string_view
 #include <type_traits> // std::is_floating_point_v
 #include <utility>     // std::declval

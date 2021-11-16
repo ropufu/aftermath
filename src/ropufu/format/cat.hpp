@@ -35,6 +35,7 @@ namespace ropufu::aftermath::format
     } // cat(...)
 
     /** A version of snake-case where all non-digit or non-latin letters are replaced with underscores. */
+    [[maybe_unused]]
     static std::string snake(const std::string& value) noexcept
     {
         std::string result = value;

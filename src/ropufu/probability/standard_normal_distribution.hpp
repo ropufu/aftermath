@@ -19,6 +19,7 @@
 #include <optional>    // std::optional, std::nullopt
 #include <numbers>     // std::numbers::sqrt2_v
 #include <random>      // std::normal_distribution
+#include <string>      // std::string
 #include <stdexcept>   // std::logic_error
 #include <string_view> // std::string_view
 #include <utility>     // std::declval

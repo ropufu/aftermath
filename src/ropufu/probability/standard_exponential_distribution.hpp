@@ -18,6 +18,7 @@
 #include <optional>    // std::optional, std::nullopt
 #include <random>      // std::exponential_distribution
 #include <stdexcept>   // std::logic_error
+#include <string>      // std::string
 #include <string_view> // std::string_view
 #include <utility>     // std::declval
 

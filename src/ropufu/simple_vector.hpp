@@ -326,6 +326,26 @@ namespace ropufu::aftermath
             } // for (...)
             return result;
         } // get_hash(...)
+
+        bool operator ==(const type& other) const noexcept
+        {
+            if (this->m_size != other.m_size) return false;
+
+            const value_type* left_end_ptr = this->m_begin_ptr + this->m_size;
+            const value_type* right_ptr = other.m_begin_ptr;
+            for (value_type* left_ptr = this->m_begin_ptr; left_ptr != left_end_ptr; ++left_ptr)
+            {
+                if ((*left_ptr) != (*right_ptr)) return false;
+                ++right_ptr;
+            } // for (...)
+
+            return true;
+        } // operator ==(...)
+
+        bool operator !=(const type& other) const noexcept
+        {
+            return !this->operator ==(other);
+        } // operator !=(...)
     }; // struct simple_vector
 } // namespace ropufu::aftermath
 

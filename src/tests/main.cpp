@@ -38,9 +38,12 @@
 #include "ropufu/simple_vector.hpp"
 #include "ropufu/sliding_array.hpp"
 
+#include "sequential/cusum.hpp"
+#include "sequential/finite_moving_average.hpp"
 #include "sequential/iid_persistent_process.hpp"
 #include "sequential/iid_process.hpp"
 #include "sequential/iid_transient_process.hpp"
+#include "sequential/window_limited_cusum.hpp"
 
 //#include "json_schema_to_hpp/generated_code.hpp"
 

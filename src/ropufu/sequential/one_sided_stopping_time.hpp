@@ -172,13 +172,20 @@ namespace ropufu::aftermath::sequential
         /** Re-initialize the chart to its original state. */
         virtual void on_reset() noexcept = 0;
 
+        bool equals(const type& other) const noexcept
+        {
+            return
+                this->m_count_observations == other.m_count_observations &&
+                this->m_thresholds == other.m_thresholds;
+        } // equals(...)
+
 #ifndef ROPUFU_NO_JSON
         /** Serializes the class to a JSON object. */
         virtual nlohmann::json serialize() const noexcept = 0;
 
         bool try_deserialize_core(const nlohmann::json& j) noexcept
         {
-            std::string_view stopping_time_name;
+            std::string stopping_time_name;
             thresholds_type thresholds;
 
             if (!noexcept_json::required(j, type::jstr_type, stopping_time_name)) return false;
