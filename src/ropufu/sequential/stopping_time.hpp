@@ -1,6 +1,6 @@
 
-#ifndef ROPUFU_AFTERMATH_SEQUENTIAL_ONE_SIDED_STOPPING_TIME_HPP_INCLUDED
-#define ROPUFU_AFTERMATH_SEQUENTIAL_ONE_SIDED_STOPPING_TIME_HPP_INCLUDED
+#ifndef ROPUFU_AFTERMATH_SEQUENTIAL_STOPPING_TIME_HPP_INCLUDED
+#define ROPUFU_AFTERMATH_SEQUENTIAL_STOPPING_TIME_HPP_INCLUDED
 
 #ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
@@ -14,29 +14,57 @@
 
 #include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
-#include <optional>    // std::optional
 #include <ranges>      // std::ranges::...
-#include <stdexcept>   // std::logic_error
 #include <string>      // std::string
 #include <string_view> // std::string_view
 #include <utility>     // std::forward, std::move
 #include <vector>      // std::vector
 
+#ifdef ROPUFU_TMP_TEMPLATE_SIGNATURE
+#undef ROPUFU_TMP_TEMPLATE_SIGNATURE
+#endif
+#define ROPUFU_TMP_TEMPLATE_SIGNATURE \
+    template <std::totally_ordered t_value_type, std::ranges::random_access_range t_container_type> \
+        requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>           \
+
+
 namespace ropufu::aftermath::sequential
 {
+    /** Describes how the stopping time is determined by the detection statistic. */
+    enum struct stopping_time_mode : char
+    {
+        /** inf{n : R_n > b}. */
+        one_sided,
+        /** inf{n : R_n < a or R_n > b}. */
+        two_sided
+    }; // enum struct stopping_time_mode
+
+    /** Base class for stopping times with real-valued detection statistic. */
+    template <stopping_time_mode t_mode, std::totally_ordered t_value_type, std::ranges::random_access_range t_container_type>
+        requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
+    struct stopping_time;
+
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    using one_sided_stopping_time = stopping_time<stopping_time_mode::one_sided, t_value_type, t_container_type>;
+
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    using two_sided_stopping_time = stopping_time<stopping_time_mode::two_sided, t_value_type, t_container_type>;
+    
     /** Base class for one-sided stopping times of the form inf{n : R_n > b},
      *  where R_n is the detection statistic and b is a threshold.
      */
-    template <std::totally_ordered t_value_type, std::ranges::random_access_range t_container_type>
-        requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
-    struct one_sided_stopping_time : public observer<t_value_type, t_container_type>
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    struct stopping_time<stopping_time_mode::one_sided, t_value_type, t_container_type>
+        : public observer<t_value_type, t_container_type>
     {
-        using type = one_sided_stopping_time<t_value_type, t_container_type>;
+        using type = stopping_time<stopping_time_mode::one_sided, t_value_type, t_container_type>;
         using value_type = t_value_type;
         using container_type = t_container_type;
 
         using thresholds_type = ropufu::ordered_vector<value_type>;
         using process_type = discrete_process<value_type, container_type>;
+
+        static constexpr stopping_time_mode mode = stopping_time_mode::one_sided;
 
         /** Names the stopping time type. */
         constexpr virtual std::string_view name() const noexcept = 0;
@@ -82,23 +110,23 @@ namespace ropufu::aftermath::sequential
         } // check_for_stopping(...)
 
     public:
-        virtual ~one_sided_stopping_time() noexcept = default;
+        virtual ~stopping_time() noexcept = default;
 
         /** Initializeds the stopping time for a given collection of thresholds.
          *  @remark If the collection is empty, the rule will not run.
          */
-        explicit one_sided_stopping_time(const thresholds_type& thresholds)
+        explicit stopping_time(const thresholds_type& thresholds)
         {
             this->initialize(thresholds);
-        } // one_sided_stopping_time(...)
+        } // stopping_time(...)
         
         /** Initializeds the stopping time for a given collection of thresholds.
          *  @remark If the collection is empty, the rule will not run.
          */
-        explicit one_sided_stopping_time(thresholds_type&& thresholds)
+        explicit stopping_time(thresholds_type&& thresholds)
         {
             this->initialize(std::forward<thresholds_type>(thresholds));
-        } // one_sided_stopping_time(...)
+        } // stopping_time(...)
 
         std::size_t count_observations() const noexcept { return this->m_count_observations; }
 
@@ -203,7 +231,7 @@ namespace ropufu::aftermath::sequential
             j[std::string{type::jstr_thresholds}] = this->m_thresholds;
         } // serialize_core(...)
 #endif
-    }; // struct one_sided_stopping_time
+    }; // struct stopping_time<...>
 } // namespace ropufu::aftermath::sequential
 
-#endif // ROPUFU_AFTERMATH_SEQUENTIAL_ONE_SIDED_STOPPING_TIME_HPP_INCLUDED
+#endif // ROPUFU_AFTERMATH_SEQUENTIAL_STOPPING_TIME_HPP_INCLUDED

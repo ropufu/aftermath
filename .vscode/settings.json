@@ -110,6 +110,7 @@
         "__tuple": "cpp",
         "complex": "cpp",
         "queue": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "__bits": "cpp"
     }
 }

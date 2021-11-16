@@ -8,7 +8,7 @@
 #endif
 
 #include "../simple_vector.hpp"
-#include "one_sided_stopping_time.hpp"
+#include "stopping_time.hpp"
 
 #include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
