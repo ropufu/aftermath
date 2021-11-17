@@ -9,7 +9,6 @@
 #include "../format/cat.hpp"
 #include "../ordered_vector.hpp"
 #include "../vector_extender.hpp"
-#include "discrete_process.hpp"
 #include "observer.hpp"
 
 #include <concepts>    // std::same_as, std::totally_ordered
@@ -62,7 +61,6 @@ namespace ropufu::aftermath::sequential
         using container_type = t_container_type;
 
         using thresholds_type = ropufu::ordered_vector<value_type>;
-        using process_type = discrete_process<value_type, container_type>;
 
         static constexpr stopping_time_mode mode = stopping_time_mode::one_sided;
 
