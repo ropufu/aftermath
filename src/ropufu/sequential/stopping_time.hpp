@@ -29,40 +29,23 @@
 
 namespace ropufu::aftermath::sequential
 {
-    /** Describes how the stopping time is determined by the detection statistic. */
-    enum struct stopping_time_mode : char
-    {
-        /** inf{n : R_n > b}. */
-        one_sided,
-        /** inf{n : R_n < a or R_n > b}. */
-        two_sided
-    }; // enum struct stopping_time_mode
-
     /** Base class for stopping times with real-valued detection statistic. */
-    template <stopping_time_mode t_mode, std::totally_ordered t_value_type, std::ranges::random_access_range t_container_type>
+    template <std::totally_ordered t_value_type, std::ranges::random_access_range t_container_type>
         requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
     struct stopping_time;
-
-    ROPUFU_TMP_TEMPLATE_SIGNATURE
-    using one_sided_stopping_time = stopping_time<stopping_time_mode::one_sided, t_value_type, t_container_type>;
-
-    ROPUFU_TMP_TEMPLATE_SIGNATURE
-    using two_sided_stopping_time = stopping_time<stopping_time_mode::two_sided, t_value_type, t_container_type>;
     
     /** Base class for one-sided stopping times of the form inf{n : R_n > b},
      *  where R_n is the detection statistic and b is a threshold.
      */
     ROPUFU_TMP_TEMPLATE_SIGNATURE
-    struct stopping_time<stopping_time_mode::one_sided, t_value_type, t_container_type>
+    struct stopping_time
         : public observer<t_value_type, t_container_type>
     {
-        using type = stopping_time<stopping_time_mode::one_sided, t_value_type, t_container_type>;
+        using type = stopping_time<t_value_type, t_container_type>;
         using value_type = t_value_type;
         using container_type = t_container_type;
 
         using thresholds_type = ropufu::ordered_vector<value_type>;
-
-        static constexpr stopping_time_mode mode = stopping_time_mode::one_sided;
 
         /** Names the stopping time type. */
         constexpr virtual std::string_view name() const noexcept = 0;
@@ -229,7 +212,7 @@ namespace ropufu::aftermath::sequential
             j[std::string{type::jstr_thresholds}] = this->m_thresholds;
         } // serialize_core(...)
 #endif
-    }; // struct stopping_time<...>
+    }; // struct stopping_time
 } // namespace ropufu::aftermath::sequential
 
 #endif // ROPUFU_AFTERMATH_SEQUENTIAL_STOPPING_TIME_HPP_INCLUDED

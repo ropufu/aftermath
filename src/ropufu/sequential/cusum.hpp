@@ -46,10 +46,10 @@ namespace ropufu::aftermath::sequential
 
     /** Classical CUSUM chart. */
     ROPUFU_TMP_TEMPLATE_SIGNATURE
-    struct cusum : public one_sided_stopping_time<t_value_type, t_container_type>
+    struct cusum : public stopping_time<t_value_type, t_container_type>
     {
         using type = ROPUFU_TMP_TYPENAME;
-        using base_type = one_sided_stopping_time<t_value_type, t_container_type>;
+        using base_type = stopping_time<t_value_type, t_container_type>;
         using value_type = t_value_type;
         using container_type = t_container_type;
 

@@ -54,17 +54,16 @@ namespace ropufu::aftermath::sequential
      *  When time n is less than L, only takes the first n observations.
      */
     ROPUFU_TMP_TEMPLATE_SIGNATURE
-    struct finite_moving_average : public window_limited_stopping_time<stopping_time_mode::one_sided, t_value_type, t_container_type, t_transform_type>
+    struct finite_moving_average
+        : public window_limited_stopping_time<t_value_type, t_container_type, t_transform_type>
     {
         using type = ROPUFU_TMP_TYPENAME;
-        using base_type = window_limited_stopping_time<stopping_time_mode::one_sided, t_value_type, t_container_type, t_transform_type>;
+        using base_type = window_limited_stopping_time<t_value_type, t_container_type, t_transform_type>;
         using value_type = t_value_type;
         using container_type = t_container_type;
         using transform_type = t_transform_type;
 
         using thresholds_type = typename base_type::thresholds_type;
-
-        static constexpr stopping_time_mode mode = stopping_time_mode::one_sided;
 
         /** Names the stopping time type. */
         constexpr std::string_view name() const noexcept override

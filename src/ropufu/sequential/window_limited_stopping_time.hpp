@@ -18,22 +18,20 @@
 namespace ropufu::aftermath::sequential
 {
     /** Base class for window-limited stopping times. */
-    template <stopping_time_mode t_mode,
-        std::totally_ordered t_value_type,
+    template <std::totally_ordered t_value_type,
         std::ranges::random_access_range t_container_type,
         timed_transform<t_value_type> t_transform_type = identity_transform<t_value_type>>
             requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
-    struct window_limited_stopping_time : public stopping_time<t_mode, t_value_type, t_container_type>
+    struct window_limited_stopping_time
+        : public stopping_time<t_value_type, t_container_type>
     {
-        using type = window_limited_stopping_time<t_mode, t_value_type, t_container_type, t_transform_type>;
-        using base_type = stopping_time<t_mode, t_value_type, t_container_type>;
+        using type = window_limited_stopping_time<t_value_type, t_container_type, t_transform_type>;
+        using base_type = stopping_time<t_value_type, t_container_type>;
         using value_type = t_value_type;
         using container_type = t_container_type;
         using transform_type = t_transform_type;
 
         using thresholds_type = typename base_type::thresholds_type;
-
-        static constexpr stopping_time_mode mode = t_mode;
 
         // ~~ Json names ~~
         static constexpr std::string_view jstr_window_size = "window";
