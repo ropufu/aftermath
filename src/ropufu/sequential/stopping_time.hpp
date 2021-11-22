@@ -4,24 +4,31 @@
 
 #ifndef ROPUFU_NO_JSON
 #include <nlohmann/json.hpp>
+#include "../noexcept_json.hpp"
 #endif
 
 #include "../format/cat.hpp"
 #include "../ordered_vector.hpp"
+#include "../simple_vector.hpp"
 #include "../vector_extender.hpp"
-#include "observer.hpp"
+#include "statistic.hpp"
 
 #include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
+#include <functional>  // std::hash
 #include <ranges>      // std::ranges::...
 #include <string>      // std::string
 #include <string_view> // std::string_view
 #include <utility>     // std::forward, std::move
 #include <vector>      // std::vector
 
+#ifdef ROPUFU_TMP_TYPENAME
+#undef ROPUFU_TMP_TYPENAME
+#endif
 #ifdef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #undef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #endif
+#define ROPUFU_TMP_TYPENAME stopping_time<t_value_type, t_container_type>
 #define ROPUFU_TMP_TEMPLATE_SIGNATURE \
     template <std::totally_ordered t_value_type, std::ranges::random_access_range t_container_type> \
         requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>           \
@@ -29,17 +36,24 @@
 
 namespace ropufu::aftermath::sequential
 {
-    /** Base class for stopping times with real-valued detection statistic. */
-    template <std::totally_ordered t_value_type, std::ranges::random_access_range t_container_type>
-        requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
-    struct stopping_time;
-    
     /** Base class for one-sided stopping times of the form inf{n : R_n > b},
      *  where R_n is the detection statistic and b is a threshold.
      */
+    template <std::totally_ordered t_value_type,
+        std::ranges::random_access_range t_container_type = aftermath::simple_vector<t_value_type>>
+        requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
+    struct stopping_time;
+
+#ifndef ROPUFU_NO_JSON
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    void to_json(nlohmann::json& j, const ROPUFU_TMP_TYPENAME& x) noexcept;
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    void from_json(const nlohmann::json& j, ROPUFU_TMP_TYPENAME& x);
+#endif
+
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct stopping_time
-        : public observer<t_value_type, t_container_type>
+        : public statistic<t_value_type, t_container_type, void, void>
     {
         using type = stopping_time<t_value_type, t_container_type>;
         using value_type = t_value_type;
@@ -47,17 +61,22 @@ namespace ropufu::aftermath::sequential
 
         using thresholds_type = ropufu::ordered_vector<value_type>;
 
-        /** Names the stopping time type. */
-        constexpr virtual std::string_view name() const noexcept = 0;
+        /** Names the stopping time. */
+        static constexpr std::string_view name = "one-sided";
 
         // ~~ Json names ~~
         static constexpr std::string_view jstr_type = "type";
         static constexpr std::string_view jstr_thresholds = "thresholds";
 
+#ifndef ROPUFU_NO_JSON
+        friend ropufu::noexcept_json_serializer<type>;
+#endif
+        friend std::hash<type>;
+        
     private:
         std::size_t m_count_observations = 0;
-        thresholds_type m_thresholds;
-        std::vector<std::size_t> m_when_stopped;
+        thresholds_type m_thresholds = {};
+        std::vector<std::size_t> m_when_stopped = {};
         /** If a threshold has been crossed, all smaller
          *  thresholds must have been crossed too. */
         std::size_t m_first_uncrossed_index = 0;
@@ -81,7 +100,7 @@ namespace ropufu::aftermath::sequential
             while (this->m_first_uncrossed_index < this->m_thresholds.size())
             {
                 // Don't do anything if the smallest threshold has not been crossed.
-                if (statistic < this->m_thresholds[this->m_first_uncrossed_index]) break;
+                if (statistic <= this->m_thresholds[this->m_first_uncrossed_index]) break;
 
                 // Smallest uncrossed threshold has been crossed. Record the stopping time...
                 this->m_when_stopped[this->m_first_uncrossed_index] = time;
@@ -91,7 +110,7 @@ namespace ropufu::aftermath::sequential
         } // check_for_stopping(...)
 
     public:
-        virtual ~stopping_time() noexcept = default;
+        stopping_time() noexcept = default;
 
         /** Initializeds the stopping time for a given collection of thresholds.
          *  @remark If the collection is empty, the rule will not run.
@@ -134,7 +153,6 @@ namespace ropufu::aftermath::sequential
             this->m_count_observations = 0;
             ropufu::fill(this->m_when_stopped, 0);
             this->m_first_uncrossed_index = 0;
-            this->on_reset();
         } // reset(...)
 
         /** Observe a single value. */
@@ -142,8 +160,7 @@ namespace ropufu::aftermath::sequential
         {
             if (this->is_running())
             {
-                value_type statistic = this->update_statistic(value);
-                this->check_for_stopping(statistic, this->m_count_observations + 1);
+                this->check_for_stopping(value, this->m_count_observations + 1);
             } // if (...)
             ++this->m_count_observations;
         } // observe(...)
@@ -153,13 +170,11 @@ namespace ropufu::aftermath::sequential
         {
             std::size_t n = values.size();
             if (this->is_running())
-            {
-                container_type statistics = this->update_statistic(values);
-                
+            {                
                 std::size_t time = this->m_count_observations + 1;
-                for (value_type statistic : statistics)
+                for (value_type x : values)
                 {
-                    this->check_for_stopping(statistic, time);
+                    this->check_for_stopping(x, time);
                     if (this->is_stopped()) break;
                     ++time;
                 } // for (...)
@@ -167,52 +182,76 @@ namespace ropufu::aftermath::sequential
             this->m_count_observations += n;
         } // observe(...)
 
-    protected:
-        /** Processes the newest observation and returns the new value of detection statistic.
-         *  @remark Observation counter has not been incremented yet.
-         */
-        virtual value_type update_statistic(const value_type& value) noexcept = 0;
-
-        /** Processes a block of newest observations and returns the new block of values of detection statistic.
-         *  @remark Observation counter has not been incremented yet.
-         */
-        virtual container_type update_statistic(const container_type& values) noexcept = 0;
-
-        /** Re-initialize the chart to its original state. */
-        virtual void on_reset() noexcept = 0;
-
-        bool equals(const type& other) const noexcept
+        bool operator ==(const type& other) const noexcept
         {
             return
                 this->m_count_observations == other.m_count_observations &&
                 this->m_thresholds == other.m_thresholds;
-        } // equals(...)
+        } // operator ==(...)
+
+        bool operator !=(const type& other) const noexcept
+        {
+            return !this->operator ==(other);
+        } // operator !=(...)
 
 #ifndef ROPUFU_NO_JSON
-        /** Serializes the class to a JSON object. */
-        virtual nlohmann::json serialize() const noexcept = 0;
-
-        bool try_deserialize_core(const nlohmann::json& j) noexcept
+        friend void to_json(nlohmann::json& j, const type& x) noexcept
         {
-            std::string stopping_time_name;
-            thresholds_type thresholds;
+            j = nlohmann::json{
+                {type::jstr_type, type::name},
+                {type::jstr_thresholds, x.m_thresholds}
+            };
+        } // to_json(...)
 
-            if (!noexcept_json::required(j, type::jstr_type, stopping_time_name)) return false;
-            if (!noexcept_json::required(j, type::jstr_thresholds, thresholds)) return false;
-            
-            if (stopping_time_name != this->name()) return false;
-            this->initialize(std::move(thresholds));
-
-            return true;
-        } // try_deserialize_core(...)
-
-        void serialize_core(nlohmann::json& j) const noexcept
+        friend void from_json(const nlohmann::json& j, type& x)
         {
-            j[std::string{type::jstr_type}] = this->name();
-            j[std::string{type::jstr_thresholds}] = this->m_thresholds;
-        } // serialize_core(...)
+            if (!ropufu::noexcept_json::try_get(j, x))
+                throw std::runtime_error("Parsing <stopping_time> failed: " + j.dump());
+        } // from_json(...)
 #endif
     }; // struct stopping_time
 } // namespace ropufu::aftermath::sequential
+
+#ifndef ROPUFU_NO_JSON
+namespace ropufu
+{
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    struct noexcept_json_serializer<ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME>
+    {
+        using result_type = ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME;
+        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        {
+            std::string stopping_time_name;
+            typename result_type::thresholds_type thresholds;
+            if (!noexcept_json::required(j, result_type::jstr_type, stopping_time_name)) return false;
+            if (!noexcept_json::required(j, result_type::jstr_thresholds, thresholds)) return false;
+            
+            if (stopping_time_name != result_type::name) return false;
+            x.initialize(std::move(thresholds));
+
+            return true;
+        } // try_get(...)
+    }; // struct noexcept_json_serializer<...>
+} // namespace ropufu
+#endif
+
+namespace std
+{
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    struct hash<ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME>
+    {
+        using argument_type = ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME;
+
+        std::size_t operator ()(const argument_type& x) const noexcept
+        {
+            std::size_t result = 0;
+            std::hash<typename argument_type::value_type> statistic_hasher = {};
+
+            result ^= statistic_hasher(x.m_latest_statistic);
+
+            return result;
+        } // operator ()(...)
+    }; // struct hash<...>
+} // namespace std
 
 #endif // ROPUFU_AFTERMATH_SEQUENTIAL_STOPPING_TIME_HPP_INCLUDED

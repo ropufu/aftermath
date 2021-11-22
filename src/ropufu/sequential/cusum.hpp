@@ -8,7 +8,7 @@
 #endif
 
 #include "../simple_vector.hpp"
-#include "stopping_time.hpp"
+#include "statistic.hpp"
 
 #include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
@@ -32,6 +32,7 @@
 
 namespace ropufu::aftermath::sequential
 {
+    /** CUSUM statistic keeps trac of the maximum of all partial sums. */
     template <std::totally_ordered t_value_type,
         std::ranges::random_access_range t_container_type = aftermath::simple_vector<t_value_type>>
         requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
@@ -44,26 +45,19 @@ namespace ropufu::aftermath::sequential
     void from_json(const nlohmann::json& j, ROPUFU_TMP_TYPENAME& x);
 #endif
 
-    /** Classical CUSUM chart. */
     ROPUFU_TMP_TEMPLATE_SIGNATURE
-    struct cusum : public stopping_time<t_value_type, t_container_type>
+    struct cusum
+        : public statistic<t_value_type, t_container_type>
     {
         using type = ROPUFU_TMP_TYPENAME;
-        using base_type = stopping_time<t_value_type, t_container_type>;
         using value_type = t_value_type;
         using container_type = t_container_type;
 
-        using thresholds_type = typename base_type::thresholds_type;
-
-        /** Names the stopping time type. */
-        constexpr std::string_view name() const noexcept override
-        {
-            return "CUSUM";
-        } // name(...)
-
-        static constexpr std::size_t parameter_dim = 1;
+        /** Names the statistic. */
+        static constexpr std::string_view name = "CUSUM";
 
         // ~~ Json names ~~
+        static constexpr std::string_view jstr_type = "type";
         static constexpr std::string_view jstr_window_size = "window";
 
 #ifndef ROPUFU_NO_JSON
@@ -73,28 +67,42 @@ namespace ropufu::aftermath::sequential
 
     private:
         // Latest statistic value.
-        value_type m_statistic = 0;
+        value_type m_latest_statistic = 0;
 
     public:
-        cusum() noexcept : cusum(thresholds_type{})
-        {
-        } // cusum(...)
+        cusum() noexcept = default;
 
-        explicit cusum(const thresholds_type& thresholds)
-            : base_type(thresholds)
+        /** The underlying process has been cleared. */
+        void reset() noexcept override
         {
-        } // cusum(...)
+            this->m_latest_statistic = 0;
+        } // reset(...)
 
-        explicit cusum(thresholds_type&& thresholds)
-            : base_type(std::forward<thresholds_type>(thresholds))
+        /** Observe a single value. */
+        value_type observe(value_type value) noexcept override
         {
-        } // cusum(...)
+            if (this->m_latest_statistic < 0) this->m_latest_statistic = 0;
+            this->m_latest_statistic += value;
+            return this->m_latest_statistic;
+        } // observe(...)
+
+        /** Observe a block of values. */
+        container_type observe(const container_type& values) noexcept override
+        {
+            container_type statistics = values;
+            for (std::size_t i = 0; i < values.size(); ++i)
+            {
+                if (this->m_latest_statistic < 0) this->m_latest_statistic = 0;
+                this->m_latest_statistic += values[i];
+                statistics[i] = this->m_latest_statistic;
+            } // for (...)
+            return statistics;
+        } // observe(...)
 
         bool operator ==(const type& other) const noexcept
         {
             return
-                this->equals(other) &&
-                this->m_statistic == other.m_statistic;
+                this->m_latest_statistic == other.m_latest_statistic;
         } // operator ==(...)
 
         bool operator !=(const type& other) const noexcept
@@ -105,7 +113,9 @@ namespace ropufu::aftermath::sequential
 #ifndef ROPUFU_NO_JSON
         friend void to_json(nlohmann::json& j, const type& x) noexcept
         {
-            x.serialize_core(j);
+            j = nlohmann::json{
+                {type::jstr_type, type::name}
+            };
         } // to_json(...)
 
         friend void from_json(const nlohmann::json& j, type& x)
@@ -113,50 +123,6 @@ namespace ropufu::aftermath::sequential
             if (!ropufu::noexcept_json::try_get(j, x))
                 throw std::runtime_error("Parsing <cusum> failed: " + j.dump());
         } // from_json(...)
-#endif
-
-    protected:
-        /** Processes the newest observation and returns the new value of detection statistic.
-         *  @remark Observation counter has not been incremented yet.
-         */
-        value_type update_statistic(const value_type& value) noexcept override
-        {
-            value_type previous = this->m_statistic;
-            if (previous < 0) previous = 0;
-            this->m_statistic = previous + value;
-            return this->m_statistic;
-        } // update_statistic(...)
-
-        /** Processes a block of newest observations and returns the new block of values of detection statistic.
-         *  @remark Observation counter has not been incremented yet.
-         */
-        container_type update_statistic(const container_type& values) noexcept override
-        {
-            container_type result = values;
-            for (std::size_t k = 0; k < values.size(); ++k)
-            {
-                value_type previous = this->m_statistic;
-                if (previous < 0) previous = 0;
-                this->m_statistic = previous + values[k];
-                result[k] = this->m_statistic;
-            } // for (...)
-
-            return result;
-        } // update_statistic(...)
-
-        /** Re-initialize the chart to its original state. */
-        void on_reset() noexcept override
-        {
-            this->m_statistic = 0;
-        } // on_reset(...)
-
-#ifndef ROPUFU_NO_JSON
-        /** Serializes the class to a JSON object. */
-        nlohmann::json serialize() const noexcept override
-        {
-            nlohmann::json j = *this;
-            return j;
-        } // serialize(...)
 #endif
     }; // struct cusum
 } // namespace ropufu::aftermath::sequential
@@ -170,12 +136,13 @@ namespace ropufu
         using result_type = ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME;
         static bool try_get(const nlohmann::json& j, result_type& x) noexcept
         {
-            if (!x.try_deserialize_core(j)) return false;
-
+            std::string statistic_name;
             std::size_t window_size = 0;
+            if (!noexcept_json::required(j, result_type::jstr_type, statistic_name)) return false;
             if (!noexcept_json::optional(j, result_type::jstr_window_size, window_size)) return false;
 
             if (window_size != 0) return false;
+            if (statistic_name != result_type::name) return false;
             
             return true;
         } // try_get(...)
@@ -189,18 +156,13 @@ namespace std
     struct hash<ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME>
     {
         using argument_type = ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME;
-        using result_type = std::size_t;
 
-        result_type operator ()(argument_type const& x) const noexcept
+        std::size_t operator ()(const argument_type& x) const noexcept
         {
-            result_type result = 0;
-            constexpr result_type total_width = sizeof(result_type);
-            constexpr result_type width = total_width / (argument_type::parameter_dim);
-            constexpr result_type shift = (width == 0 ? 1 : width);
-
+            std::size_t result = 0;
             std::hash<typename argument_type::value_type> statistic_hasher = {};
 
-            result ^= (statistic_hasher(x.m_statistic) << ((shift * 0) % total_width));
+            result ^= statistic_hasher(x.m_latest_statistic);
 
             return result;
         } // operator ()(...)

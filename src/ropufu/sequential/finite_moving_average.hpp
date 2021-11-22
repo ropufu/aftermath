@@ -9,7 +9,7 @@
 
 #include "../simple_vector.hpp"
 #include "timed_transform.hpp"
-#include "window_limited_stopping_time.hpp"
+#include "window_limited_statistic.hpp"
 
 #include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
@@ -55,24 +55,19 @@ namespace ropufu::aftermath::sequential
      */
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct finite_moving_average
-        : public window_limited_stopping_time<t_value_type, t_container_type, t_transform_type>
+        : public window_limited_statistic<t_value_type, t_container_type, t_transform_type>
     {
         using type = ROPUFU_TMP_TYPENAME;
-        using base_type = window_limited_stopping_time<t_value_type, t_container_type, t_transform_type>;
+        using base_type = window_limited_statistic<t_value_type, t_container_type, t_transform_type>;
         using value_type = t_value_type;
         using container_type = t_container_type;
         using transform_type = t_transform_type;
 
-        using thresholds_type = typename base_type::thresholds_type;
-
-        /** Names the stopping time type. */
+        /** Names the statistic type. */
         constexpr std::string_view name() const noexcept override
         {
             return "FMA";
         } // name(...)
-
-        // ~~ Json names ~~
-        static constexpr std::string_view jstr_window_size = base_type::jstr_window_size;
 
 #ifndef ROPUFU_NO_JSON
         friend ropufu::noexcept_json_serializer<type>;
@@ -94,9 +89,6 @@ namespace ropufu::aftermath::sequential
 #ifndef ROPUFU_NO_JSON
         friend void to_json(nlohmann::json& j, const type& x) noexcept
         {
-            j = nlohmann::json{
-                {type::jstr_window_size, x.window_size()}
-            };
             x.serialize_core(j);
         } // to_json(...)
 
@@ -121,18 +113,9 @@ namespace ropufu::aftermath::sequential
             return sum;
         } // on_history_updated(...)
 
-        constexpr void on_reset_override() noexcept override
+        constexpr void on_reset() noexcept override
         {
         } // on_reset(...)
-
-#ifndef ROPUFU_NO_JSON
-        /** Serializes the class to a JSON object. */
-        nlohmann::json serialize() const noexcept override
-        {
-            nlohmann::json j = *this;
-            return j;
-        } // serialize(...)
-#endif
     }; // struct finite_moving_average
 } // namespace ropufu::aftermath::sequential
 
