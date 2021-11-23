@@ -8,6 +8,7 @@
 #endif
 
 #include "../format/cat.hpp"
+#include "../number_traits.hpp"
 #include "../ordered_vector.hpp"
 #include "../simple_vector.hpp"
 #include "../vector_extender.hpp"
@@ -77,9 +78,23 @@ namespace ropufu::aftermath::sequential
         std::size_t m_count_observations = 0;
         thresholds_type m_thresholds = {};
         std::vector<std::size_t> m_when_stopped = {};
-        /** If a threshold has been crossed, all smaller
-         *  thresholds must have been crossed too. */
+        /** If a threshold has been crossed, all smaller thresholds must have been crossed too. */
         std::size_t m_first_uncrossed_index = 0;
+
+        /** @brief Validates the structure and returns an error message, if any. */
+        std::optional<std::string> error_message() const noexcept
+        {
+            for (value_type x : this->m_thresholds) if (!aftermath::is_finite(x)) return "Thresholds must be finite.";
+            
+            return std::nullopt;
+        } // error_message(...)
+        
+        /** @exception std::logic_error Validation failed. */
+        void validate() const
+        {
+            std::optional<std::string> message = this->error_message();
+            if (message.has_value()) throw std::logic_error(message.value());
+        } // validate(...)
 
         void initialize(const thresholds_type& thresholds)
         {
@@ -118,6 +133,7 @@ namespace ropufu::aftermath::sequential
         explicit stopping_time(const thresholds_type& thresholds)
         {
             this->initialize(thresholds);
+            this->validate();
         } // stopping_time(...)
         
         /** Initializeds the stopping time for a given collection of thresholds.
@@ -126,6 +142,7 @@ namespace ropufu::aftermath::sequential
         explicit stopping_time(thresholds_type&& thresholds)
         {
             this->initialize(std::forward<thresholds_type>(thresholds));
+            this->validate();
         } // stopping_time(...)
 
         std::size_t count_observations() const noexcept { return this->m_count_observations; }
@@ -133,12 +150,12 @@ namespace ropufu::aftermath::sequential
         /** Thresholds, sorted in ascending order, to determine when the rule should stop. */
         const thresholds_type& thresholds() const noexcept { return this->m_thresholds; }
 
-        /** Number of observations when the stopping time terminated for \c this->thresholds().
+        /** Number of observations when the stopping time terminated.
          *  @remark If the process is still running 0 is returned instead.
          */
         const std::vector<std::size_t>& when() const noexcept { return this->m_when_stopped; }
 
-        /** Number of observations when the stopping time terminated for the specific threshold. */
+        /** Number of observations when the stopping time terminated for the indicated threshold. */
         std::size_t when(std::size_t threshold_index) const { return this->m_when_stopped[threshold_index]; }
 
         /** Indicates that the process has not stopped for at least one threshold. */
@@ -228,6 +245,7 @@ namespace ropufu
             
             if (stopping_time_name != result_type::name) return false;
             x.initialize(std::move(thresholds));
+            if (x.error_message().has_value()) return false;
 
             return true;
         } // try_get(...)
