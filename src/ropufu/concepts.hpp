@@ -269,6 +269,48 @@ namespace ropufu
 {
     namespace detail
     {
+        template <typename... t_types>
+        struct are_same;
+
+        template <typename t_first_type, typename t_second_type, typename... t_other_types>
+        struct are_same<t_first_type, t_second_type, t_other_types...>
+        {
+            static constexpr bool value =
+                std::same_as<t_first_type, t_second_type> &&
+                are_same<t_second_type, t_other_types...>::value;
+        }; // struct are_same<...>
+
+        template <typename t_first_type, typename t_second_type>
+        struct are_same<t_first_type, t_second_type>
+        {
+            static constexpr bool value =
+                std::same_as<t_first_type, t_second_type>;
+        }; // struct are_same<...>
+
+        template <typename t_type>
+        struct are_same<t_type>
+        {
+            static constexpr bool value = true;
+        }; // struct are_same<...>
+
+        template <>
+        struct are_same<>
+        {
+            static constexpr bool value = true;
+        }; // struct are_same<...>
+
+        template <typename... t_types>
+        static constexpr bool are_same_v = are_same<t_types...>::value;
+    } // namespace detail
+
+    template <typename... t_types>
+    concept all_same = detail::are_same_v<t_types...>;
+} // namespace ropufu
+
+namespace ropufu
+{
+    namespace detail
+    {
         template <typename t_type>
         struct try_make_signed
         {

@@ -27,10 +27,13 @@
 #ifdef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #undef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #endif
-#define ROPUFU_TMP_TYPENAME parallel_stopping_time<t_value_type, t_container_type>
-#define ROPUFU_TMP_TEMPLATE_SIGNATURE \
-    template <std::totally_ordered t_value_type, std::ranges::random_access_range t_container_type> \
-        requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>           \
+#define ROPUFU_TMP_TYPENAME parallel_stopping_time<t_scalar_type, t_scalar_container_type, t_pair_container_type>
+#define ROPUFU_TMP_TEMPLATE_SIGNATURE                             \
+    template <std::totally_ordered t_scalar_type,                 \
+        std::ranges::random_access_range t_scalar_container_type, \
+        std::ranges::random_access_range t_pair_container_type>   \
+            requires std::same_as<std::ranges::range_value_t<t_scalar_container_type>, t_scalar_type> &&                  \
+                std::same_as<std::ranges::range_value_t<t_pair_container_type>, std::pair<t_scalar_type, t_scalar_type>> \
 
 
 namespace ropufu::aftermath::sequential
@@ -41,9 +44,11 @@ namespace ropufu::aftermath::sequential
      *  thresholds. We will refer to V_n as the vertical statistic (frist),
      *  and H_n as the horizontal statistic (second).
      */
-    template <std::totally_ordered t_value_type,
-        std::ranges::random_access_range t_container_type = aftermath::simple_vector<t_value_type>>
-        requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
+    template <std::totally_ordered t_scalar_type,
+        std::ranges::random_access_range t_scalar_container_type = aftermath::simple_vector<t_scalar_type>,
+        std::ranges::random_access_range t_pair_container_type = aftermath::simple_vector<std::pair<t_scalar_type, t_scalar_type>>>
+            requires std::same_as<std::ranges::range_value_t<t_scalar_container_type>, t_scalar_type> &&
+                std::same_as<std::ranges::range_value_t<t_pair_container_type>, std::pair<t_scalar_type, t_scalar_type>>
     struct parallel_stopping_time;
 
 #ifndef ROPUFU_NO_JSON
@@ -55,17 +60,17 @@ namespace ropufu::aftermath::sequential
 
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct parallel_stopping_time
-        : public statistic<t_value_type, t_container_type, void, void>
+        : public statistic<std::pair<t_scalar_type, t_scalar_type>, t_pair_container_type, void, void>
     {
-        using type = stopping_time<t_value_type, t_container_type>;
-        using value_type = t_value_type;
-        using container_type = t_container_type;
+        using type = ROPUFU_TMP_TYPENAME;
+        using scalar_type = t_scalar_type;
+        using scalar_container_type = t_scalar_container_type;
+        using pair_container_type = t_pair_container_type;
 
-        using thresholds_type = ropufu::ordered_vector<value_type>;
+        using value_type = std::pair<t_scalar_type, t_scalar_type>;
+        using thresholds_type = std::pair<scalar_container_type, scalar_container_type>;
         template <typename t_data_type>
         using matrix_t = aftermath::algebra::matrix<t_data_type>;
-        template <typename t_type>
-        using pair_t = std::pair<t_type, t_type>;
 
         /** Names the stopping time. */
         static constexpr std::string_view name = "parallel";
@@ -83,20 +88,19 @@ namespace ropufu::aftermath::sequential
     private:
         std::size_t m_count_observations = 0;
         /** Two vectors of thresholds for the first and second statistic. */
-        pair_t<thresholds_type> m_thresholds = {};
+        thresholds_type m_thresholds = {};
         /** Matrix indicating which statistic caused stopping (1 for first, 2 for second, 3 for both). */
         matrix_t<char> m_which_triggered = {};
         /** Matrix counting the number of observations prior to stopping. */
         matrix_t<std::size_t> m_when_stopped = {};
-
         /** Keep track of the first uncrossed threshold index for each of the statistics. */
-        pair_t<std::size_t> m_first_uncrossed_index = 0;
+        std::pair<std::size_t, std::size_t> m_first_uncrossed_index = {};
 
         /** @brief Validates the structure and returns an error message, if any. */
         std::optional<std::string> error_message() const noexcept
         {
-            for (value_type x : this->m_thresholds.first) if (!aftermath::is_finite(x)) return "Thresholds must be finite.";
-            for (value_type x : this->m_thresholds.second) if (!aftermath::is_finite(x)) return "Thresholds must be finite.";
+            for (scalar_type x : this->m_thresholds.first) if (!aftermath::is_finite(x)) return "Thresholds must be finite.";
+            for (scalar_type x : this->m_thresholds.second) if (!aftermath::is_finite(x)) return "Thresholds must be finite.";
             
             return std::nullopt;
         } // error_message(...)
@@ -108,13 +112,13 @@ namespace ropufu::aftermath::sequential
             if (message.has_value()) throw std::logic_error(message.value());
         } // validate(...)
 
-        void initialize(const pair_t<thresholds_type>& thresholds)
+        void initialize(const thresholds_type& thresholds)
         {
             this->m_thresholds = thresholds;
             this->on_thresholds_initialized();
         } // initialize(...)
 
-        void initialize(pair_t<thresholds_type>&& thresholds)
+        void initialize(thresholds_type&& thresholds)
         {
             this->m_thresholds = std::move(thresholds);
             this->on_thresholds_initialized();
@@ -122,10 +126,10 @@ namespace ropufu::aftermath::sequential
 
         void on_thresholds_initialized()
         {
-            this->m_which_triggered = matrix_t<std::byte>(this->m_vertical_thresholds.size(), this->m_horizontal_thresholds.size());
-            this->m_when_stopped = matrix_t<std::size_t>(this->m_vertical_thresholds.size(), this->m_horizontal_thresholds.size());
-            this->m_thresholds.first.sort();
-            this->m_thresholds.second.sort();
+            this->m_which_triggered = matrix_t<char>(this->m_thresholds.first.size(), this->m_thresholds.second.size());
+            this->m_when_stopped = matrix_t<std::size_t>(this->m_thresholds.first.size(), this->m_thresholds.second.size());
+            std::sort(this->m_thresholds.first.begin(), this->m_thresholds.first.end());
+            std::sort(this->m_thresholds.second.begin(), this->m_thresholds.second.end());
         } // on_thresholds_initialized(...)
 
     public:
@@ -134,7 +138,7 @@ namespace ropufu::aftermath::sequential
         /** Initializeds the stopping time for a given collection of thresholds.
          *  @remark If either collection is empty, the rule will not run.
          */
-        parallel_stopping_time(const thresholds_type& vertical_thresholds, const thresholds_type& horizontal_thresholds)
+        parallel_stopping_time(const scalar_container_type& vertical_thresholds, const scalar_container_type& horizontal_thresholds)
         {
             this->initialize(std::make_pair(vertical_thresholds, horizontal_thresholds));
             this->validate();
@@ -143,11 +147,11 @@ namespace ropufu::aftermath::sequential
         /** Initializeds the stopping time for a given collection of thresholds.
          *  @remark If either collection is empty, the rule will not run.
          */
-        parallel_stopping_time(thresholds_type&& vertical_thresholds, thresholds_type&& horizontal_thresholds)
+        parallel_stopping_time(scalar_container_type&& vertical_thresholds, scalar_container_type&& horizontal_thresholds)
         {
             this->initialize(std::make_pair(
-                std::forward<thresholds_type>(vertical_thresholds),
-                std::forward<thresholds_type>(horizontal_thresholds)
+                std::move(vertical_thresholds),
+                std::move(horizontal_thresholds)
             ));
             this->validate();
         } // parallel_stopping_time(...)
@@ -155,16 +159,16 @@ namespace ropufu::aftermath::sequential
         std::size_t count_observations() const noexcept { return this->m_count_observations; }
 
         /** Thresholds, sorted in ascending order, to determine when the second stopping time should terminate. */
-        const thresholds_type& vertical_thresholds() const noexcept { return this->m_thresholds.first; }
+        const scalar_container_type& vertical_thresholds() const noexcept { return this->m_thresholds.first; }
 
         /** Thresholds, sorted in ascending order, to determine when the first stopping time should terminate. */
-        const thresholds_type& horizontal_thresholds() const noexcept { return this->m_thresholds.second; }
+        const scalar_container_type& horizontal_thresholds() const noexcept { return this->m_thresholds.second; }
 
         /** Which of the rules caused termination: 1 for first, 2 for second, 3 for both, 0 for neither. */
-        const matrix_t<std::size_t>& which() const noexcept { return this->m_when_stopped; }
+        const matrix_t<char>& which() const noexcept { return this->m_which_triggered; }
 
         /** Which of the rules caused termination for the indicated threshold. */
-        std::size_t which(std::size_t vertical_threshold_index, std::size_t horizontal_threshold_index) const
+        char which(std::size_t vertical_threshold_index, std::size_t horizontal_threshold_index) const
         {
             return this->m_which_triggered(vertical_threshold_index, horizontal_threshold_index);
         } // which(...)
@@ -187,7 +191,7 @@ namespace ropufu::aftermath::sequential
         bool is_stopped() const noexcept
         {
             return
-                this->m_first_uncrossed_index.first == this->m_thresholds.first.size() &&
+                this->m_first_uncrossed_index.first == this->m_thresholds.first.size() ||
                 this->m_first_uncrossed_index.second == this->m_thresholds.second.size();
         } // is_stopped(...)
 
@@ -202,7 +206,7 @@ namespace ropufu::aftermath::sequential
         } // reset(...)
 
         /** Observe a single value. */
-        void observe(value_type value) noexcept override
+        void observe(const value_type& value) noexcept override
         {
             //         |  0    1   ...   n-1    | c (horizontal) 
             // --------|------------------------|         
@@ -216,46 +220,40 @@ namespace ropufu::aftermath::sequential
             
             std::size_t m = this->m_thresholds.first.size(); // Height of the threshold matrix.
             std::size_t n = this->m_thresholds.second.size(); // Width of the threshold matrix.
+            std::size_t time = this->m_count_observations + 1;
 
             // Traverse vertical thresholds.
             std::size_t next_uncrossed_vertical_index = this->m_first_uncrossed_index.first;
             for (std::size_t i = this->m_first_uncrossed_index.first; i < m; ++i)
             {
-                value_type b = this->m_thresholds.first[i];
-                if (!this->do_decide_null(b, i, 0)) break; // Break the loop the first time the null hypothesis is not accepted.
-                else
+                scalar_type b = this->m_thresholds.first[i];
+                if (value.first <= b) break; // The smallest uncrossed index still hasn't been crossed.
+                
+                next_uncrossed_vertical_index = i + 1;
+                for (std::size_t j = this->m_first_uncrossed_index.second; j < n; ++j)
                 {
-                    next_uncrossed_vertical_index = i + 1;
-                    for (std::size_t j = this->m_first_uncrossed_index.second; j < n; ++j)
-                    {
-                        this->m_which_triggered(i, j) |= 1; // Mark threshold as crossed.
-                        this->m_run_length(i, j) = proc.count(); // Record the freshly stopped times.
-                    } // for (...)
-                } // else (...)
+                    this->m_which_triggered(i, j) |= 1; // Mark threshold as crossed.
+                    this->m_when_stopped(i, j) = time; // Record the freshly stopped times.
+                } // for (...)
             } // for (...)
 
             // Traverse horizontal thresholds.
-            std::size_t next_uncrossed_alt_index = this->m_first_uncrossed_alt_index;
-            for (std::size_t j = this->m_first_uncrossed_alt_index; j < n; ++j)
+            std::size_t next_uncrossed_horizontal_index = this->m_first_uncrossed_index.second;
+            for (std::size_t j = this->m_first_uncrossed_index.second; j < n; ++j)
             {
-                value_type b = this->m_unscaled_alt_thresholds[j];
-                if (!this->do_decide_alt(b, 0, j)) break; // Break the loop the first time the alternative hypothesis is not accepted.
-                else
+                scalar_type c = this->m_thresholds.second[j];
+                if (value.second <= c) break; // The smallest uncrossed index still hasn't been crossed.
+
+                next_uncrossed_horizontal_index = j + 1;
+                for (std::size_t i = this->m_first_uncrossed_index.first; i < m; ++i)
                 {
-                    next_uncrossed_alt_index = j + 1;
-                    for (std::size_t i = this->m_first_uncrossed_null_index; i < m; ++i)
-                    {
-                        this->m_has_decided_alt(i, j) = true; // Mark threshold as crossed.
-                        this->m_run_length(i, j) = proc.count(); // Record the freshly stopped times.
-                    } // for (...)
-                } // else (...)
+                    this->m_which_triggered(i, j) |= 2; // Mark threshold as crossed.
+                    this->m_when_stopped(i, j) = time; // Record the freshly stopped times.
+                } // for (...)
             } // for (...)
 
-            this->m_first_uncrossed_null_index = next_uncrossed_null_index;
-            this->m_first_uncrossed_alt_index = next_uncrossed_alt_index;
-            
-            bool is_still_listening = (this->m_first_uncrossed_null_index < m) && (this->m_first_uncrossed_alt_index < n);
-            if (!is_still_listening) this->m_state = two_sprt_state::decided;
+            this->m_first_uncrossed_index.first = next_uncrossed_vertical_index;
+            this->m_first_uncrossed_index.second = next_uncrossed_horizontal_index;
 
             ++this->m_count_observations;
         } // observe(...)
@@ -289,6 +287,31 @@ namespace ropufu::aftermath::sequential
         } // from_json(...)
 #endif
     }; // struct parallel_stopping_time
-} // namespace ropufu::sequential::hypotheses
+} // namespace ropufu::aftermath::sequential
+
+#ifndef ROPUFU_NO_JSON
+namespace ropufu
+{
+    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    struct noexcept_json_serializer<ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME>
+    {
+        using result_type = ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME;
+        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        {
+            std::string stopping_time_name;
+            typename result_type::thresholds_type thresholds;
+            if (!noexcept_json::required(j, result_type::jstr_type, stopping_time_name)) return false;
+            if (!noexcept_json::required(j, result_type::jstr_vertical_thresholds, thresholds.first)) return false;
+            if (!noexcept_json::required(j, result_type::jstr_horizontal_thresholds, thresholds.second)) return false;
+            
+            if (stopping_time_name != result_type::name) return false;
+            x.initialize(std::move(thresholds));
+            if (x.error_message().has_value()) return false;
+
+            return true;
+        } // try_get(...)
+    }; // struct noexcept_json_serializer<...>
+} // namespace ropufu
+#endif
 
 #endif // ROPUFU_AFTERMATH_SEQUENTIAL_PARALLEL_STOPPING_TIME_HPP_INCLUDED

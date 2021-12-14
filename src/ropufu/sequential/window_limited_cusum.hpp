@@ -38,8 +38,8 @@
 namespace ropufu::aftermath::sequential
 {
     template <std::totally_ordered t_value_type,
-        std::ranges::random_access_range t_container_type = aftermath::simple_vector<t_value_type>,
-        timed_transform<t_value_type> t_transform_type = identity_transform<t_value_type>>
+        std::ranges::random_access_range t_container_type = simple_vector<t_value_type>,
+        ropufu::aftermath::sequential::timed_transform<t_value_type> t_transform_type = identity_transform<t_value_type>>
             requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
     struct window_limited_cusum;
 

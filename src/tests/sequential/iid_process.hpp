@@ -81,7 +81,7 @@ TEST_CASE("testing iid_process bulk (Gaussian)")
 
     distributiont_type d{17, 29};
     process_type proc {d};
-    container_type values{count};
+    container_type values(count);
     proc.next(values);
     CHECK_EQ(proc.count(), count);
 

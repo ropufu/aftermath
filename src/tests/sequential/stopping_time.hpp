@@ -30,10 +30,11 @@ TEST_CASE_TEMPLATE("testing stopping_time json", sampler_type, ROPUFU_TMP_TEST_T
 {
     using value_type = typename sampler_type::value_type;
     using stopping_time_type = ropufu::aftermath::sequential::stopping_time<value_type>;
+    using container_type = typename stopping_time_type::container_type;
     
     stopping_time_type stopping_time_o{};
-    stopping_time_type stopping_time_a{{3}};
-    stopping_time_type stopping_time_b{{1, 2, 5}};
+    stopping_time_type stopping_time_a{container_type({3})};
+    stopping_time_type stopping_time_b{container_type({1, 2, 5})};
 
     std::string xxx {};
     std::string yyy {};
@@ -53,20 +54,27 @@ TEST_CASE_TEMPLATE("testing stopping_time border crossing", sampler_type, ROPUFU
 {
     using value_type = typename sampler_type::value_type;
     using stopping_time_type = ropufu::aftermath::sequential::stopping_time<value_type>;
-    stopping_time_type stopping_time{{1, 2, 5}};
+    using container_type = typename stopping_time_type::container_type;
+    
+    stopping_time_type stopping_time{container_type({1, 2, 5})};
 
     std::vector<value_type> process = {0, -1, 1, 2, 0, 3, 3};
+    // ======================================================
+    // Time:                           1,  2, 3, 4, 5, 6, 7
+    // ======================================================
     // First value > 1:                          ^
     // First value > 2:                                ^
+    // First value > 5:                never
+    // ======================================================
     for (value_type x : process)
     {
         stopping_time.observe(x);
     } // for (...)
 
-    CHECK_EQ(stopping_time.is_running(), true);
-    CHECK_EQ(stopping_time.when(0), 1 + 3); // process > 1.
-    CHECK_EQ(stopping_time.when(1), 1 + 5); // process > 2.
-    CHECK_EQ(stopping_time.when(2), 0); // process > 5.
+    CHECK_EQ(stopping_time.is_running(), true); // First process never crosses 5.
+    CHECK_EQ(stopping_time.when(0), 4); // First process > 1.
+    CHECK_EQ(stopping_time.when(1), 6); // First process > 2.
+    CHECK_EQ(stopping_time.when(2), 0); // First process > 5.
 } // TEST_CASE_TEMPLATE(...)
 
 #endif // ROPUFU_AFTERMATH_TESTS_SEQUENTIAL_STOPPING_TIME_HPP_INCLUDED

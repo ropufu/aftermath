@@ -9,7 +9,6 @@
 
 #include "../format/cat.hpp"
 #include "../number_traits.hpp"
-#include "../ordered_vector.hpp"
 #include "../simple_vector.hpp"
 #include "../vector_extender.hpp"
 #include "statistic.hpp"
@@ -56,11 +55,9 @@ namespace ropufu::aftermath::sequential
     struct stopping_time
         : public statistic<t_value_type, t_container_type, void, void>
     {
-        using type = stopping_time<t_value_type, t_container_type>;
+        using type = ROPUFU_TMP_TYPENAME;
         using value_type = t_value_type;
         using container_type = t_container_type;
-
-        using thresholds_type = ropufu::ordered_vector<value_type>;
 
         /** Names the stopping time. */
         static constexpr std::string_view name = "one-sided";
@@ -76,7 +73,7 @@ namespace ropufu::aftermath::sequential
         
     private:
         std::size_t m_count_observations = 0;
-        thresholds_type m_thresholds = {};
+        container_type m_thresholds = {};
         std::vector<std::size_t> m_when_stopped = {};
         /** If a threshold has been crossed, all smaller thresholds must have been crossed too. */
         std::size_t m_first_uncrossed_index = 0;
@@ -96,18 +93,18 @@ namespace ropufu::aftermath::sequential
             if (message.has_value()) throw std::logic_error(message.value());
         } // validate(...)
 
-        void initialize(const thresholds_type& thresholds)
+        void initialize(const container_type& thresholds)
         {
             this->m_thresholds = thresholds;
             this->m_when_stopped = std::vector<std::size_t>(this->m_thresholds.size());
-            this->m_thresholds.sort();
+            ropufu::sort(this->m_thresholds);
         } // initialize(...)
 
-        void initialize(thresholds_type&& thresholds)
+        void initialize(container_type&& thresholds)
         {
             this->m_thresholds = std::move(thresholds);
             this->m_when_stopped = std::vector<std::size_t>(this->m_thresholds.size());
-            this->m_thresholds.sort();
+            ropufu::sort(this->m_thresholds);
         } // initialize(...)
 
         void check_for_stopping(value_type statistic, std::size_t time) noexcept
@@ -130,7 +127,7 @@ namespace ropufu::aftermath::sequential
         /** Initializeds the stopping time for a given collection of thresholds.
          *  @remark If the collection is empty, the rule will not run.
          */
-        explicit stopping_time(const thresholds_type& thresholds)
+        explicit stopping_time(const container_type& thresholds)
         {
             this->initialize(thresholds);
             this->validate();
@@ -139,16 +136,16 @@ namespace ropufu::aftermath::sequential
         /** Initializeds the stopping time for a given collection of thresholds.
          *  @remark If the collection is empty, the rule will not run.
          */
-        explicit stopping_time(thresholds_type&& thresholds)
+        explicit stopping_time(container_type&& thresholds)
         {
-            this->initialize(std::forward<thresholds_type>(thresholds));
+            this->initialize(std::forward<container_type>(thresholds));
             this->validate();
         } // stopping_time(...)
 
         std::size_t count_observations() const noexcept { return this->m_count_observations; }
 
         /** Thresholds, sorted in ascending order, to determine when the rule should stop. */
-        const thresholds_type& thresholds() const noexcept { return this->m_thresholds; }
+        const container_type& thresholds() const noexcept { return this->m_thresholds; }
 
         /** Number of observations when the stopping time terminated.
          *  @remark If the process is still running 0 is returned instead.
@@ -173,7 +170,7 @@ namespace ropufu::aftermath::sequential
         } // reset(...)
 
         /** Observe a single value. */
-        void observe(value_type value) noexcept override
+        void observe(const value_type& value) noexcept override
         {
             if (this->is_running())
             {
@@ -187,7 +184,7 @@ namespace ropufu::aftermath::sequential
         {
             std::size_t n = values.size();
             if (this->is_running())
-            {                
+            {
                 std::size_t time = this->m_count_observations + 1;
                 for (value_type x : values)
                 {
@@ -239,7 +236,7 @@ namespace ropufu
         static bool try_get(const nlohmann::json& j, result_type& x) noexcept
         {
             std::string stopping_time_name;
-            typename result_type::thresholds_type thresholds;
+            typename result_type::container_type thresholds;
             if (!noexcept_json::required(j, result_type::jstr_type, stopping_time_name)) return false;
             if (!noexcept_json::required(j, result_type::jstr_thresholds, thresholds)) return false;
             
@@ -252,24 +249,5 @@ namespace ropufu
     }; // struct noexcept_json_serializer<...>
 } // namespace ropufu
 #endif
-
-namespace std
-{
-    ROPUFU_TMP_TEMPLATE_SIGNATURE
-    struct hash<ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME>
-    {
-        using argument_type = ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME;
-
-        std::size_t operator ()(const argument_type& x) const noexcept
-        {
-            std::size_t result = 0;
-            std::hash<typename argument_type::value_type> statistic_hasher = {};
-
-            result ^= statistic_hasher(x.m_latest_statistic);
-
-            return result;
-        } // operator ()(...)
-    }; // struct hash<...>
-} // namespace std
 
 #endif // ROPUFU_AFTERMATH_SEQUENTIAL_STOPPING_TIME_HPP_INCLUDED

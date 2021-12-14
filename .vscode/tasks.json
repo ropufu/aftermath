@@ -5,9 +5,9 @@
             "label": "GCC Tests (Debug)",
             "dependsOn": ["Generate JSON to hpp (Test)"],
             "type": "shell",
-            "command": "g++-10",
+            "command": "g++-11",
             "args": [
-                "-std=c++2a",
+                "-std=c++2b",
                 "-Wall",
                 "-I${workspaceRoot}/../../include",
                 "${workspaceFolder}/src/tests/main.cpp",
@@ -35,9 +35,9 @@
             "label": "GCC Tests (Release)",
             "dependsOn": ["Generate JSON to hpp (Test)"],
             "type": "shell",
-            "command": "g++-10",
+            "command": "g++-11",
             "args": [
-                "-std=c++2a",
+                "-std=c++2b",
                 "-Wall",
                 "-I${workspaceRoot}/../../include",
                 "${workspaceFolder}/src/tests/main.cpp",

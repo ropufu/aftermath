@@ -117,7 +117,7 @@ namespace ropufu::aftermath::sequential
         } // on_reset(...)
         
         /** Observe a single value. */
-        value_type observe(value_type value) noexcept override
+        value_type observe(const value_type& value) noexcept override
         {
             // Element at the currently oldest index will be overwritten.
             this->m_newest_index = (this->m_newest_index + this->m_minus_one) % (this->m_window_size);

@@ -31,15 +31,15 @@
 #define ROPUFU_TMP_TEMPLATE_SIGNATURE                                                     \
     template <std::totally_ordered t_value_type,                                          \
     std::ranges::random_access_range t_container_type,                                    \
-    ropufu::aftermath::sequential::timed_transform<t_value_type> t_transform_type>        \
+    ropufu::aftermath::sequential::timed_transform<t_value_type> t_transform_type>      \
         requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type> \
 
 
 namespace ropufu::aftermath::sequential
 {
     template <std::totally_ordered t_value_type,
-        std::ranges::random_access_range t_container_type = aftermath::simple_vector<t_value_type>,
-        timed_transform<t_value_type> t_transform_type = identity_transform<t_value_type>>
+        std::ranges::random_access_range t_container_type = simple_vector<t_value_type>,
+        ropufu::aftermath::sequential::timed_transform<t_value_type> t_transform_type = identity_transform<t_value_type>>
             requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
     struct finite_moving_average;
 
@@ -106,7 +106,7 @@ namespace ropufu::aftermath::sequential
          *            oldest       newest
          *  @param newest_index Points to the newest item in \param history.
          */
-        value_type on_history_updated(const container_type& history, std::size_t newest_index) noexcept override
+        value_type on_history_updated(const container_type& history, std::size_t /*newest_index*/) noexcept override
         {
             value_type sum = 0;
             for (value_type x : history) sum += x;

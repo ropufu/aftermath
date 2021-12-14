@@ -104,8 +104,8 @@ namespace ropufu::tests
     template <typename t_type>
     bool does_json_round_trip(const t_type& x, std::string& a, std::string& b) noexcept
     {
-        a = "Processing...";
-        b = "Processing...";
+        a = "Serialization failed...";
+        b = "Deserialization failed...";
 
         nlohmann::json j = x;
         a = j.dump();

@@ -43,6 +43,7 @@
 #include "sequential/iid_persistent_process.hpp"
 #include "sequential/iid_process.hpp"
 #include "sequential/iid_transient_process.hpp"
+#include "sequential/parallel_stopping_time.hpp"
 #include "sequential/stopping_time.hpp"
 #include "sequential/window_limited_cusum.hpp"
 
@@ -50,7 +51,6 @@
 
 #include "../ropufu/concepts.hpp"
 #include "../ropufu/metadata.hpp"
-#include "../ropufu/sequential/parallel_stopping_time.hpp"
 
 //#include "random_engines.hpp"
 

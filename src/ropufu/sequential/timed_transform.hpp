@@ -31,7 +31,7 @@ namespace ropufu::aftermath::sequential
         using type = identity_transform<t_value_type>;
         using value_type = t_value_type;
 
-        constexpr value_type operator ()(std::size_t time, value_type x) const noexcept
+        constexpr value_type operator ()(std::size_t /*time*/, value_type x) const noexcept
         {
             return x;
         } // operator ()(...)

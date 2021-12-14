@@ -48,7 +48,7 @@ namespace ropufu::tests
     t_vector_type non_negative_vector_b(std::size_t size) noexcept
     {
         using scalar_t = typename t_vector_type::value_type;
-        t_vector_type result { size };
+        t_vector_type result(size);
 
         for (std::size_t i = 0; i < size; ++i)
             result.at(i) = static_cast<scalar_t>(i + (i * i) % 3);

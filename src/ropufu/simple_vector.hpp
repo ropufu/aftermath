@@ -2,16 +2,22 @@
 #ifndef ROPUFU_AFTERMATH_SIMPLE_VECTOR_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_SIMPLE_VECTOR_HPP_INCLUDED
 
+#ifndef ROPUFU_NO_JSON
+#include <nlohmann/json.hpp>
+#include "noexcept_json.hpp"
+#endif
+
 #include "concepts.hpp"
 
-#include <concepts>  // std::default_initializable
-#include <cstddef>   // std::size_t, std::nullptr_t
-#include <cstring>   // std::memset, std::memcpy
-#include <memory>    // std::allocator, std::allocator_traits
-#include <ranges>    // std::ranges:range
-#include <stdexcept> // std::out_of_range, std::logic_error
+#include <concepts>    // std::default_initializable
+#include <cstddef>     // std::size_t, std::nullptr_t
+#include <cstring>     // std::memset, std::memcpy
+#include <initializer_list> // std::initializer_list
+#include <memory>      // std::allocator, std::allocator_traits
+#include <ranges>      // std::ranges:range
+#include <stdexcept>   // std::out_of_range, std::logic_error
 #include <type_traits> // std::is_arithmetic_v
-#include <utility>   // std::move, std::hash
+#include <utility>     // std::move, std::hash
 
 namespace ropufu::aftermath
 {
@@ -88,6 +94,10 @@ namespace ropufu::aftermath
 
         template <std::default_initializable, typename> friend struct simple_vector;
         template <typename, typename, typename> friend struct detail::vector_wipe_module;
+        
+#ifndef ROPUFU_NO_JSON
+        friend ropufu::noexcept_json_serializer<type>;
+#endif
 
     private:
         allocator_type m_allocator = {};
@@ -175,6 +185,17 @@ namespace ropufu::aftermath
             value_type* end_ptr = this->m_begin_ptr + this->m_size;
             for (value_type* it = this->m_begin_ptr; it != end_ptr; ++it)
                 allocator_traits_type::construct(this->m_allocator, it, value);
+        } // simple_vector(...)
+
+        /** @brief Creates a vector from another sequence. */
+        explicit simple_vector(std::initializer_list<value_type> container) : simple_vector(nullptr, container.size())
+        {
+            value_type* it = this->m_begin_ptr;
+            for (const value_type& x : container)
+            {
+                allocator_traits_type::construct(this->m_allocator, it, x);
+                ++it;
+            } // for (...)
         } // simple_vector(...)
 
         /** @brief Creates a vector from another sequence. */
@@ -346,8 +367,46 @@ namespace ropufu::aftermath
         {
             return !this->operator ==(other);
         } // operator !=(...)
+
+#ifndef ROPUFU_NO_JSON
+        friend void to_json(nlohmann::json& j, const type& x) noexcept
+        {
+            j = nlohmann::json::array();
+            for (const value_type& y : x) j.push_back(y);
+        } // to_json(...)
+
+        friend void from_json(const nlohmann::json& j, type& x)
+        {
+            if (!ropufu::noexcept_json::try_get(j, x))
+                throw std::runtime_error("Parsing <simple_vector> failed: " + j.dump());
+        } // from_json(...)
+#endif
     }; // struct simple_vector
 } // namespace ropufu::aftermath
+
+#ifndef ROPUFU_NO_JSON
+namespace ropufu
+{
+    template <std::default_initializable t_value_type, typename t_allocator_type>
+    struct noexcept_json_serializer<ropufu::aftermath::simple_vector<t_value_type, t_allocator_type>>
+    {
+        using result_type = ropufu::aftermath::simple_vector<t_value_type, t_allocator_type>;
+        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        {
+            if (!j.is_array()) return false;
+
+            std::size_t n = j.size();
+            x = result_type(n);
+            for (std::size_t i = 0; i < n; ++i)
+            {
+                if (!noexcept_json::try_get(j[i], x[i])) return false;
+            } // for (...)
+
+            return true;
+        } // try_get(...)
+    }; // struct noexcept_json_serializer<...>
+} // namespace ropufu
+#endif
 
 namespace std
 {

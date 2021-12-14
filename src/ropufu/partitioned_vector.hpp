@@ -6,6 +6,7 @@
 #include "vector_extender.hpp"
 
 #include <concepts>  // std::default_initializable, std::same_as
+#include <initializer_list> // std::initializer_list
 #include <memory>    // std::allocator, std::allocator_traits
 #include <ranges>    // std::ranges
 #include <stdexcept> // std::out_of_range, std::logic_error
@@ -41,6 +42,13 @@ namespace ropufu::aftermath
         partitioned_vector() noexcept
         {
         } // partitioned_vector(...)
+
+        /** Partition spanning the entire vector. */
+        explicit partitioned_vector(std::initializer_list<value_type> container)
+            : m_values(container)
+        {
+            this->m_border_indices[1] = this->m_values.size();
+        } // simple_vector(...)
 
         /** Partition spanning the entire vector. */
         template <std::ranges::range t_container_type>

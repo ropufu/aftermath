@@ -79,7 +79,7 @@ namespace ropufu::aftermath::sequential
         } // reset(...)
 
         /** Observe a single value. */
-        value_type observe(value_type value) noexcept override
+        value_type observe(const value_type& value) noexcept override
         {
             if (this->m_latest_statistic < 0) this->m_latest_statistic = 0;
             this->m_latest_statistic += value;
@@ -111,7 +111,7 @@ namespace ropufu::aftermath::sequential
         } // operator !=(...)
 
 #ifndef ROPUFU_NO_JSON
-        friend void to_json(nlohmann::json& j, const type& x) noexcept
+        friend void to_json(nlohmann::json& j, const type& /*x*/) noexcept
         {
             j = nlohmann::json{
                 {type::jstr_type, type::name}
@@ -134,7 +134,7 @@ namespace ropufu
     struct noexcept_json_serializer<ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME>
     {
         using result_type = ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME;
-        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        static bool try_get(const nlohmann::json& j, result_type& /*x*/) noexcept
         {
             std::string statistic_name;
             std::size_t window_size = 0;

@@ -38,17 +38,17 @@ TEST_CASE_TEMPLATE("testing partitioned vector", simple_vector_type, ROPUFU_AFTE
 
     CAPTURE(size);
 
-    simple_vector_type zero {size};
-    simple_vector_type one {size};
-    simple_vector_type b {size};
+    simple_vector_type zero(size);
+    simple_vector_type one(size);
+    simple_vector_type b(size);
 
     value_type temp = 1729;
     for (value_type& x : one) x = 1;
     for (value_type& x : b) { x = temp / 2; temp = static_cast<value_type>(static_cast<int>(temp * (temp - 1)) % 3203); }
     
-    partitioned_vector_type zero_partitioned {zero};
-    partitioned_vector_type one_partitioned {one};
-    partitioned_vector_type b_partitioned {b};
+    partitioned_vector_type zero_partitioned(zero);
+    partitioned_vector_type one_partitioned(one);
+    partitioned_vector_type b_partitioned(b);
 
     CHECK_EQ(zero_partitioned.partition_size(), 1);
     CHECK_EQ(one_partitioned.partition_size(), 1);
