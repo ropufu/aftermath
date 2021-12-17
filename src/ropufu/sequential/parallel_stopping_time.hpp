@@ -7,9 +7,14 @@
 #include "../noexcept_json.hpp"
 #endif
 
+#include "../format/cat.hpp"
 #include "../algebra/matrix.hpp"
 #include "../number_traits.hpp"
+#include "../simple_vector.hpp"
+#include "../vector_extender.hpp"
+#include "statistic.hpp"
 
+#include <algorithm>   // std::sort
 #include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash

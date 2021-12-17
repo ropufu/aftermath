@@ -3,8 +3,8 @@
 #define ROPUFU_AFTERMATH_PARTITIONED_VECTOR_HPP_INCLUDED
 
 #include "simple_vector.hpp"
-#include "vector_extender.hpp"
 
+#include <algorithm> // std::sort
 #include <concepts>  // std::default_initializable, std::same_as
 #include <initializer_list> // std::initializer_list
 #include <memory>    // std::allocator, std::allocator_traits
@@ -23,8 +23,8 @@ namespace ropufu::aftermath
         using type = partitioned_vector<t_value_type, t_allocator_type>;
         using value_type = t_value_type;
         using allocator_type = t_allocator_type;
-        using vector_type = aftermath::simple_vector<value_type, allocator_type>;
 
+        using vector_type = aftermath::simple_vector<value_type, allocator_type>;
         using allocator_traits_type = std::allocator_traits<allocator_type>;
         using size_type = typename allocator_traits_type::size_type;
         using iterator_type = value_type*;
@@ -75,7 +75,7 @@ namespace ropufu::aftermath
             if (border_index > this->m_values.size()) throw std::logic_error("Sentinel index cannot exceed vector size.");
 
             this->m_border_indices.push_back(border_index);
-            ropufu::sort(this->m_border_indices);
+            std::sort(this->m_border_indices.begin(), this->m_border_indices.end());
         } // split(...)
 
         void clear_partition() noexcept

@@ -12,6 +12,7 @@
 #include "algebra/fraction.hpp"
 #include "algebra/matrix.hpp"
 #include "algebra/interval.hpp"
+#include "algebra/interval_based_vector.hpp"
 
 #include "algorithm/fuzzy.hpp"
 #include "algorithm/lower_upper_decomposition.hpp"

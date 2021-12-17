@@ -35,7 +35,7 @@
 TEST_CASE_TEMPLATE("testing interval json", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {
     interval_type a {1, 1729};
-    interval_type b {13, 2};
+    interval_type b {2, 13};
     interval_type c {27, 27};
 
     std::string xxx {};
@@ -56,7 +56,7 @@ TEST_CASE_TEMPLATE("testing interval json", interval_type, ROPUFU_AFTERMATH_TEST
 TEST_CASE_TEMPLATE("testing interval noexcept json", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {
     interval_type a {1, 1729};
-    interval_type b {13, 2};
+    interval_type b {2, 13};
     interval_type c {27, 27};
 
     nlohmann::json j = {
@@ -74,55 +74,6 @@ TEST_CASE_TEMPLATE("testing interval noexcept json", interval_type, ROPUFU_AFTER
     CHECK_EQ(m["gamma"], c);
 } // TEST_CASE_TEMPLATE(...)
 #endif
-
-TEST_CASE_TEMPLATE("testing interval explosion", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
-{
-    using value_type = typename interval_type::value_type;
-    constexpr std::size_t n = 5;
-    value_type from = 1;
-    value_type to = 5;
-
-    interval_type a = interval_type(from, to);
-    std::vector<value_type> a_lin_seq {};
-    std::vector<value_type> a_log_seq {};
-    std::vector<value_type> a_exp_seq {};
-
-    ropufu::aftermath::algebra::explode(a, a_lin_seq, n, ropufu::aftermath::algebra::linear_spacing<value_type>());
-    ropufu::aftermath::algebra::explode(a, a_log_seq, n, ropufu::aftermath::algebra::logarithmic_spacing<value_type>());
-    ropufu::aftermath::algebra::explode(a, a_exp_seq, n, ropufu::aftermath::algebra::exponential_spacing<value_type>());
-
-    REQUIRE(a_lin_seq.size() == n);
-    REQUIRE(a_log_seq.size() == n);
-    REQUIRE(a_exp_seq.size() == n);
-
-    // Linear spacing is easy: it all happens in one space with no intermediate transformations.
-    std::vector<value_type> expected_lin_seq = { 1, 2, 3, 4, 5 };
-    for (std::size_t i = 0; i < n; ++i) CHECK(a_lin_seq[i] == expected_lin_seq[i]);
-
-    // Non-linear spacing is where things get a little more complicated.
-    constexpr double tolerance = 1e-5;
-    std::vector<double> expected_log_seq_x = { 1, 1.49534878122122, 2.23606797749979, 3.34370152488211, 5 };
-    std::vector<double> expected_exp_seq_x = { 1, 3.66719608858604, 4.32500274735786, 4.71840457920730, 5 };
-
-    std::vector<value_type> expected_log_seq(n);
-    std::vector<value_type> expected_exp_seq(n);
-    for (std::size_t i = 0; i < n; ++i)
-    {
-        expected_log_seq[i] = static_cast<value_type>(expected_log_seq_x[i]);
-        expected_exp_seq[i] = static_cast<value_type>(expected_exp_seq_x[i]);
-    } // for (...)
-
-    std::vector<value_type> error_log_seq(n);
-    std::vector<value_type> error_exp_seq(n);
-    // Make sure unsigned types are handled properly.
-    for (std::size_t i = 0; i < n; ++i)
-    {
-        error_log_seq[i] = (a_log_seq[i] > expected_log_seq[i]) ? (a_log_seq[i] - expected_log_seq[i]) : (expected_log_seq[i] - a_log_seq[i]);
-        error_exp_seq[i] = (a_exp_seq[i] > expected_exp_seq[i]) ? (a_exp_seq[i] - expected_exp_seq[i]) : (expected_exp_seq[i] - a_exp_seq[i]);
-    } // for (...)
-    for (std::size_t i = 0; i < n; ++i) CHECK(error_log_seq[i] < tolerance);
-    for (std::size_t i = 0; i < n; ++i) CHECK(error_exp_seq[i] < tolerance);
-} // TEST_CASE_TEMPLATE(...)
 
 TEST_CASE_TEMPLATE("testing interval hash", interval_type, ROPUFU_AFTERMATH_TESTS_ALGEBRA_RANGE_ALL_TYPES)
 {

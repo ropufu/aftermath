@@ -15,7 +15,7 @@
 #include <initializer_list> // std::initializer_list
 #include <iostream>     // std::ostream
 #include <ranges>       // std::ranges::range
-#include <stdexcept>    // std::runtime_error
+#include <stdexcept>    // std::logic_error, std::runtime_error
 #include <string>       // std::string
 #include <string_view>  // std::string_view
 #include <vector>       // std::vector
@@ -54,9 +54,10 @@ namespace ropufu::aftermath::algebra
     public:
         interval() noexcept { }
         
-        interval(const value_type& from, const value_type& to) noexcept
+        interval(const value_type& from, const value_type& to)
             : m_from(from), m_to(to)
         {
+            if (this->m_from > this->m_to) throw std::logic_error("Left endpoint cannot exceed right endpoint.");
         } // interval(...)
 
         const value_type& from() const noexcept { return this->m_from; }
@@ -80,52 +81,20 @@ namespace ropufu::aftermath::algebra
         } // operator <<(...)
 
 #ifndef ROPUFU_NO_JSON
-    friend void to_json(nlohmann::json& j, const type& x) noexcept
-    {
-        j = nlohmann::json{
-            {type::jstr_from, x.from()},
-            {type::jstr_to, x.to()}
-        };
-    } // to_json(...)
+        friend void to_json(nlohmann::json& j, const type& x) noexcept
+        {
+            j = nlohmann::json{
+                {type::jstr_from, x.from()},
+                {type::jstr_to, x.to()}
+            };
+        } // to_json(...)
 
-    friend void from_json(const nlohmann::json& j, type& x)
-    {
-        if (!noexcept_json::try_get(j, x)) throw std::runtime_error("Parsing <interval> failed: " + j.dump());
-    } // from_json(...)
+        friend void from_json(const nlohmann::json& j, type& x)
+        {
+            if (!noexcept_json::try_get(j, x)) throw std::runtime_error("Parsing <interval> failed: " + j.dump());
+        } // from_json(...)
 #endif
     }; // struct interval
-    
-    template <ropufu::spacing t_spacing_type, std::totally_ordered t_value_type, typename t_allocator_type>
-    void explode(const interval<t_value_type>& interval, std::vector<t_value_type, t_allocator_type>& container, std::size_t count, const t_spacing_type& spacing)
-    {
-        using intermediate_type = typename t_spacing_type::intermediate_type;
-
-        switch (count)
-        {
-            case 0: container = {}; return;
-            case 1: container = { interval.from() }; return;
-            case 2: container = { interval.from(), interval.to() }; return;
-        } // switch (...)
-
-        container.clear();
-        container.reserve(count);
-
-        intermediate_type f_from = spacing.forward_transform(interval.from());
-        intermediate_type f_to = spacing.forward_transform(interval.to());
-        intermediate_type f_diameter = f_to - f_from;
-        intermediate_type sentinel = static_cast<intermediate_type>(count - 1);
-        
-        container.push_back(interval.from()); // First value is always the left end-point.
-        for (intermediate_type i = 1; i < sentinel; ++i)
-        {
-            intermediate_type f_step = (i * f_diameter) / sentinel;
-            t_value_type x = spacing.backward_transform(f_from + f_step);
-
-            container.push_back(x);
-        } // for (...)
-        container.push_back(interval.to()); // Last value is always the right end-point.
-        container.shrink_to_fit();
-    } // explode(...)
 } // namespace ropufu::aftermath::algebra
 
 #ifndef ROPUFU_NO_JSON
@@ -154,6 +123,8 @@ namespace ropufu
                 if (!noexcept_json::required(j, result_type::jstr_to, x.m_to)) return false;
             } // else (...)
 
+            if (x.m_from > x.m_to) return false;
+            
             return true;
         } // try_get(...)
     }; // struct noexcept_json_serializer<...>

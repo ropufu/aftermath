@@ -10,6 +10,7 @@
 #include <cmath>       // std::log, std::pow
 #include <concepts>    // std::same_as
 #include <cstddef>     // std::size_t
+#include <functional>  // std::hash
 #include <numbers>     // std::numbers::e_v
 #include <string>      // std::string
 #include <string_view> // std::string_view
@@ -57,6 +58,7 @@ namespace ropufu::aftermath::algebra
 #ifndef ROPUFU_NO_JSON
         friend ropufu::noexcept_json_serializer<type>;
 #endif
+        friend std::hash<type>;
 
         constexpr linear_spacing() noexcept { }
 
@@ -74,7 +76,7 @@ namespace ropufu::aftermath::algebra
             else return static_cast<value_type>(transformed_value);
         } // backward_transform(...)
 
-        constexpr bool operator ==(const type& other) const noexcept
+        constexpr bool operator ==(const type& /*other*/) const noexcept
         {
             return true;
         } // operator ==(...)
@@ -85,7 +87,7 @@ namespace ropufu::aftermath::algebra
         } // operator !=(...)
 
 #ifndef ROPUFU_NO_JSON
-        friend void to_json(nlohmann::json& j, const type& x) noexcept
+        friend void to_json(nlohmann::json& j, const type& /*x*/) noexcept
         {
             j = nlohmann::json{
                 {type::jstr_type, type::name}
@@ -122,6 +124,7 @@ namespace ropufu::aftermath::algebra
 #ifndef ROPUFU_NO_JSON
         friend ropufu::noexcept_json_serializer<type>;
 #endif
+        friend std::hash<type>;
 
     private:
         intermediate_type m_log_base = std::numbers::e_v<intermediate_type>;
@@ -150,7 +153,7 @@ namespace ropufu::aftermath::algebra
             else return static_cast<value_type>(std::pow(this->m_log_base, transformed_value));
         } // backward_transform(...)
 
-        constexpr bool operator ==(const type& other) const noexcept
+        constexpr bool operator ==(const type& /*other*/) const noexcept
         {
             return true;
         } // operator ==(...)
@@ -161,7 +164,7 @@ namespace ropufu::aftermath::algebra
         } // operator !=(...)
 
 #ifndef ROPUFU_NO_JSON
-        friend void to_json(nlohmann::json& j, const type& x) noexcept
+        friend void to_json(nlohmann::json& j, const type& /*x*/) noexcept
         {
             j = nlohmann::json{
                 {type::jstr_type, type::name}
@@ -199,6 +202,7 @@ namespace ropufu::aftermath::algebra
 #ifndef ROPUFU_NO_JSON
         friend ropufu::noexcept_json_serializer<type>;
 #endif
+        friend std::hash<type>;
 
     private:
         intermediate_type m_log_base = std::numbers::e_v<intermediate_type>;
@@ -263,7 +267,7 @@ namespace ropufu
     struct noexcept_json_serializer<ropufu::aftermath::algebra::linear_spacing<t_value_type, t_intermediate_type>>
     {
         using result_type = ropufu::aftermath::algebra::linear_spacing<t_value_type, t_intermediate_type>;
-        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        static bool try_get(const nlohmann::json& j, result_type& /*x*/) noexcept
         {
             if (j.is_string()) return j.get<std::string>() == result_type::name;
 
@@ -278,7 +282,7 @@ namespace ropufu
     struct noexcept_json_serializer<ropufu::aftermath::algebra::logarithmic_spacing<t_value_type, t_intermediate_type>>
     {
         using result_type = ropufu::aftermath::algebra::logarithmic_spacing<t_value_type, t_intermediate_type>;
-        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
+        static bool try_get(const nlohmann::json& j, result_type& /*x*/) noexcept
         {
             if (j.is_string()) return j.get<std::string>() == result_type::name;
             
@@ -306,5 +310,45 @@ namespace ropufu
     }; // struct noexcept_json_serializer<...>
 } // namespace ropufu
 #endif
+
+namespace std
+{
+    template <typename t_value_type, typename t_intermediate_type>
+    struct hash<ropufu::aftermath::algebra::linear_spacing<t_value_type, t_intermediate_type>>
+    {
+        using argument_type = ropufu::aftermath::algebra::linear_spacing<t_value_type, t_intermediate_type>;
+        using result_type = std::size_t;
+
+        result_type operator ()(const argument_type& x) const noexcept
+        {
+            return 0;
+        } // operator ()(...)
+    }; // struct hash<...>
+
+    template <typename t_value_type, typename t_intermediate_type>
+    struct hash<ropufu::aftermath::algebra::logarithmic_spacing<t_value_type, t_intermediate_type>>
+    {
+        using argument_type = ropufu::aftermath::algebra::logarithmic_spacing<t_value_type, t_intermediate_type>;
+        using result_type = std::size_t;
+
+        result_type operator ()(const argument_type& x) const noexcept
+        {
+            return 0;
+        } // operator ()(...)
+    }; // struct hash<...>
+
+    template <typename t_value_type, typename t_intermediate_type>
+    struct hash<ropufu::aftermath::algebra::exponential_spacing<t_value_type, t_intermediate_type>>
+    {
+        using argument_type = ropufu::aftermath::algebra::exponential_spacing<t_value_type, t_intermediate_type>;
+        using result_type = std::size_t;
+
+        result_type operator ()(const argument_type& x) const noexcept
+        {
+            std::hash<t_value_type> value_hash {};
+            return value_hash(x.m_log_base);
+        } // operator ()(...)
+    }; // struct hash<...>
+} // namespace std
 
 #endif // ROPUFU_AFTERMATH_ALGEBRA_INTERVAL_SPACING_HPP_INCLUDED

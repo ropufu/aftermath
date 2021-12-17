@@ -13,6 +13,7 @@
 #include "../vector_extender.hpp"
 #include "statistic.hpp"
 
+#include <algorithm>   // std::sort
 #include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
@@ -97,14 +98,14 @@ namespace ropufu::aftermath::sequential
         {
             this->m_thresholds = thresholds;
             this->m_when_stopped = std::vector<std::size_t>(this->m_thresholds.size());
-            ropufu::sort(this->m_thresholds);
+            std::sort(this->m_thresholds.begin(), this->m_thresholds.end());
         } // initialize(...)
 
         void initialize(container_type&& thresholds)
         {
             this->m_thresholds = std::move(thresholds);
             this->m_when_stopped = std::vector<std::size_t>(this->m_thresholds.size());
-            ropufu::sort(this->m_thresholds);
+            std::sort(this->m_thresholds.begin(), this->m_thresholds.end());
         } // initialize(...)
 
         void check_for_stopping(value_type statistic, std::size_t time) noexcept

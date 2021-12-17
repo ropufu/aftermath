@@ -19,7 +19,7 @@
 #include <string_view> // std::string_view
 #include <type_traits> // std::underlying_type_t
 #include <utility>     // std::forward
-#include <variant>     // std::variant
+#include <variant>     // std::variant, std::monostate
 #include <vector>      // std::vector
 
 namespace ropufu
@@ -131,7 +131,7 @@ namespace ropufu
             } // switch (...)
         } // try_get(...)
 
-        /** Tries to serialize a JSON array as \c std::array. Fails if sizes do not match. */
+        /** Tries to deserialize a JSON array as \c std::array. Fails if sizes do not match. */
         template <ropufu::decayed t_value_type, std::size_t t_size>
         static bool try_get(const nlohmann::json& j, std::array<t_value_type, t_size>& result) noexcept
         {
@@ -153,7 +153,7 @@ namespace ropufu
             return true;
         } // try_get(...)
 
-        /** Tries to serialize a JSON array as \c std::set. Fails if source contains duplicate values. */
+        /** Tries to deserialize a JSON array as \c std::set. Fails if source contains duplicate values. */
         template <ropufu::decayed t_value_type>
         static bool try_get(const nlohmann::json& j, std::set<t_value_type>& result) noexcept
         {
@@ -173,7 +173,21 @@ namespace ropufu
             } // switch (...)
         } // try_get(...)
 
-        /** Tries to serialize an optional JSON value. */
+        /** Tries to deserialize an std::nullopt_t JSON value. */
+        template <ropufu::decayed t_value_type>
+        static bool try_get(const nlohmann::json& j, std::monostate&) noexcept
+        {
+            return false;
+        } // try_get(...)
+
+        /** Tries to deserialize an std::nullopt_t JSON value. */
+        template <ropufu::decayed t_value_type>
+        static bool try_get(const nlohmann::json& j, std::nullopt_t&) noexcept
+        {
+            return j.is_null();
+        } // try_get(...)
+
+        /** Tries to deserialize an optional JSON value. */
         template <ropufu::decayed t_value_type>
         static bool try_get(const nlohmann::json& j, std::optional<t_value_type>& result) noexcept
         {
@@ -192,7 +206,7 @@ namespace ropufu
             } // switch (...)
         } // try_get(...)
 
-        /** Tries to serialize a JSON value that can be one of several types.
+        /** Tries to deserialize a JSON value that can be one of several types.
          *  The first that works will be selected.
          */
         template <ropufu::decayed... t_value_types>
