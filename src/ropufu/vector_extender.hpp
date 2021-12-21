@@ -64,7 +64,7 @@ namespace ropufu
             typename t_spacing_types::value_type...>
     bool try_serialize(nlohmann::json& j, const t_container_type& container, const vector_initializer_t<t_spacing_types...>& initializer) noexcept
     {
-        if (initializer.index == 0) j = container;
+        if (initializer.index() == 0) j = container;
         else
             std::visit([&j] (auto&& arg) {
                 using arg_type = std::decay_t<decltype(arg)>;
@@ -73,7 +73,7 @@ namespace ropufu
         return true;
     } // try_serialize(...)
 
-    template <push_back_container t_container_type, spacing... t_spacing_types>
+    template <spacing... t_spacing_types, push_back_container t_container_type>
         requires all_same<
             std::ranges::range_value_t<t_container_type>,
             typename t_spacing_types::value_type...>

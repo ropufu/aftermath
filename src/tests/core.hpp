@@ -10,9 +10,11 @@
 
 #include <array>   // std::array
 #include <chrono>  // std::chrono::steady_clock, std::chrono::system_clock
+#include <concepts> // std::floating_point
 #include <cstddef> // std::size_t
 #include <list>    // std::list
 #include <random>  // std::seed_seq
+#include <ranges>  // std::ranges::...
 #include <sstream> // std::ostringstream
 #include <string>  // std::string
 #include <string_view> // std::string_view
@@ -164,6 +166,28 @@ namespace ropufu::tests
         for (std::size_t i = 0; i < size; ++i) x.push_back(++seed);
         return true;
     } // try_initialize_container(...)
+    
+    template <std::floating_point t_distance_type, std::ranges::sized_range t_container_type>
+    t_distance_type vector_distance(const t_container_type& x, const t_container_type& y) noexcept
+    {
+        constexpr t_distance_type infinity = std::numeric_limits<t_distance_type>::infinity();
+        t_distance_type result = 0;
+
+        auto it = x.cbegin();
+        auto jt = y.cbegin();
+        while (it != x.cend() && jt != y.cend())
+        {
+            t_distance_type dist = ((*it) > (*jt)) ?
+                static_cast<t_distance_type>((*it) - (*jt)) :
+                static_cast<t_distance_type>((*jt) - (*it));
+            if (dist > result) result = dist;
+            ++it;
+            ++jt;
+        } // while (...)
+
+        if (it != x.cend() || jt != y.cend()) return infinity;
+        return result;
+    } // vector_distance(...)
 
     template <typename t_left_matrix_type, typename t_right_matrix_type>
     long double matrix_distance(const t_left_matrix_type& left, const t_right_matrix_type& right) noexcept
