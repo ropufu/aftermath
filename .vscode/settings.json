@@ -112,6 +112,7 @@
         "queue": "cpp",
         "cinttypes": "cpp",
         "__bits": "cpp",
-        "__functional_03": "cpp"
+        "__functional_03": "cpp",
+        "future": "cpp"
     }
 }

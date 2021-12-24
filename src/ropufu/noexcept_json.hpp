@@ -24,11 +24,11 @@
 
 namespace ropufu
 {
-    template <typename t_result_type>
+    template <typename t_value_type>
     struct noexcept_json_serializer
     {
         /** To be specialized. */
-        // static bool try_get(const nlohmann::json& j, t_result_type& x) noexcept;
+        // static bool try_get(const nlohmann::json& j, t_value_type& x) noexcept;
     }; // struct noexcept_json_serializer
 
     template <typename t_value_type>
@@ -44,7 +44,7 @@ namespace ropufu
         {
             // Check if noexcept serializer has been specialized.
             {noexcept_json_serializer<t_value_type>::try_get(j, x)} -> std::same_as<bool>;
-            noexcept(noexcept_json_serializer<t_value_type>::try_get(j, x));
+            requires noexcept(noexcept_json_serializer<t_value_type>::try_get(j, x));
         }; // concept json_noexcept
 
     template <typename t_value_type>
@@ -54,7 +54,7 @@ namespace ropufu
         {
             // Check if enum parser has been specialized.
             {ropufu::aftermath::detail::enum_parser<t_value_type>::try_parse(s, x)} -> std::same_as<bool>;
-            noexcept(ropufu::aftermath::detail::enum_parser<t_value_type>::try_parse(s, x));
+            requires noexcept(ropufu::aftermath::detail::enum_parser<t_value_type>::try_parse(s, x));
         }; // concept enum_noexcept
 
     struct noexcept_json;
@@ -118,7 +118,7 @@ namespace ropufu
             return &(*search);
         } // try_find(...)
 
-        template <typename t_letter_type>
+        template <ropufu::decayed t_letter_type>
         static bool try_get(const nlohmann::json& j, std::basic_string<t_letter_type>& result) noexcept
         {
             using value_type = std::basic_string<t_letter_type>;
@@ -173,18 +173,22 @@ namespace ropufu
             } // switch (...)
         } // try_get(...)
 
-        /** Tries to deserialize an std::nullopt_t JSON value. */
-        template <ropufu::decayed t_value_type>
-        static bool try_get(const nlohmann::json& j, std::monostate&) noexcept
+        /** Deserealizing std::monostate JSON value should always fail. */
+        static bool try_get(const nlohmann::json&, std::monostate&) noexcept
         {
             return false;
         } // try_get(...)
 
         /** Tries to deserialize an std::nullopt_t JSON value. */
-        template <ropufu::decayed t_value_type>
         static bool try_get(const nlohmann::json& j, std::nullopt_t&) noexcept
         {
             return j.is_null();
+        } // try_get(...)
+
+        static bool try_get(const nlohmann::json& j, nlohmann::json& result) noexcept
+        {
+            result = j;
+            return true;
         } // try_get(...)
 
         /** Tries to deserialize an optional JSON value. */
@@ -277,13 +281,7 @@ namespace ropufu
 
             if (j.is_discarded()) return false;
 
-
-            if constexpr (std::same_as<value_type, nlohmann::json>) // Trivial clause.
-            {
-                result = j;
-                return true;
-            } // if constexpr (...)
-            else if constexpr (ropufu::json_noexcept<value_type>) // First clause: type is already noexcept-ready (specialized noexcept_json_serializer).
+            if constexpr (ropufu::json_noexcept<value_type>) // First clause: type is already noexcept-ready (specialized noexcept_json_serializer).
             {
                 return serializer_type::try_get(j, result);
             } // if constexpr (...)

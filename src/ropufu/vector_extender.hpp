@@ -47,17 +47,14 @@ namespace ropufu
     {
         for (const auto& j : indices) result.push_back(collection[j]);
     } // sample(...)
-} // namespace ropufu
 
-#ifndef ROPUFU_NO_JSON
-namespace ropufu
-{
     template <spacing... t_spacing_types>
         requires all_same<typename t_spacing_types::value_type...>
     using vector_initializer_t = std::variant<
             std::monostate,
             aftermath::algebra::interval_based_vector<t_spacing_types>...>;
 
+#ifndef ROPUFU_NO_JSON
     template <push_back_container t_container_type, spacing... t_spacing_types>
         requires all_same<
             std::ranges::range_value_t<t_container_type>,
@@ -72,7 +69,9 @@ namespace ropufu
             }, initializer);
         return true;
     } // try_serialize(...)
+#endif
 
+#ifndef ROPUFU_NO_JSON
     template <spacing... t_spacing_types, push_back_container t_container_type>
         requires all_same<
             std::ranges::range_value_t<t_container_type>,
@@ -91,7 +90,7 @@ namespace ropufu
 
         return true;
     } // try_deserialize(...)
-} // namespace ropufu
 #endif
+} // namespace ropufu
 
 #endif // ROPUFU_AFTERMATH_VECTOR_EXTENDER_HPP_INCLUDED

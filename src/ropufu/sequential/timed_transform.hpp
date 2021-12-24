@@ -37,6 +37,31 @@ namespace ropufu::aftermath::sequential
         } // operator ()(...)
     }; // struct identity_transform
 
+    /** Affine transformation. */
+    template <typename t_value_type>
+    struct linear_transform
+    {
+        using type = linear_transform<t_value_type>;
+        using value_type = t_value_type;
+
+    private:
+        value_type m_scale_factor = {};
+        value_type m_shift = {};
+
+    public:
+        linear_transform() noexcept = default;
+
+        linear_transform(value_type scale_factor, value_type shift) noexcept
+            : m_scale_factor(scale_factor), m_shift(shift)
+        {
+        } // linear_transform(...)
+
+        constexpr value_type operator ()(std::size_t /*time*/, value_type x) const noexcept
+        {
+            return this->m_scale_factor * x + this->m_shift;
+        } // operator ()(...)
+    }; // struct linear_transform
+
     /** Window-limited linear transformation. */
     template <std::totally_ordered t_value_type,
         std::ranges::random_access_range t_container_type = aftermath::simple_vector<t_value_type>>

@@ -3,13 +3,13 @@ PNAME = tests.out
 
 CC = g++-11
 
-CFLAGS = -std=c++2b -Wall -O3
+CFLAGS = -std=c++2b -Wall -O3 -pthread
 
 PATHINC = -I./../../../../include
 
 PATHLIB =
 
-LDFLAGS = 
+LDFLAGS = -pthread
 
 .VPATH: .
 

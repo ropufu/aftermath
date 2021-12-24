@@ -94,16 +94,8 @@ namespace ropufu::aftermath::sequential
             if (message.has_value()) throw std::logic_error(message.value());
         } // validate(...)
 
-        void initialize(const container_type& thresholds)
+        void initialize()
         {
-            this->m_thresholds = thresholds;
-            this->m_when_stopped = std::vector<std::size_t>(this->m_thresholds.size());
-            std::sort(this->m_thresholds.begin(), this->m_thresholds.end());
-        } // initialize(...)
-
-        void initialize(container_type&& thresholds)
-        {
-            this->m_thresholds = std::move(thresholds);
             this->m_when_stopped = std::vector<std::size_t>(this->m_thresholds.size());
             std::sort(this->m_thresholds.begin(), this->m_thresholds.end());
         } // initialize(...)
@@ -129,8 +121,9 @@ namespace ropufu::aftermath::sequential
          *  @remark If the collection is empty, the rule will not run.
          */
         explicit stopping_time(const container_type& thresholds)
+            : m_thresholds(thresholds)
         {
-            this->initialize(thresholds);
+            this->initialize();
             this->validate();
         } // stopping_time(...)
         
@@ -138,8 +131,9 @@ namespace ropufu::aftermath::sequential
          *  @remark If the collection is empty, the rule will not run.
          */
         explicit stopping_time(container_type&& thresholds)
+            : m_thresholds(std::forward<container_type>(thresholds))
         {
-            this->initialize(std::forward<container_type>(thresholds));
+            this->initialize();
             this->validate();
         } // stopping_time(...)
 
@@ -237,13 +231,12 @@ namespace ropufu
         static bool try_get(const nlohmann::json& j, result_type& x) noexcept
         {
             std::string stopping_time_name;
-            typename result_type::container_type thresholds;
             if (!noexcept_json::required(j, result_type::jstr_type, stopping_time_name)) return false;
-            if (!noexcept_json::required(j, result_type::jstr_thresholds, thresholds)) return false;
+            if (!noexcept_json::required(j, result_type::jstr_thresholds, x.m_thresholds)) return false;
             
             if (stopping_time_name != result_type::name) return false;
-            x.initialize(std::move(thresholds));
             if (x.error_message().has_value()) return false;
+            x.initialize();
 
             return true;
         } // try_get(...)

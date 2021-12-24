@@ -117,25 +117,13 @@ namespace ropufu::aftermath::sequential
             if (message.has_value()) throw std::logic_error(message.value());
         } // validate(...)
 
-        void initialize(const thresholds_type& thresholds)
-        {
-            this->m_thresholds = thresholds;
-            this->on_thresholds_initialized();
-        } // initialize(...)
-
-        void initialize(thresholds_type&& thresholds)
-        {
-            this->m_thresholds = std::move(thresholds);
-            this->on_thresholds_initialized();
-        } // initialize(...)
-
-        void on_thresholds_initialized()
+        void initialize()
         {
             this->m_which_triggered = matrix_t<char>(this->m_thresholds.first.size(), this->m_thresholds.second.size());
             this->m_when_stopped = matrix_t<std::size_t>(this->m_thresholds.first.size(), this->m_thresholds.second.size());
             std::sort(this->m_thresholds.first.begin(), this->m_thresholds.first.end());
             std::sort(this->m_thresholds.second.begin(), this->m_thresholds.second.end());
-        } // on_thresholds_initialized(...)
+        } // initialize(...)
 
     public:
         parallel_stopping_time() noexcept = default;
@@ -144,8 +132,9 @@ namespace ropufu::aftermath::sequential
          *  @remark If either collection is empty, the rule will not run.
          */
         parallel_stopping_time(const scalar_container_type& vertical_thresholds, const scalar_container_type& horizontal_thresholds)
+            : m_thresholds(std::make_pair(vertical_thresholds, horizontal_thresholds))
         {
-            this->initialize(std::make_pair(vertical_thresholds, horizontal_thresholds));
+            this->initialize();
             this->validate();
         } // parallel_stopping_time(...)
         
@@ -153,11 +142,11 @@ namespace ropufu::aftermath::sequential
          *  @remark If either collection is empty, the rule will not run.
          */
         parallel_stopping_time(scalar_container_type&& vertical_thresholds, scalar_container_type&& horizontal_thresholds)
+            : m_thresholds(std::make_pair(
+                std::forward<scalar_container_type>(vertical_thresholds),
+                std::forward<scalar_container_type>(horizontal_thresholds)))
         {
-            this->initialize(std::make_pair(
-                std::move(vertical_thresholds),
-                std::move(horizontal_thresholds)
-            ));
+            this->initialize();
             this->validate();
         } // parallel_stopping_time(...)
 
@@ -304,14 +293,13 @@ namespace ropufu
         static bool try_get(const nlohmann::json& j, result_type& x) noexcept
         {
             std::string stopping_time_name;
-            typename result_type::thresholds_type thresholds;
             if (!noexcept_json::required(j, result_type::jstr_type, stopping_time_name)) return false;
-            if (!noexcept_json::required(j, result_type::jstr_vertical_thresholds, thresholds.first)) return false;
-            if (!noexcept_json::required(j, result_type::jstr_horizontal_thresholds, thresholds.second)) return false;
+            if (!noexcept_json::required(j, result_type::jstr_vertical_thresholds, x.m_thresholds.first)) return false;
+            if (!noexcept_json::required(j, result_type::jstr_horizontal_thresholds, x.m_thresholds.second)) return false;
             
             if (stopping_time_name != result_type::name) return false;
-            x.initialize(std::move(thresholds));
             if (x.error_message().has_value()) return false;
+            x.initialize();
 
             return true;
         } // try_get(...)
