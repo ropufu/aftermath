@@ -10,12 +10,13 @@
 #include "../simple_vector.hpp"
 #include "discrete_process.hpp"
 
-#include <chrono>      // std::chrono::system_clock
 #include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <random>      // std::seed_seq
 #include <ranges>      // std::ranges::...
+#include <stdexcept>   // std::runtime_error
+#include <string>      // std::string
 #include <string_view> // std::string_view
 
 #ifdef ROPUFU_TMP_TYPENAME
@@ -25,11 +26,12 @@
 #undef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #endif
 #define ROPUFU_TMP_TYPENAME iid_process<t_sampler_type, t_container_type>
-#define ROPUFU_TMP_TEMPLATE_SIGNATURE \
-    template <typename t_sampler_type, std::ranges::random_access_range t_container_type> \
-        requires \
-            std::totally_ordered<typename t_sampler_type::value_type> && \
-            std::same_as<std::ranges::range_value_t<t_container_type>, typename t_sampler_type::value_type>
+#define ROPUFU_TMP_TEMPLATE_SIGNATURE                                                                       \
+    template <typename t_sampler_type, std::ranges::random_access_range t_container_type>                   \
+        requires                                                                                            \
+            std::totally_ordered<typename t_sampler_type::value_type> &&                                    \
+            std::same_as<std::ranges::range_value_t<t_container_type>, typename t_sampler_type::value_type> \
+
 
 namespace ropufu::aftermath::sequential
 {
@@ -79,15 +81,6 @@ namespace ropufu::aftermath::sequential
         /** @todo Replace with parameter struct. */
         distribution_type m_distribution;
 
-        static engine_type make_engine() noexcept
-        {
-            engine_type result{};
-            int time_seed = static_cast<int>(std::chrono::system_clock::now().time_since_epoch().count());
-            std::seed_seq sequence{ 1, 1, 2, 3, 5, 8, 1729, time_seed };
-            result.seed(sequence);
-            return result;
-        } // make_engine(...)
-
     protected:
         void on_clear() noexcept override { }
 
@@ -108,9 +101,14 @@ namespace ropufu::aftermath::sequential
         } // iid_process(...)
 
         explicit iid_process(const distribution_type& dist) noexcept
-            : m_engine(type::make_engine()), m_sampler(dist), m_distribution(dist)
+            : m_engine(), m_sampler(dist), m_distribution(dist)
         {
         } // iid_process(...)
+
+        void seed(std::seed_seq& sequence) noexcept
+        {
+            this->m_engine.seed(sequence);
+        } // seed(...)
 
         /** Check for parameter equality. */
         bool operator ==(const type& other) const noexcept

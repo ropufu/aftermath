@@ -79,20 +79,6 @@ namespace ropufu::aftermath::sequential
             this->m_minus_one = this->m_history.size() - 1;
         } // initialize(...)
 
-        void initialize(const container_type& history) noexcept
-        {
-            this->m_history = history;
-            this->m_window_size = this->m_history.size();
-            this->m_minus_one = this->m_history.size() - 1;
-        } // initialize(...)
-
-        void initialize(container_type&& history) noexcept
-        {
-            this->m_history = std::move(history);
-            this->m_window_size = this->m_history.size();
-            this->m_minus_one = this->m_history.size() - 1;
-        } // initialize(...)
-
     public:
         window_limited_statistic() noexcept : window_limited_statistic(1, transform_type{})
         {

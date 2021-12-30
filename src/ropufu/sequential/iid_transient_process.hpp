@@ -10,13 +10,13 @@
 #include "../simple_vector.hpp"
 #include "discrete_process.hpp"
 
-#include <chrono>      // std::chrono::system_clock
 #include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
 #include <random>      // std::seed_seq
 #include <ranges>      // std::ranges::...
 #include <stdexcept>   // std::logic_error
+#include <string>      // std::string
 #include <string_view> // std::string_view
 
 #ifdef ROPUFU_TMP_TYPENAME
@@ -95,16 +95,6 @@ namespace ropufu::aftermath::sequential
         /** @todo Replace with parameter struct. */
         under_change_distribution_type m_under_change_distribution;
 
-        template <typename t_engine_type>
-        static t_engine_type make_engine() noexcept
-        {
-            t_engine_type result{};
-            int time_seed = static_cast<int>(std::chrono::system_clock::now().time_since_epoch().count());
-            std::seed_seq sequence{ 0, 1, 3, 6, 10, 15, 1729, time_seed };
-            result.seed(sequence);
-            return result;
-        } // make_engine(...)
-
     protected:
         void on_clear() noexcept override { }
 
@@ -149,13 +139,19 @@ namespace ropufu::aftermath::sequential
 
         iid_transient_process(const no_change_distribution_type& no_change_dist, const under_change_distribution_type& under_change_dist,
             std::size_t first_under_change_index, std::size_t change_duration)
-            : m_no_change_engine(type::make_engine<no_change_engine_type>()), m_under_change_engine(type::make_engine<under_change_engine_type>()),
+            : m_no_change_engine(), m_under_change_engine(),
             m_no_change_sampler(no_change_dist), m_under_change_sampler(under_change_dist),
             m_first_under_change_index(first_under_change_index), m_last_under_change_index(first_under_change_index + change_duration - 1),
             m_no_change_distribution(no_change_dist), m_under_change_distribution(under_change_dist)
         {
             if (change_duration == 0) throw std::logic_error("Change duration cannot be zero.");
         } // iid_transient_process(...)
+
+        void seed(std::seed_seq& no_change_sequence, std::seed_seq& under_change_sequence) noexcept
+        {
+            this->m_no_change_engine.seed(no_change_sequence);
+            this->m_under_change_engine.seed(under_change_sequence);
+        } // seed(...)
 
         std::size_t first_under_change_index() const noexcept { return this->m_first_under_change_index; }
         std::size_t last_under_change_index() const noexcept { return this->m_last_under_change_index; }

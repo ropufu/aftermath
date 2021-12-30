@@ -19,7 +19,6 @@
 #include <stdexcept>   // std::logic_error, std::runtime_error
 #include <string>      // std::string
 #include <string_view> // std::string_view
-#include <utility>     // std::forward
 
 #ifdef ROPUFU_TMP_TYPENAME
 #undef ROPUFU_TMP_TYPENAME
@@ -129,13 +128,6 @@ namespace ropufu
         static bool try_get(const nlohmann::json& j, result_type& x) noexcept
         {
             if (!x.try_deserialize_core(j)) return false;
-
-            std::size_t window_size;
-            if (!noexcept_json::required(j, result_type::jstr_window_size, window_size)) return false;
-            
-            x.initialize(window_size);
-            if (x.error_message().has_value()) return false;
-            
             return true;
         } // try_get(...)
     }; // struct noexcept_json_serializer<...>

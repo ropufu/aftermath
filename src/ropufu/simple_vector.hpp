@@ -120,7 +120,6 @@ namespace ropufu::aftermath
         void allocate()
         {
             if (this->m_begin_ptr != nullptr) throw std::logic_error("Memory has to be deallocated prior to another allocation call.");
-            //if (this->m_size == 0) return; // Do not perform trivial allocations.
             this->m_begin_ptr = this->m_allocator.allocate(this->m_size);
         } // allocate(...)
 
