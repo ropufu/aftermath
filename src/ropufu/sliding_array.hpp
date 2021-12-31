@@ -113,6 +113,12 @@ namespace ropufu::aftermath
         } // sliding_vector(...)
 
         std::size_t size() const noexcept { return this->m_count; }
+        bool empty() const noexcept { return this->m_count == 0; }
+
+        void wipe() noexcept
+        {
+            this->m_storage.wipe();
+        } // wipe(...)
 
         const value_type* data() const noexcept { return this->m_active_ptr; }
         value_type* data() noexcept { return this->m_active_ptr; }
@@ -157,6 +163,23 @@ namespace ropufu::aftermath
             // Mark new location as active.
             std::swap(this->m_passive_ptr, this->m_active_ptr);
         } // displace_front(...)
+
+        bool operator ==(const type& other) const noexcept
+        {
+            if (this->m_count != other.m_count) return false;
+            auto it = this->cbegin();
+            for (const value_type& x : other)
+            {
+                if (x != (*it)) return false;
+                ++it;
+            } // for (...)
+            return true;
+        } // operator ==(...)
+
+        bool operator !=(const type& other) const noexcept
+        {
+            return !this->operator ==(other);
+        } // operator !=(...)
     }; // struct sliding_vector
 
     /** An auxiliary structure to discard old observations. */

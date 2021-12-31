@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #endif
 
+#include "../sliding_array.hpp"
 #include "statistic.hpp"
 #include "timed_transform.hpp"
 
@@ -33,6 +34,8 @@ namespace ropufu::aftermath::sequential
         using value_type = t_value_type;
         using container_type = t_container_type;
         using transform_type = t_transform_type;
+        
+        using history_type = ropufu::aftermath::sliding_vector<value_type>;
 
         /** Names the statistic type. */
         constexpr virtual std::string_view name() const noexcept = 0;
@@ -44,24 +47,15 @@ namespace ropufu::aftermath::sequential
     private:
         std::size_t m_count_observations = 0;
         // Collection of most recent observations.
-        container_type m_history;
-        // If L is the window size, then the structure at time n is:
-        // ... --- (n - L + 1) ---  n --- (n - 1) --- (n - 2) --- ...
-        //           oldest       newest
-        std::size_t m_newest_index = 0;
-        // Cached value of m_history.size().
-        std::size_t m_window_size = 0;
-        // Cached value of m_history.size() - 1.
-        std::size_t m_minus_one = 0;
+        history_type m_history;
         // Transform for first L - 1 observations.
-        transform_type m_transform = {};
+        transform_type m_transform;
         
     protected:
         /** @brief Validates the structure and returns an error message, if any. */
         std::optional<std::string> error_message() const noexcept
         {
             if (this->m_history.size() == 0) return "Window size cannot be zero.";
-            
             return std::nullopt;
         } // error_message(...)
         
@@ -72,32 +66,23 @@ namespace ropufu::aftermath::sequential
             if (message.has_value()) throw std::logic_error(message.value());
         } // validate(...)
 
-        void initialize(std::size_t window_size) noexcept
-        {
-            this->m_history = container_type(window_size);
-            this->m_window_size = this->m_history.size();
-            this->m_minus_one = this->m_history.size() - 1;
-        } // initialize(...)
-
     public:
         window_limited_statistic() noexcept : window_limited_statistic(1, transform_type{})
         {
         } // window_limited_statistic(...)
 
         explicit window_limited_statistic(std::size_t window_size, const transform_type& transform = {})
-            : m_transform(transform)
+            : m_history(window_size), m_transform(transform)
         {
-            this->initialize(window_size);
             this->validate();
         } // window_limited_statistic(...)
 
-        std::size_t window_size() const noexcept { return this->m_window_size; }
+        std::size_t window_size() const noexcept { return this->m_history.size(); }
 
         /** The underlying process has been cleared. */
         void reset() noexcept override
         {
-            for (value_type& x : this->m_history) x = 0;
-            this->m_newest_index = 0;
+            this->m_history.wipe();
             this->m_count_observations = 0;
             this->on_reset();
         } // on_reset(...)
@@ -105,13 +90,11 @@ namespace ropufu::aftermath::sequential
         /** Observe a single value. */
         value_type observe(const value_type& value) noexcept override
         {
-            // Element at the currently oldest index will be overwritten.
-            this->m_newest_index = (this->m_newest_index + this->m_minus_one) % (this->m_window_size);
-            this->m_history[this->m_newest_index] = value;
+            this->m_history.displace_front(value);
+            value_type statistic = this->on_history_updated(this->m_history);
 
-            value_type statistic = this->on_history_updated(this->m_history, this->m_newest_index);
             std::size_t time = this->m_count_observations;
-            if (time < this->m_window_size) statistic = this->m_transform(time, statistic);
+            if (time < this->m_history.size()) statistic = this->m_transform(time, statistic);
             ++this->m_count_observations;
             return statistic;
         } // observe(...)
@@ -123,23 +106,19 @@ namespace ropufu::aftermath::sequential
             std::size_t time = this->m_count_observations;
 
             std::size_t offset = 0;
-            if (time < this->m_window_size) [[unlikely]] offset = this->m_window_size - time;
+            if (time < this->m_history.size()) [[unlikely]] offset = this->m_history.size() - time;
 
             for (std::size_t k = 0; k < offset; ++k)
             {
-                this->m_newest_index = (this->m_newest_index + this->m_minus_one) % (this->m_window_size);
-                this->m_history[this->m_newest_index] = values[k];
-
-                statistics[k] = this->on_history_updated(this->m_history, this->m_newest_index);
-                statistics[k] = this->m_transform(time, statistics[k]);
+                this->m_history.displace_front(values[k]);
+                statistics[k] = this->on_history_updated(this->m_history);
+                statistics[k] = this->m_transform(time + k, statistics[k]);
             } // for (...)
 
             for (std::size_t k = offset; k < values.size(); ++k)
             {
-                this->m_newest_index = (this->m_newest_index + this->m_minus_one) % (this->m_window_size);
-                this->m_history[this->m_newest_index] = values[k];
-
-                statistics[k] = this->on_history_updated(this->m_history, this->m_newest_index);
+                this->m_history.displace_front(values[k]);
+                statistics[k] = this->on_history_updated(this->m_history);
             } // for (...)
 
             this->m_count_observations += values.size();
@@ -148,12 +127,9 @@ namespace ropufu::aftermath::sequential
         
     protected:
         /** Occurs when the most recent observation has been added to the history.
-         *  @param history If L is the window size, then the history at time n contains observations @ times:
-         *  ... --- (n - L + 1) ---  n --- (n - 1) --- (n - 2) --- ...
-         *            oldest       newest
-         *  @param newest_index Points to the newest item in \param history.
+         *  @param history Contains most recent observations (newest first, oldest last).
          */
-        virtual value_type on_history_updated(const container_type& history, std::size_t newest_index) noexcept = 0;
+        virtual value_type on_history_updated(const history_type& history) noexcept = 0;
 
         virtual void on_reset() noexcept = 0;
 
@@ -190,8 +166,8 @@ namespace ropufu::aftermath::sequential
             if (!noexcept_json::required(j, type::jstr_type, statistic_name)) return false;
             if (!noexcept_json::required(j, type::jstr_window_size, window_size)) return false;
 
+            this->m_history = history_type(window_size);
             if (statistic_name != this->name()) return false;
-            this->initialize(window_size);
             if (this->error_message().has_value()) return false;
             
             return true;
@@ -200,7 +176,7 @@ namespace ropufu::aftermath::sequential
         void serialize_core(nlohmann::json& j) const noexcept
         {
             j[std::string{type::jstr_type}] = this->name();
-            j[std::string{type::jstr_window_size}] = this->m_window_size;
+            j[std::string{type::jstr_window_size}] = this->m_history.size();
         } // serialize_core(...)
 #endif
     }; // struct window_limited_statistic

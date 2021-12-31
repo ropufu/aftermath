@@ -8,6 +8,7 @@
 #endif
 
 #include "../simple_vector.hpp"
+#include "../sliding_array.hpp"
 #include "timed_transform.hpp"
 #include "window_limited_statistic.hpp"
 
@@ -62,6 +63,8 @@ namespace ropufu::aftermath::sequential
         using container_type = t_container_type;
         using transform_type = t_transform_type;
 
+        using history_type = typename base_type::history_type;
+
         /** Names the statistic type. */
         constexpr std::string_view name() const noexcept override
         {
@@ -100,12 +103,9 @@ namespace ropufu::aftermath::sequential
 
     protected:
         /** Occurs when the most recent observation has been added to the history.
-         *  @param history If L is the window size, then the history at time n contains observations @ times:
-         *  ... --- (n - L + 1) ---  n --- (n - 1) --- (n - 2) --- ...
-         *            oldest       newest
-         *  @param newest_index Points to the newest item in \param history.
+         *  @param history Contains most recent observations (newest first, oldest last).
          */
-        value_type on_history_updated(const container_type& history, std::size_t /*newest_index*/) noexcept override
+        value_type on_history_updated(const history_type& history) noexcept override
         {
             value_type sum = 0;
             for (value_type x : history) sum += x;

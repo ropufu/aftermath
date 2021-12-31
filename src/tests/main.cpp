@@ -40,6 +40,7 @@
 #include "ropufu/simple_vector.hpp"
 #include "ropufu/sliding_array.hpp"
 
+#include "sequential/auto_regressive_process.hpp"
 #include "sequential/cusum.hpp"
 #include "sequential/finite_moving_average.hpp"
 #include "sequential/iid_persistent_process.hpp"
