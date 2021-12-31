@@ -143,7 +143,7 @@ namespace ropufu::aftermath
         simple_vector(type&& other) noexcept
             : m_allocator(std::move(other.m_allocator)), m_size(other.m_size), m_begin_ptr(other.m_begin_ptr)
         {
-            other.m_allocator = {};
+            other.m_allocator = {}; // @todo Is this line unnecessary?
             other.m_begin_ptr = nullptr;
         } // simple_vector(...)
 
@@ -156,7 +156,7 @@ namespace ropufu::aftermath
             this->m_size = other.m_size;
             this->m_begin_ptr = other.m_begin_ptr;
             // Clear stolen references.
-            other.m_allocator = {};
+            other.m_allocator = {}; // @todo Is this line unnecessary?
             other.m_begin_ptr = nullptr;
             return *this;
         } // operator =(...)
