@@ -1,0 +1,148 @@
+
+\documentclass{article}
+\usepackage[intlimits]{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts,amstext,amsthm}
+\usepackage{paralist}        % {inparaenum} environment
+\usepackage{mathtools}       % {dcases} environment
+\usepackage{wasysym}         % \clock
+\usepackage[normalem]{ulem}  % \sout
+\usepackage[usenames,dvipsnames]{xcolor} % Named colors
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\usetikzlibrary{decorations.pathmorphing}
+\usetikzlibrary{patterns}
+
+% ~~ Styling ~~
+\renewcommand{\geq}{\geqslant}
+\renewcommand{\leq}{\leqslant}
+
+\newcommand{\ignore}[1]{}
+\newcommand{\nolabel}[1]{}
+\newcommand{\set}[1]{\left\{ #1 \right\}}
+% Set with condition and automatically scaled braces: {... | ...}.
+\newcommand{\cset}[3][:]{\left\{#2 \,#1\, #3\right\}}
+
+\renewcommand{\Pr}{{\sf P}}           % Probability measure.
+\DeclareMathOperator{\EV}{{\sf E}}    % Expected value.
+\DeclareMathOperator{\Var}{{\sf Var}} % Variance.
+\DeclareMathOperator{\Cov}{{\sf Cov}} % Covariance.
+\DeclareMathOperator{\SE}{{\sf SE}}   % Standard error.
+\DeclareMathOperator{\Hyp}{\mathcal{H}}
+\DeclareMathOperator{\DNormal}{\mathcal{N}} % Normal distribution.
+
+% ~~ Linear Algebra ~~
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\newcommand{\One}{\mathchoice{\rm 1\mskip-4.2mu l}{\rm 1\mskip-4.2mu l}{\rm 1\mskip-4.6mu l}{\rm 1\mskip-5.2mu l}}
+\newenvironment{algorithm}[1][]{\paragraph*{Algorithm#1.}}{\vspace{1ex}}
+
+% ~~ Paper-specific ~~
+\newcommand{\hlambda}{\hat{\lambda}}
+\newcommand{\hmu}{\hat{\mu}}
+\newcommand{\htau}{\hat{\tau}}
+\newcommand{\ESS}{\mathrm{ESS}}
+\newcommand{\PFA}{\mathrm{PFA}}
+\newcommand{\PMS}{\mathrm{PMS}}
+\newcommand{\PrFA}{\Pr _\mathrm{FA}}
+\newcommand{\PrMS}{\Pr _\mathrm{MS}}
+
+% Styling.
+\hypersetup{
+    colorlinks=true,%
+    bookmarksnumbered=true,%
+    bookmarksopen=true,%
+    citecolor=blue,%
+    urlcolor=blue,%
+    unicode=true,           % enable unicode encoded PDF strings
+    breaklinks=true         % allow links to break over lines by making
+                            % links over multiple lines into PDF
+                            % links to the same target
+}
+
+\begin{document}
+
+
+\section*{\texttt{aftermath::sequential}}
+
+\paragraph*{\texttt{parallel\_stopping\_time} motivation.}
+Consider a rule $(\tau, d)$ that decides between two hypotheses $\Hyp_0$ and $\Hyp_1$, where $\tau = \min\set{t_0, t_1}$,
+\[
+    t_0 = \inf\cset{n \geq 1}{R_n \geq a},
+    \qquad
+    t_1 = \inf\cset{n \geq 1}{S_n \geq b},
+\]
+and $d = j$ if $\tau = t_j$, $j = 0, 1$.
+When both thresholds are crossed at once, i.e., $\tau = t_0 = t_1$, we consider the decision erroneous.
+
+For efficiency reasons, rather than perform simulations for a given pair of thresholds $(a, b)$, we construct a grid of thresholds $(a_i, b_j)$ with $a_1 < a_2 < \cdots < a_m$ and $b_1 < b_2 < \cdots < b_n$.
+We will call the thresholds $a$, $b$, null and alternative, respectively.
+\begin{center}
+    \begin{tikzpicture}[
+            arrow/.style={->, >=Latex},
+            box/.style={inner sep=0pt, minimum width=80pt, minimum height=60pt}
+        ]
+        \draw[arrow]  (-2,+1.4) -- (2,+1.4); \node at (2.7,+1.4) {$\ensuremath{b, \text{alt}}$};
+        \draw[dashed] (-2,0) -- (-0.8,0); \node at (-2.2,0) {$\ensuremath{i}$};
+        \draw[arrow]  (-1.8,1.6) -- (-1.8,-1.6); \node at (-1.8,-1.9) {$\ensuremath{a, \text{null}}$};
+        \draw[dashed] (0,1.6) -- (0,0.3); \node at (0,1.9) {$\ensuremath{j}$};
+        \node[draw, rectangle, box] at (0, 0) {$\ensuremath{(a_i, b_j)}$};
+    \end{tikzpicture}
+\end{center}
+
+The stopping time $\tau$ will run as long as at least one of the threshold pairs in the matrix has not been crossed, or equivalently as long as $(a_m, b_n)$ has not been crossed. For each pair of thresholds, we record the observed value of $\tau$, and the decision made ($1$ if $d = 0$; $2$ if $d = 1$; $3$ if $\tau = t_0 = t_1$).
+
+When the first observation is collected, the $\mathsf{\Gamma}$-shaped region (dotted on the figure below) in the corresponding matrices will be filled.
+With each next step the decision will have been made in a $\mathsf{\Gamma}$-shaped region.
+Let $i_k$ and $i_{k + 1}$ denote the indices of the first uncrossed null threshold at steps $k$ and $k + 1$, respectively.
+Let $j_k$ and $j_{k + 1}$ denote the corresponding indices of the first uncrossed alternative thresholds.
+Then the decisions associated with $\tau = k + 1$ will have the following form.
+\begin{center}
+    \newcommand{\scaled}[2]{(\xscale * #1, \yscale * #2)}
+    \newcommand{\halfway}[4]{(\xscale * 0.5 * #1 + \xscale * 0.5 * #2, \yscale * 0.5 * #3 + \yscale * 0.5 * #4)}
+    \begin{tikzpicture}[
+            old/.style={pattern=dots, pattern color=gray},
+            null/.style={pattern=north west lines, pattern color=gray},
+            alt/.style={pattern=north east lines, pattern color=gray}]
+        \pgfmathsetmacro{\xscale}{0.8}
+        \pgfmathsetmacro{\yscale}{0.8}
+        \pgfmathsetmacro{\delta}{0.05}
+        \pgfmathsetmacro{\a}{2.0}
+        \pgfmathsetmacro{\b}{4.0}
+        \pgfmathsetmacro{\c}{8.0}
+        \pgfmathsetmacro{\x}{-1.0}
+        \pgfmathsetmacro{\y}{-2.0}
+        \pgfmathsetmacro{\z}{-4.0}
+        % ~~ Old stuff ~~
+        \draw \scaled{0 - \delta}{0 + \delta} rectangle \scaled{\c + \delta}{\z - \delta};
+        \draw[old] \scaled{0 + \delta}{0 - \delta} --
+              \scaled{\c - \delta}{0 - \delta} --
+              \scaled{\c - \delta}{\x + \delta} --
+              \scaled{\a - \delta}{\x + \delta} --
+              \scaled{\a - \delta}{\z + \delta} --
+              \scaled{0 + \delta}{\z + \delta} -- cycle;
+        % ~~ Indices ~~
+        \draw \scaled{\a}{0 + \delta} node[above] {$\ensuremath{j_{k}}$};
+        \draw \scaled{\b}{0 + \delta} node[above] {$\ensuremath{j_{k + 1}}$};
+        \draw[dashed] \scaled{\a}{0 + \delta} -- \scaled{\a}{\x + \delta};
+        \draw[dashed] \scaled{\b}{0 + \delta} -- \scaled{\b}{\x + \delta};
+        \draw \scaled{0 - \delta}{\x} node[left] {$\ensuremath{i_{k}}$};
+        \draw \scaled{0 - \delta}{\y} node[left] {$\ensuremath{i_{k + 1}}$};
+        \draw[dashed] \scaled{0 - \delta}{\x} -- \scaled{\a - \delta}{\x};
+        \draw[dashed] \scaled{0 - \delta}{\y} -- \scaled{\a - \delta}{\y};
+        % ~~ New blocks ~~
+        \draw \scaled{\a + \delta}{\x - \delta} rectangle \scaled{\b - \delta}{\y + \delta};
+        \draw[null] \scaled{\b + \delta}{\x - \delta} rectangle \scaled{\c - \delta}{\y + \delta};
+        \draw[alt] \scaled{\a + \delta}{\y - \delta} rectangle \scaled{\b - \delta}{\z + \delta};
+        % ~~ Labels ~~
+        \node[fill = white] at \halfway{\a}{\b}{\x}{\y} {err};
+        \node[fill = white] at \halfway{\a}{\b}{\y}{\z} {$\ensuremath{\Hyp_0}$};
+        \node[fill = white] at \halfway{\b}{\c}{\x}{\y} {$\ensuremath{\Hyp_1}$};
+    \end{tikzpicture}
+\end{center}
+
+
+\end{document}

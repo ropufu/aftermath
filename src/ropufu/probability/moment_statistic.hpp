@@ -41,10 +41,10 @@ namespace ropufu::aftermath::probability
         using scalar_type = detail::vector_to_scalar_t<statistic_type>;
 
         /** Number of bins. */
-        static constexpr std::size_t bredth = t_order + 1;
+        static constexpr std::size_t breadth = t_order + 1;
 
         template <typename t_type>
-        using bins_t = std::array<t_type, type::bredth>;
+        using bins_t = std::array<t_type, type::breadth>;
 
     private:
         std::size_t m_count = 0; // Total count of observations.
@@ -68,6 +68,8 @@ namespace ropufu::aftermath::probability
             this->m_local_shifted_squares.fill(this->m_zero);
         } // moment_statistic(...)
 
+        const statistic_type& shift() const noexcept { return this->m_shift; }
+
         void clear() noexcept
         {
             this->m_count = 0;
@@ -76,6 +78,16 @@ namespace ropufu::aftermath::probability
             this->m_local_shifted_sums.fill(this->m_zero);
             this->m_local_shifted_squares.fill(this->m_zero);
         } // clear(...)
+
+        void observe(const type& other) noexcept
+        {
+            for (std::size_t i = 0; i < type::breadth; ++i)
+            {
+                this->m_local_shifted_sums[i] += other.m_local_shifted_sums[i];
+                this->m_local_shifted_squares[i] += other.m_local_shifted_squares[i];
+            } // for (...)
+            this->m_count += other.m_count;
+        } // observe(...)
 
         void observe(const observation_type& value) noexcept
         {
@@ -88,7 +100,7 @@ namespace ropufu::aftermath::probability
             this->m_local_shifted_squares[this->m_bin_index] += x;
 
             ++this->m_count;
-            this->m_bin_index = (this->m_bin_index + 1) % (type::bredth);
+            this->m_bin_index = (this->m_bin_index + 1) % (type::breadth);
         } // observe(...)
             
         type& operator <<(const observation_type& value) noexcept
@@ -99,6 +111,8 @@ namespace ropufu::aftermath::probability
 
         std::size_t count() const noexcept { return this->m_count; }
 
+        bool empty() const noexcept { return this->m_count == 0; }
+
         statistic_type mean() const noexcept
         {
             scalar_type n = static_cast<scalar_type>(this->m_count);
@@ -106,7 +120,7 @@ namespace ropufu::aftermath::probability
             // S = sum(x - shift) = n (mean - shift).
             // mean = shift + (S / n) = shift + sum(S_local / n).
             statistic_type mean { this->m_shift };
-            for (std::size_t j = 0; j < type::bredth; ++j)
+            for (std::size_t j = 0; j < type::breadth; ++j)
             {
                 statistic_type s { this->m_local_shifted_sums[j] };
                 s /= n;
@@ -132,7 +146,7 @@ namespace ropufu::aftermath::probability
             statistic_type variance_sa { this->m_zero };
             statistic_type variance_sb { this->m_zero };
 
-            for (std::size_t j = 0; j < type::bredth; ++j)
+            for (std::size_t j = 0; j < type::breadth; ++j)
             {
                 statistic_type q { this->m_local_shifted_squares[j] };
                 statistic_type sa { this->m_local_shifted_sums[j] };

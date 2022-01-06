@@ -42,7 +42,7 @@ namespace ropufu::aftermath::random
         } // normal_sampler_512(...)
 
         explicit normal_sampler_512(const distribution_type& dist) noexcept
-            : m_shift(dist.mu()), m_scale(dist.sigma())
+            : m_shift(static_cast<value_type>(dist.mu())), m_scale(static_cast<value_type>(dist.sigma()))
         {
         } // normal_sampler_512(...)
 

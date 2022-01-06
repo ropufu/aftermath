@@ -7,13 +7,11 @@
 #include "../noexcept_json.hpp"
 #endif
 
-#include "../simple_vector.hpp"
 #include "statistic.hpp"
 
-#include <concepts>    // std::same_as, std::totally_ordered
+#include <concepts>    // std::totally_ordered
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
-#include <ranges>      // std::ranges::...
 #include <stdexcept>   // std::runtime_error
 #include <string_view> // std::string_view
 #include <utility>     // std::forward
@@ -24,18 +22,14 @@
 #ifdef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #undef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #endif
-#define ROPUFU_TMP_TYPENAME cusum<t_value_type, t_container_type>
-#define ROPUFU_TMP_TEMPLATE_SIGNATURE \
-    template <std::totally_ordered t_value_type, std::ranges::random_access_range t_container_type> \
-        requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>           \
-
+#define ROPUFU_TMP_TYPENAME cusum<t_observation_value_type, t_statistic_value_type>
+#define ROPUFU_TMP_TEMPLATE_SIGNATURE template <std::totally_ordered t_observation_value_type, std::totally_ordered t_statistic_value_type>
 
 namespace ropufu::aftermath::sequential
 {
     /** CUSUM statistic keeps trac of the maximum of all partial sums. */
-    template <std::totally_ordered t_value_type,
-        std::ranges::random_access_range t_container_type = aftermath::simple_vector<t_value_type>>
-        requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
+    template <std::totally_ordered t_observation_value_type,
+        std::totally_ordered t_statistic_value_type = t_observation_value_type>
     struct cusum;
 
 #ifndef ROPUFU_NO_JSON
@@ -47,11 +41,11 @@ namespace ropufu::aftermath::sequential
 
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct cusum
-        : public statistic<t_value_type, t_container_type>
+        : public statistic<t_observation_value_type, t_statistic_value_type>
     {
         using type = ROPUFU_TMP_TYPENAME;
-        using value_type = t_value_type;
-        using container_type = t_container_type;
+        using observation_value_type = t_observation_value_type;
+        using statistic_value_type = t_statistic_value_type;
 
         /** Names the statistic. */
         static constexpr std::string_view name = "CUSUM";
@@ -67,7 +61,7 @@ namespace ropufu::aftermath::sequential
 
     private:
         // Latest statistic value.
-        value_type m_latest_statistic = 0;
+        statistic_value_type m_latest_statistic = 0;
 
     public:
         cusum() noexcept = default;
@@ -79,24 +73,11 @@ namespace ropufu::aftermath::sequential
         } // reset(...)
 
         /** Observe a single value. */
-        value_type observe(const value_type& value) noexcept override
+        statistic_value_type observe(const statistic_value_type& value) noexcept override
         {
             if (this->m_latest_statistic < 0) this->m_latest_statistic = 0;
             this->m_latest_statistic += value;
             return this->m_latest_statistic;
-        } // observe(...)
-
-        /** Observe a block of values. */
-        container_type observe(const container_type& values) noexcept override
-        {
-            container_type statistics = values;
-            for (std::size_t i = 0; i < values.size(); ++i)
-            {
-                if (this->m_latest_statistic < 0) this->m_latest_statistic = 0;
-                this->m_latest_statistic += values[i];
-                statistics[i] = this->m_latest_statistic;
-            } // for (...)
-            return statistics;
         } // observe(...)
 
         bool operator ==(const type& other) const noexcept
@@ -160,7 +141,7 @@ namespace std
         std::size_t operator ()(const argument_type& x) const noexcept
         {
             std::size_t result = 0;
-            std::hash<typename argument_type::value_type> statistic_hasher = {};
+            std::hash<typename argument_type::statistic_value_type> statistic_hasher = {};
 
             result ^= statistic_hasher(x.m_latest_statistic);
 

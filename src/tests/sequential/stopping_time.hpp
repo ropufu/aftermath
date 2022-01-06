@@ -16,47 +16,31 @@
 #include <string>  // std::string
 #include <vector>  // std::vector
 
+namespace ropufu::tests
+{
+    template <typename t_value_type>
+    struct stopped_statistic_for_stopping_time
+    {
+        using value_type = t_value_type;
+
+        value_type operator ()(std::size_t time) const noexcept
+        {
+            return static_cast<value_type>(time);
+        } // operator (...)
+    }; // struct stopped_statistic_for_stopping_time
+} // namespace ropufu::tests
+
 #ifdef ROPUFU_TMP_TEST_TYPES
 #undef ROPUFU_TMP_TEST_TYPES
 #endif
-#define ROPUFU_TMP_TEST_TYPES                                                      \
-    ropufu::aftermath::random::binomial_sampler<std::mt19937_64, std::int64_t>,    \
-    ropufu::aftermath::random::normal_sampler_512<std::mt19937_64, double>,        \
-    ropufu::aftermath::random::uniform_int_sampler<std::mt19937_64, std::int64_t>  \
+#define ROPUFU_TMP_TEST_TYPES std::int64_t, float, double
 
-
-#ifndef ROPUFU_NO_JSON
-TEST_CASE_TEMPLATE("testing stopping_time json", sampler_type, ROPUFU_TMP_TEST_TYPES)
+TEST_CASE_TEMPLATE("testing stopping_time border crossing", value_type, ROPUFU_TMP_TEST_TYPES)
 {
-    using value_type = typename sampler_type::value_type;
     using stopping_time_type = ropufu::aftermath::sequential::stopping_time<value_type>;
-    using container_type = typename stopping_time_type::container_type;
     
-    stopping_time_type stopping_time_o{};
-    stopping_time_type stopping_time_a{container_type({3})};
-    stopping_time_type stopping_time_b{container_type({1, 2, 5})};
-
-    std::string xxx {};
-    std::string yyy {};
-
-    ropufu::tests::does_json_round_trip(stopping_time_o, xxx, yyy);
-    CHECK_EQ(xxx, yyy);
-
-    ropufu::tests::does_json_round_trip(stopping_time_a, xxx, yyy);
-    CHECK_EQ(xxx, yyy);
-
-    ropufu::tests::does_json_round_trip(stopping_time_b, xxx, yyy);
-    CHECK_EQ(xxx, yyy);
-} // TEST_CASE_TEMPLATE(...)
-#endif
-
-TEST_CASE_TEMPLATE("testing stopping_time border crossing", sampler_type, ROPUFU_TMP_TEST_TYPES)
-{
-    using value_type = typename sampler_type::value_type;
-    using stopping_time_type = ropufu::aftermath::sequential::stopping_time<value_type>;
-    using container_type = typename stopping_time_type::container_type;
-    
-    stopping_time_type stopping_time{container_type({1, 2, 5})};
+    std::vector<value_type> thresholds{1, 2, 5};
+    stopping_time_type stopping_time{thresholds};
 
     std::vector<value_type> process = {0, -1, 1, 2, 0, 3, 3};
     // ======================================================
@@ -75,6 +59,21 @@ TEST_CASE_TEMPLATE("testing stopping_time border crossing", sampler_type, ROPUFU
     CHECK_EQ(stopping_time.when(0), 4); // First process > 1.
     CHECK_EQ(stopping_time.when(1), 6); // First process > 2.
     CHECK_EQ(stopping_time.when(2), 0); // First process > 5.
+} // TEST_CASE_TEMPLATE(...)
+
+TEST_CASE_TEMPLATE("testing stopping_time stopped_statistic", value_type, ROPUFU_TMP_TEST_TYPES)
+{
+    using stopped_statistic_type = ropufu::tests::stopped_statistic_for_stopping_time<std::size_t>;
+    using stopping_time_type = ropufu::aftermath::sequential::stopping_time<value_type, stopped_statistic_type>;
+    
+    std::vector<value_type> thresholds{1, 2, 5};
+    stopping_time_type stopping_time{thresholds};
+
+    std::vector<value_type> process = {0, -1, 1, 2, 0, 3, 3, 10};
+    for (value_type x : process) stopping_time.observe(x);
+
+    REQUIRE_EQ(stopping_time.is_running(), false);
+    CHECK_EQ(stopping_time.stopped_statistic(), stopping_time.when());
 } // TEST_CASE_TEMPLATE(...)
 
 #endif // ROPUFU_AFTERMATH_TESTS_SEQUENTIAL_STOPPING_TIME_HPP_INCLUDED

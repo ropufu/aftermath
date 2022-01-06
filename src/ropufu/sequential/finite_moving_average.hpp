@@ -7,18 +7,13 @@
 #include "../noexcept_json.hpp"
 #endif
 
-#include "../simple_vector.hpp"
-#include "../sliding_array.hpp"
 #include "timed_transform.hpp"
 #include "window_limited_statistic.hpp"
 
 #include <concepts>    // std::same_as, std::totally_ordered
 #include <cstddef>     // std::size_t
 #include <functional>  // std::hash
-#include <optional>    // std::optional, std::nullopt
-#include <ranges>      // std::ranges::...
-#include <stdexcept>   // std::logic_error, std::runtime_error
-#include <string>      // std::string
+#include <stdexcept>   // std::runtime_error
 #include <string_view> // std::string_view
 
 #ifdef ROPUFU_TMP_TYPENAME
@@ -27,20 +22,18 @@
 #ifdef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #undef ROPUFU_TMP_TEMPLATE_SIGNATURE
 #endif
-#define ROPUFU_TMP_TYPENAME finite_moving_average<t_value_type, t_container_type, t_transform_type>
-#define ROPUFU_TMP_TEMPLATE_SIGNATURE                                                     \
-    template <std::totally_ordered t_value_type,                                          \
-    std::ranges::random_access_range t_container_type,                                    \
-    ropufu::aftermath::sequential::timed_transform<t_value_type> t_transform_type>      \
-        requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type> \
+#define ROPUFU_TMP_TYPENAME finite_moving_average<t_observation_value_type, t_statistic_value_type, t_transform_type>
+#define ROPUFU_TMP_TEMPLATE_SIGNATURE                                                             \
+    template <std::totally_ordered t_observation_value_type,                                      \
+        std::totally_ordered t_statistic_value_type,                                              \
+        ropufu::aftermath::sequential::timed_transform<t_statistic_value_type> t_transform_type>  \
 
 
 namespace ropufu::aftermath::sequential
 {
-    template <std::totally_ordered t_value_type,
-        std::ranges::random_access_range t_container_type = simple_vector<t_value_type>,
-        ropufu::aftermath::sequential::timed_transform<t_value_type> t_transform_type = identity_transform<t_value_type>>
-            requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
+    template <std::totally_ordered t_observation_value_type,
+        std::totally_ordered t_statistic_value_type = t_observation_value_type,
+        ropufu::aftermath::sequential::timed_transform<t_statistic_value_type> t_transform_type = identity_transform<t_statistic_value_type>>
     struct finite_moving_average;
 
 #ifndef ROPUFU_NO_JSON
@@ -55,12 +48,12 @@ namespace ropufu::aftermath::sequential
      */
     ROPUFU_TMP_TEMPLATE_SIGNATURE
     struct finite_moving_average
-        : public window_limited_statistic<t_value_type, t_container_type, t_transform_type>
+        : public window_limited_statistic<t_observation_value_type, t_statistic_value_type, t_transform_type>
     {
         using type = ROPUFU_TMP_TYPENAME;
-        using base_type = window_limited_statistic<t_value_type, t_container_type, t_transform_type>;
-        using value_type = t_value_type;
-        using container_type = t_container_type;
+        using base_type = window_limited_statistic<t_observation_value_type, t_statistic_value_type, t_transform_type>;
+        using observation_value_type = t_observation_value_type;
+        using statistic_value_type = t_statistic_value_type;
         using transform_type = t_transform_type;
 
         using history_type = typename base_type::history_type;
@@ -105,10 +98,10 @@ namespace ropufu::aftermath::sequential
         /** Occurs when the most recent observation has been added to the history.
          *  @param history Contains most recent observations (newest first, oldest last).
          */
-        value_type on_history_updated(const history_type& history) noexcept override
+        statistic_value_type on_history_updated(const history_type& history) noexcept override
         {
-            value_type sum = 0;
-            for (value_type x : history) sum += x;
+            statistic_value_type sum = 0;
+            for (const observation_value_type& x : history) sum += x;
             return sum;
         } // on_history_updated(...)
 

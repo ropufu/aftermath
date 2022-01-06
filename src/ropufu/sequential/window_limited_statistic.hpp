@@ -23,19 +23,18 @@
 namespace ropufu::aftermath::sequential
 {
     /** Implements base functionality for window-limited statistics. */
-    template <std::totally_ordered t_value_type,
-        std::ranges::random_access_range t_container_type,
-        timed_transform<t_value_type> t_transform_type = identity_transform<t_value_type>>
-            requires std::same_as<std::ranges::range_value_t<t_container_type>, t_value_type>
+    template <std::totally_ordered t_observation_value_type,
+        std::totally_ordered t_statistic_value_type,
+        timed_transform<t_statistic_value_type> t_transform_type = identity_transform<t_statistic_value_type>>
     struct window_limited_statistic
-        : public statistic<t_value_type, t_container_type>
+        : public statistic<t_observation_value_type, t_statistic_value_type>
     {
-        using type = window_limited_statistic<t_value_type, t_container_type, t_transform_type>;
-        using value_type = t_value_type;
-        using container_type = t_container_type;
+        using type = window_limited_statistic<t_observation_value_type, t_statistic_value_type, t_transform_type>;
+        using observation_value_type = t_observation_value_type;
+        using statistic_value_type = t_statistic_value_type;
         using transform_type = t_transform_type;
         
-        using history_type = ropufu::aftermath::sliding_vector<value_type>;
+        using history_type = ropufu::aftermath::sliding_vector<observation_value_type>;
 
         /** Names the statistic type. */
         constexpr virtual std::string_view name() const noexcept = 0;
@@ -88,10 +87,10 @@ namespace ropufu::aftermath::sequential
         } // on_reset(...)
         
         /** Observe a single value. */
-        value_type observe(const value_type& value) noexcept override
+        statistic_value_type observe(const observation_value_type& value) noexcept override
         {
             this->m_history.displace_front(value);
-            value_type statistic = this->on_history_updated(this->m_history);
+            statistic_value_type statistic = this->on_history_updated(this->m_history);
 
             std::size_t time = this->m_count_observations;
             if (time < this->m_history.size()) statistic = this->m_transform(time, statistic);
@@ -100,9 +99,16 @@ namespace ropufu::aftermath::sequential
         } // observe(...)
 
         /** Observe a block of values. */
-        container_type observe(const container_type& values) noexcept override
+        template <std::ranges::random_access_range t_observation_container_type,
+            std::ranges::random_access_range t_statistic_container_type>
+            requires
+                std::ranges::sized_range<t_observation_container_type> &&
+                std::ranges::sized_range<t_statistic_container_type> &&
+                std::same_as<std::ranges::range_value_t<t_observation_container_type>, observation_value_type> &&
+                std::same_as<std::ranges::range_value_t<t_statistic_container_type>, statistic_value_type>
+        void observe(const t_observation_container_type& values, t_statistic_container_type& statistics) noexcept
         {
-            container_type statistics = values;
+            statistics = t_statistic_container_type(values.size());
             std::size_t time = this->m_count_observations;
 
             std::size_t offset = 0;
@@ -122,14 +128,13 @@ namespace ropufu::aftermath::sequential
             } // for (...)
 
             this->m_count_observations += values.size();
-            return statistics;
         } // observe(...)
         
     protected:
         /** Occurs when the most recent observation has been added to the history.
          *  @param history Contains most recent observations (newest first, oldest last).
          */
-        virtual value_type on_history_updated(const history_type& history) noexcept = 0;
+        virtual statistic_value_type on_history_updated(const history_type& history) noexcept = 0;
 
         virtual void on_reset() noexcept = 0;
 
@@ -146,10 +151,10 @@ namespace ropufu::aftermath::sequential
             std::size_t width = total_width / (this->m_window_size);
             std::size_t shift = (width == 0 ? 1 : width);
 
-            std::hash<value_type> history_hasher = {};
+            std::hash<observation_value_type> history_hasher = {};
 
             std::size_t offset = 0;
-            for (value_type y : this->m_history)
+            for (const observation_value_type& y : this->m_history)
             {
                 result ^= (history_hasher(y) << offset);
                 offset = (offset + shift) % total_width;

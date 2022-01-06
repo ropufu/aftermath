@@ -2,93 +2,90 @@
 #ifndef ROPUFU_AFTERMATH_SEQUENTIAL_PARALLEL_STOPPING_TIME_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_SEQUENTIAL_PARALLEL_STOPPING_TIME_HPP_INCLUDED
 
-#ifndef ROPUFU_NO_JSON
-#include <nlohmann/json.hpp>
-#include "../noexcept_json.hpp"
-#endif
-
-#include "../format/cat.hpp"
 #include "../algebra/matrix.hpp"
 #include "../number_traits.hpp"
 #include "../simple_vector.hpp"
 #include "../vector_extender.hpp"
+#include "concepts.hpp"
 #include "statistic.hpp"
 
 #include <algorithm>   // std::sort
-#include <concepts>    // std::same_as, std::totally_ordered
+#include <concepts>    // std::totally_ordered, std::constructible_from
 #include <cstddef>     // std::size_t
-#include <functional>  // std::hash
 #include <optional>    // std::optional, std::nullopt
 #include <ranges>      // std::ranges::...
-#include <stdexcept>   // std::logic_error
+#include <stdexcept>   // std::logic_error, std::runtime_error
 #include <string>      // std::string
 #include <string_view> // std::string_view
-#include <utility>     // std::forward, std::move, std::pair
-#include <vector>      // std::vector
-
-#ifdef ROPUFU_TMP_TYPENAME
-#undef ROPUFU_TMP_TYPENAME
-#endif
-#ifdef ROPUFU_TMP_TEMPLATE_SIGNATURE
-#undef ROPUFU_TMP_TEMPLATE_SIGNATURE
-#endif
-#define ROPUFU_TMP_TYPENAME parallel_stopping_time<t_scalar_type, t_scalar_container_type, t_pair_container_type>
-#define ROPUFU_TMP_TEMPLATE_SIGNATURE                             \
-    template <std::totally_ordered t_scalar_type,                 \
-        std::ranges::random_access_range t_scalar_container_type, \
-        std::ranges::random_access_range t_pair_container_type>   \
-            requires std::same_as<std::ranges::range_value_t<t_scalar_container_type>, t_scalar_type> &&                  \
-                std::same_as<std::ranges::range_value_t<t_pair_container_type>, std::pair<t_scalar_type, t_scalar_type>> \
-
+#include <utility>     // std::pair
 
 namespace ropufu::aftermath::sequential
 {
+    namespace detail
+    {
+        template <stopped_statistic t_stopped_type>
+        struct parallel_stopped_module
+        {
+            using stopped_type = t_stopped_type;
+            using value_type = typename stopped_type::value_type;
+            using statistic_type = ropufu::aftermath::algebra::matrix<value_type>;
+
+        private:
+            stopped_type m_stopped = {};
+            statistic_type m_statistic = {};
+            
+        protected:
+            void on_initialized(std::size_t height, std::size_t width) noexcept
+            {
+                this->m_statistic = statistic_type(height, width);
+            } // on_initialized(...)
+
+            void on_stopped(std::size_t i, std::size_t j, std::size_t time)
+            {
+                this->m_statistic(i, j) = this->m_stopped(time);
+            } // on_stopped(...)
+
+        public:
+            const statistic_type& stopped_statistic() { return this->m_statistic; }
+        }; // struct parallel_stopped_module
+
+        template <>
+        struct parallel_stopped_module<void>
+        {
+        protected:
+            void on_initialized(std::size_t /*height*/, std::size_t /*width*/) noexcept
+            {
+            } // on_initialized(...)
+
+            void on_stopped(std::size_t /*i*/, std::size_t /*j*/, std::size_t /*time*/) noexcept
+            {
+            } // on_stopped(...)
+        }; // struct parallel_stopped_module
+    } // namespace detail
+
     /** Base class for two one-sided stopping times running in parallel.
      *  Equivalently, may be rewritten as inf{n : V_n > b or H_n > c},
      *  where V_n and H_n are the detection statistics and b anc c are
      *  thresholds. We will refer to V_n as the vertical statistic (frist),
      *  and H_n as the horizontal statistic (second).
      */
-    template <std::totally_ordered t_scalar_type,
-        std::ranges::random_access_range t_scalar_container_type = aftermath::simple_vector<t_scalar_type>,
-        std::ranges::random_access_range t_pair_container_type = aftermath::simple_vector<std::pair<t_scalar_type, t_scalar_type>>>
-            requires std::same_as<std::ranges::range_value_t<t_scalar_container_type>, t_scalar_type> &&
-                std::same_as<std::ranges::range_value_t<t_pair_container_type>, std::pair<t_scalar_type, t_scalar_type>>
-    struct parallel_stopping_time;
-
-#ifndef ROPUFU_NO_JSON
-    ROPUFU_TMP_TEMPLATE_SIGNATURE
-    void to_json(nlohmann::json& j, const ROPUFU_TMP_TYPENAME& x) noexcept;
-    ROPUFU_TMP_TEMPLATE_SIGNATURE
-    void from_json(const nlohmann::json& j, ROPUFU_TMP_TYPENAME& x);
-#endif
-
-    ROPUFU_TMP_TEMPLATE_SIGNATURE
+    template <std::totally_ordered t_value_type, stopped_statistic t_stopped_type = void>
     struct parallel_stopping_time
-        : public statistic<std::pair<t_scalar_type, t_scalar_type>, t_pair_container_type, void, void>
+        : public statistic<std::pair<t_value_type, t_value_type>, void>,
+        public detail::parallel_stopped_module<t_stopped_type>
     {
-        using type = ROPUFU_TMP_TYPENAME;
-        using scalar_type = t_scalar_type;
-        using scalar_container_type = t_scalar_container_type;
-        using pair_container_type = t_pair_container_type;
+        using type = parallel_stopping_time<t_value_type, t_stopped_type>;
+        using value_type = t_value_type;
+        using stopped_type = t_stopped_type;
 
-        using value_type = std::pair<t_scalar_type, t_scalar_type>;
-        using thresholds_type = std::pair<scalar_container_type, scalar_container_type>;
         template <typename t_data_type>
-        using matrix_t = aftermath::algebra::matrix<t_data_type>;
+        using matrix_t = ropufu::aftermath::algebra::matrix<t_data_type>;
+        using thresholds_container_type = ropufu::aftermath::simple_vector<value_type>;
+        using thresholds_type = std::pair<thresholds_container_type, thresholds_container_type>;
 
-        /** Names the stopping time. */
-        static constexpr std::string_view name = "parallel";
-
-        // ~~ Json names ~~
-        static constexpr std::string_view jstr_type = "type";
-        static constexpr std::string_view jstr_vertical_thresholds = "vertical thresholds";
-        static constexpr std::string_view jstr_horizontal_thresholds = "horizontal thresholds";
-
-#ifndef ROPUFU_NO_JSON
-        friend ropufu::noexcept_json_serializer<type>;
-#endif
-        friend std::hash<type>;
+        static constexpr char decide_vertical   = 0b001;
+        static constexpr char decide_horizontal = 0b010;
+        static constexpr char decide_error      = type::decide_vertical | type::decide_horizontal;
 
     private:
         std::size_t m_count_observations = 0;
@@ -104,8 +101,8 @@ namespace ropufu::aftermath::sequential
         /** @brief Validates the structure and returns an error message, if any. */
         std::optional<std::string> error_message() const noexcept
         {
-            for (scalar_type x : this->m_thresholds.first) if (!aftermath::is_finite(x)) return "Thresholds must be finite.";
-            for (scalar_type x : this->m_thresholds.second) if (!aftermath::is_finite(x)) return "Thresholds must be finite.";
+            for (value_type x : this->m_thresholds.first) if (!aftermath::is_finite(x)) return "Thresholds must be finite.";
+            for (value_type x : this->m_thresholds.second) if (!aftermath::is_finite(x)) return "Thresholds must be finite.";
             
             return std::nullopt;
         } // error_message(...)
@@ -119,10 +116,13 @@ namespace ropufu::aftermath::sequential
 
         void initialize()
         {
-            this->m_which_triggered = matrix_t<char>(this->m_thresholds.first.size(), this->m_thresholds.second.size());
-            this->m_when_stopped = matrix_t<std::size_t>(this->m_thresholds.first.size(), this->m_thresholds.second.size());
+            std::size_t height = this->m_thresholds.first.size();
+            std::size_t width = this->m_thresholds.second.size();
+            this->m_which_triggered = matrix_t<char>(height, width);
+            this->m_when_stopped = matrix_t<std::size_t>(height, width);
             std::sort(this->m_thresholds.first.begin(), this->m_thresholds.first.end());
             std::sort(this->m_thresholds.second.begin(), this->m_thresholds.second.end());
+            this->on_initialized(height, width);
         } // initialize(...)
 
     public:
@@ -131,20 +131,12 @@ namespace ropufu::aftermath::sequential
         /** Initializeds the stopping time for a given collection of thresholds.
          *  @remark If either collection is empty, the rule will not run.
          */
-        parallel_stopping_time(const scalar_container_type& vertical_thresholds, const scalar_container_type& horizontal_thresholds)
-            : m_thresholds(std::make_pair(vertical_thresholds, horizontal_thresholds))
-        {
-            this->initialize();
-            this->validate();
-        } // parallel_stopping_time(...)
-        
-        /** Initializeds the stopping time for a given collection of thresholds.
-         *  @remark If either collection is empty, the rule will not run.
-         */
-        parallel_stopping_time(scalar_container_type&& vertical_thresholds, scalar_container_type&& horizontal_thresholds)
+        template <std::ranges::range t_container_type>
+            requires std::constructible_from<thresholds_container_type, t_container_type>
+        parallel_stopping_time(const t_container_type& vertical_thresholds, const t_container_type& horizontal_thresholds)
             : m_thresholds(std::make_pair(
-                std::forward<scalar_container_type>(vertical_thresholds),
-                std::forward<scalar_container_type>(horizontal_thresholds)))
+                thresholds_container_type(vertical_thresholds),
+                thresholds_container_type(horizontal_thresholds)))
         {
             this->initialize();
             this->validate();
@@ -153,10 +145,10 @@ namespace ropufu::aftermath::sequential
         std::size_t count_observations() const noexcept { return this->m_count_observations; }
 
         /** Thresholds, sorted in ascending order, to determine when the second stopping time should terminate. */
-        const scalar_container_type& vertical_thresholds() const noexcept { return this->m_thresholds.first; }
+        const thresholds_container_type& vertical_thresholds() const noexcept { return this->m_thresholds.first; }
 
         /** Thresholds, sorted in ascending order, to determine when the first stopping time should terminate. */
-        const scalar_container_type& horizontal_thresholds() const noexcept { return this->m_thresholds.second; }
+        const thresholds_container_type& horizontal_thresholds() const noexcept { return this->m_thresholds.second; }
 
         /** Which of the rules caused termination: 1 for first, 2 for second, 3 for both, 0 for neither. */
         const matrix_t<char>& which() const noexcept { return this->m_which_triggered; }
@@ -200,7 +192,7 @@ namespace ropufu::aftermath::sequential
         } // reset(...)
 
         /** Observe a single value. */
-        void observe(const value_type& value) noexcept override
+        void observe(const std::pair<value_type, value_type>& value) noexcept override
         {
             //         |  0    1   ...   n-1    | c (horizontal) 
             // --------|------------------------|         
@@ -220,14 +212,15 @@ namespace ropufu::aftermath::sequential
             std::size_t next_uncrossed_vertical_index = this->m_first_uncrossed_index.first;
             for (std::size_t i = this->m_first_uncrossed_index.first; i < m; ++i)
             {
-                scalar_type b = this->m_thresholds.first[i];
+                value_type b = this->m_thresholds.first[i];
                 if (value.first <= b) break; // The smallest uncrossed index still hasn't been crossed.
                 
                 next_uncrossed_vertical_index = i + 1;
                 for (std::size_t j = this->m_first_uncrossed_index.second; j < n; ++j)
                 {
-                    this->m_which_triggered(i, j) |= 1; // Mark threshold as crossed.
+                    this->m_which_triggered(i, j) |= type::decide_vertical; // Mark threshold as crossed.
                     this->m_when_stopped(i, j) = time; // Record the freshly stopped times.
+                    this->on_stopped(i, j, time);
                 } // for (...)
             } // for (...)
 
@@ -235,14 +228,15 @@ namespace ropufu::aftermath::sequential
             std::size_t next_uncrossed_horizontal_index = this->m_first_uncrossed_index.second;
             for (std::size_t j = this->m_first_uncrossed_index.second; j < n; ++j)
             {
-                scalar_type c = this->m_thresholds.second[j];
+                value_type c = this->m_thresholds.second[j];
                 if (value.second <= c) break; // The smallest uncrossed index still hasn't been crossed.
 
                 next_uncrossed_horizontal_index = j + 1;
                 for (std::size_t i = this->m_first_uncrossed_index.first; i < m; ++i)
                 {
-                    this->m_which_triggered(i, j) |= 2; // Mark threshold as crossed.
+                    this->m_which_triggered(i, j) |= type::decide_horizontal; // Mark threshold as crossed.
                     this->m_when_stopped(i, j) = time; // Record the freshly stopped times.
+                    this->on_stopped(i, j, time);
                 } // for (...)
             } // for (...)
 
@@ -263,48 +257,7 @@ namespace ropufu::aftermath::sequential
         {
             return !this->operator ==(other);
         } // operator !=(...)
-
-#ifndef ROPUFU_NO_JSON
-        friend void to_json(nlohmann::json& j, const type& x) noexcept
-        {
-            j = nlohmann::json{
-                {type::jstr_type, type::name},
-                {type::jstr_vertical_thresholds, x.m_thresholds.first},
-                {type::jstr_horizontal_thresholds, x.m_thresholds.second}
-            };
-        } // to_json(...)
-
-        friend void from_json(const nlohmann::json& j, type& x)
-        {
-            if (!ropufu::noexcept_json::try_get(j, x))
-                throw std::runtime_error("Parsing <parallel_stopping_time> failed: " + j.dump());
-        } // from_json(...)
-#endif
     }; // struct parallel_stopping_time
 } // namespace ropufu::aftermath::sequential
-
-#ifndef ROPUFU_NO_JSON
-namespace ropufu
-{
-    ROPUFU_TMP_TEMPLATE_SIGNATURE
-    struct noexcept_json_serializer<ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME>
-    {
-        using result_type = ropufu::aftermath::sequential::ROPUFU_TMP_TYPENAME;
-        static bool try_get(const nlohmann::json& j, result_type& x) noexcept
-        {
-            std::string stopping_time_name;
-            if (!noexcept_json::required(j, result_type::jstr_type, stopping_time_name)) return false;
-            if (!noexcept_json::required(j, result_type::jstr_vertical_thresholds, x.m_thresholds.first)) return false;
-            if (!noexcept_json::required(j, result_type::jstr_horizontal_thresholds, x.m_thresholds.second)) return false;
-            
-            if (stopping_time_name != result_type::name) return false;
-            if (x.error_message().has_value()) return false;
-            x.initialize();
-
-            return true;
-        } // try_get(...)
-    }; // struct noexcept_json_serializer<...>
-} // namespace ropufu
-#endif
 
 #endif // ROPUFU_AFTERMATH_SEQUENTIAL_PARALLEL_STOPPING_TIME_HPP_INCLUDED

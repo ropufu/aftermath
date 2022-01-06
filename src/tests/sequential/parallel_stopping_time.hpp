@@ -17,55 +17,37 @@
 #include <string>  // std::string
 #include <vector>  // std::vector
 
+namespace ropufu::tests
+{
+    template <typename t_value_type>
+    struct stopped_statistic_for_parallel_stopping_time
+    {
+        using value_type = t_value_type;
+
+        value_type operator ()(std::size_t time) const noexcept
+        {
+            return static_cast<value_type>(time);
+        } // operator (...)
+    }; // struct stopped_statistic_for_parallel_stopping_time
+} // namespace ropufu::tests
+
 #ifdef ROPUFU_TMP_TEST_TYPES
 #undef ROPUFU_TMP_TEST_TYPES
 #endif
-#define ROPUFU_TMP_TEST_TYPES                                                      \
-    ropufu::aftermath::random::binomial_sampler<std::mt19937_64, std::int64_t>,    \
-    ropufu::aftermath::random::normal_sampler_512<std::mt19937_64, double>,        \
-    ropufu::aftermath::random::uniform_int_sampler<std::mt19937_64, std::int64_t>  \
+#define ROPUFU_TMP_TEST_TYPES std::int64_t, float, double
 
-
-#ifndef ROPUFU_NO_JSON
-TEST_CASE_TEMPLATE("testing parallel_stopping_time json", sampler_type, ROPUFU_TMP_TEST_TYPES)
+TEST_CASE_TEMPLATE("testing parallel_stopping_time border crossing", value_type, ROPUFU_TMP_TEST_TYPES)
 {
-    using value_type = typename sampler_type::value_type;
     using parallel_stopping_time_type = ropufu::aftermath::sequential::parallel_stopping_time<value_type>;
-    using scalar_container_type = typename parallel_stopping_time_type::scalar_container_type;
-    
-    parallel_stopping_time_type parallel_stopping_time_o{};
-    parallel_stopping_time_type parallel_stopping_time_a{scalar_container_type({3}), scalar_container_type({1, 2, 5})};
-    parallel_stopping_time_type parallel_stopping_time_b{scalar_container_type({1, 2, 5}), scalar_container_type({4})};
-
-    std::string xxx {};
-    std::string yyy {};
-
-    ropufu::tests::does_json_round_trip(parallel_stopping_time_o, xxx, yyy);
-    CHECK_EQ(xxx, yyy);
-
-    ropufu::tests::does_json_round_trip(parallel_stopping_time_a, xxx, yyy);
-    CHECK_EQ(xxx, yyy);
-
-    ropufu::tests::does_json_round_trip(parallel_stopping_time_b, xxx, yyy);
-    CHECK_EQ(xxx, yyy);
-} // TEST_CASE_TEMPLATE(...)
-#endif
-
-TEST_CASE_TEMPLATE("testing parallel_stopping_time border crossing", sampler_type, ROPUFU_TMP_TEST_TYPES)
-{
-    using value_type = typename sampler_type::value_type;
-    using parallel_stopping_time_type = ropufu::aftermath::sequential::parallel_stopping_time<value_type>;
-    using scalar_container_type = typename parallel_stopping_time_type::scalar_container_type;
-
 
     // ========================================================
     //   (1, 0) -- (1, 4)
     //   (2, 0) -- (2, 4)
     //   (5, 0) -- (5, 4)
     // ========================================================
-    parallel_stopping_time_type parallel_stopping_time{
-        scalar_container_type({1, 2, 5}),
-        scalar_container_type({4, 0})};
+    std::vector<value_type> vertical_thresholds{1, 2, 5};
+    std::vector<value_type> horizontal_thresholds{4, 0};
+    parallel_stopping_time_type parallel_stopping_time{vertical_thresholds, horizontal_thresholds};
     // std::size_t m = parallel_stopping_time.vertical_thresholds().size();
     // std::size_t n = parallel_stopping_time.horizontal_thresholds().size();
 
@@ -105,6 +87,28 @@ TEST_CASE_TEMPLATE("testing parallel_stopping_time border crossing", sampler_typ
     CHECK_EQ(parallel_stopping_time.is_running(), false); // Second process crosses all thresholds.
     CHECK_EQ(parallel_stopping_time.when(), reference_when);
     CHECK_EQ(parallel_stopping_time.which(), reference_which);
+} // TEST_CASE_TEMPLATE(...)
+
+TEST_CASE_TEMPLATE("testing parallel_stopping_time stopped_statistic", value_type, ROPUFU_TMP_TEST_TYPES)
+{
+    using stopped_statistic_type = ropufu::tests::stopped_statistic_for_parallel_stopping_time<std::size_t>;
+    using parallel_stopping_time_type = ropufu::aftermath::sequential::parallel_stopping_time<value_type, stopped_statistic_type>;
+
+    std::vector<value_type> vertical_thresholds{1, 2, 5};
+    std::vector<value_type> horizontal_thresholds{4, 0};
+    parallel_stopping_time_type parallel_stopping_time{vertical_thresholds, horizontal_thresholds};
+
+    std::vector<value_type> process_a = {0, -1, 1, 2, 0, 3, 3, 10};
+    std::vector<value_type> process_b = {1, 4, -2, 3, 0, 7, 0, 10};
+    REQUIRE_EQ(process_a.size(), process_b.size());
+
+    for (std::size_t i = 0; i < process_a.size(); ++i)
+    {
+        parallel_stopping_time.observe(std::make_pair(process_a[i], process_b[i]));
+    } // for (...)
+
+    REQUIRE_EQ(parallel_stopping_time.is_running(), false);
+    CHECK_EQ(parallel_stopping_time.stopped_statistic(), parallel_stopping_time.when());
 } // TEST_CASE_TEMPLATE(...)
 
 #endif // ROPUFU_AFTERMATH_TESTS_SEQUENTIAL_PARALLEL_STOPPING_TIME_HPP_INCLUDED

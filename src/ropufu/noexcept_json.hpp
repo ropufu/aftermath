@@ -18,7 +18,7 @@
 #include <string>      // std::string, std::basic_string
 #include <string_view> // std::string_view
 #include <type_traits> // std::underlying_type_t
-#include <utility>     // std::forward
+#include <utility>     // std::forward, std::pair
 #include <variant>     // std::variant, std::monostate
 #include <vector>      // std::vector
 
@@ -271,6 +271,14 @@ namespace ropufu
                     return true;
                 default: return false;
             } // switch (...)
+        } // try_get(...)
+
+        template <ropufu::decayed t_first_type, ropufu::decayed t_second_type>
+        static bool try_get(const nlohmann::json& j, std::pair<t_first_type, t_second_type>& result) noexcept
+        {
+            if (!noexcept_json::required(j, "first", result.first)) return false;
+            if (!noexcept_json::required(j, "second", result.second)) return false;
+            return true;
         } // try_get(...)
 
         template <ropufu::decayed t_value_type>

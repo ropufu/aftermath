@@ -79,35 +79,41 @@ namespace ropufu::aftermath::algebra
         std::size_t count() const noexcept { return this->m_count; }
         void set_count(std::size_t value) noexcept { this->m_count = value; }
             
-        template <ropufu::push_back_container t_container_type>
-            requires std::same_as<std::ranges::range_value_t<t_container_type>, value_type>
+        template <std::ranges::random_access_range t_container_type>
+            requires
+                std::ranges::sized_range<t_container_type> &&
+                std::same_as<std::ranges::range_value_t<t_container_type>, value_type>
         void explode(t_container_type& container) const noexcept
         {
             using intermediate_type = typename t_spacing_type::intermediate_type;
+            container = t_container_type(this->m_count);
 
             switch (this->m_count)
             {
-                case 0: container = {}; return;
-                case 1: container = { this->m_range.from() }; return;
-                case 2: container = { this->m_range.from(), this->m_range.to() }; return;
+                case 2:
+                    container[1] = this->m_range.to();
+                    [[fallthrough]];
+                case 1:
+                    container[0] = this->m_range.from();
+                    return;
+                case 0: return;
             } // switch (...)
-
-            container.clear();
 
             intermediate_type f_from = this->m_spacing.forward_transform(this->m_range.from());
             intermediate_type f_to = this->m_spacing.forward_transform(this->m_range.to());
             intermediate_type f_diameter = f_to - f_from;
             intermediate_type sentinel = static_cast<intermediate_type>(this->m_count - 1);
             
-            container.push_back(this->m_range.from()); // First value is always the left end-point.
+            std::size_t index = 0;
+            container[0] = this->m_range.from(); // First value is always the left end-point.
             for (intermediate_type i = 1; i < sentinel; ++i)
             {
                 intermediate_type f_step = (i * f_diameter) / sentinel;
                 value_type x = this->m_spacing.backward_transform(f_from + f_step);
 
-                container.push_back(x);
+                container[++index] = x;
             } // for (...)
-            container.push_back(this->m_range.to()); // Last value is always the right end-point.
+            container[++index] = this->m_range.to(); // Last value is always the right end-point.
         } // explode(...)
 
         /** Checks if the two objects are equal. */
