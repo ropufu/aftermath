@@ -16,20 +16,6 @@
 #include <string>  // std::string
 #include <vector>  // std::vector
 
-namespace ropufu::tests
-{
-    template <typename t_value_type>
-    struct stopped_statistic_for_stopping_time
-    {
-        using value_type = t_value_type;
-
-        value_type operator ()(std::size_t time) const noexcept
-        {
-            return static_cast<value_type>(time);
-        } // operator (...)
-    }; // struct stopped_statistic_for_stopping_time
-} // namespace ropufu::tests
-
 #ifdef ROPUFU_TMP_TEST_TYPES
 #undef ROPUFU_TMP_TEST_TYPES
 #endif
@@ -63,14 +49,18 @@ TEST_CASE_TEMPLATE("testing stopping_time border crossing", value_type, ROPUFU_T
 
 TEST_CASE_TEMPLATE("testing stopping_time stopped_statistic", value_type, ROPUFU_TMP_TEST_TYPES)
 {
-    using stopped_statistic_type = ropufu::tests::stopped_statistic_for_stopping_time<std::size_t>;
-    using stopping_time_type = ropufu::aftermath::sequential::stopping_time<value_type, stopped_statistic_type>;
+    using stopping_time_type = ropufu::aftermath::sequential::stopping_time<value_type, std::size_t>;
     
     std::vector<value_type> thresholds{1, 2, 5};
     stopping_time_type stopping_time{thresholds};
 
     std::vector<value_type> process = {0, -1, 1, 2, 0, 3, 3, 10};
-    for (value_type x : process) stopping_time.observe(x);
+    std::size_t time = 0;
+    for (value_type x : process)
+    {
+        stopping_time.if_stopped(++time);
+        stopping_time.observe(x);
+    } // for (...)
 
     REQUIRE_EQ(stopping_time.is_running(), false);
     CHECK_EQ(stopping_time.stopped_statistic(), stopping_time.when());

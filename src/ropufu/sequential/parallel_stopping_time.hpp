@@ -6,7 +6,6 @@
 #include "../number_traits.hpp"
 #include "../simple_vector.hpp"
 #include "../vector_extender.hpp"
-#include "concepts.hpp"
 #include "statistic.hpp"
 
 #include <algorithm>   // std::sort
@@ -23,15 +22,14 @@ namespace ropufu::aftermath::sequential
 {
     namespace detail
     {
-        template <stopped_statistic t_stopped_type>
+        template <typename t_value_type>
         struct parallel_stopped_module
         {
-            using stopped_type = t_stopped_type;
-            using value_type = typename stopped_type::value_type;
+            using value_type = t_value_type;
             using statistic_type = ropufu::aftermath::algebra::matrix<value_type>;
 
         private:
-            stopped_type m_stopped = {};
+            value_type m_latest = {};
             statistic_type m_statistic = {};
             
         protected:
@@ -40,13 +38,15 @@ namespace ropufu::aftermath::sequential
                 this->m_statistic = statistic_type(height, width);
             } // on_initialized(...)
 
-            void on_stopped(std::size_t i, std::size_t j, std::size_t time)
+            void on_stopped(std::size_t i, std::size_t j)
             {
-                this->m_statistic(i, j) = this->m_stopped(time);
+                this->m_statistic(i, j) = this->m_latest;
             } // on_stopped(...)
 
         public:
             const statistic_type& stopped_statistic() { return this->m_statistic; }
+
+            void if_stopped(const value_type& value) noexcept { this->m_latest = value; }
         }; // struct parallel_stopped_module
 
         template <>
@@ -57,7 +57,7 @@ namespace ropufu::aftermath::sequential
             {
             } // on_initialized(...)
 
-            void on_stopped(std::size_t /*i*/, std::size_t /*j*/, std::size_t /*time*/) noexcept
+            void on_stopped(std::size_t /*i*/, std::size_t /*j*/) noexcept
             {
             } // on_stopped(...)
         }; // struct parallel_stopped_module
@@ -69,14 +69,14 @@ namespace ropufu::aftermath::sequential
      *  thresholds. We will refer to V_n as the vertical statistic (frist),
      *  and H_n as the horizontal statistic (second).
      */
-    template <std::totally_ordered t_value_type, stopped_statistic t_stopped_type = void>
+    template <std::totally_ordered t_value_type, typename t_stopped_value_type = void>
     struct parallel_stopping_time
         : public statistic<std::pair<t_value_type, t_value_type>, void>,
-        public detail::parallel_stopped_module<t_stopped_type>
+        public detail::parallel_stopped_module<t_stopped_value_type>
     {
-        using type = parallel_stopping_time<t_value_type, t_stopped_type>;
+        using type = parallel_stopping_time<t_value_type, t_stopped_value_type>;
         using value_type = t_value_type;
-        using stopped_type = t_stopped_type;
+        using stopped_value_type = t_stopped_value_type;
 
         template <typename t_data_type>
         using matrix_t = ropufu::aftermath::algebra::matrix<t_data_type>;
@@ -220,7 +220,7 @@ namespace ropufu::aftermath::sequential
                 {
                     this->m_which_triggered(i, j) |= type::decide_vertical; // Mark threshold as crossed.
                     this->m_when_stopped(i, j) = time; // Record the freshly stopped times.
-                    this->on_stopped(i, j, time);
+                    this->on_stopped(i, j);
                 } // for (...)
             } // for (...)
 
@@ -236,7 +236,7 @@ namespace ropufu::aftermath::sequential
                 {
                     this->m_which_triggered(i, j) |= type::decide_horizontal; // Mark threshold as crossed.
                     this->m_when_stopped(i, j) = time; // Record the freshly stopped times.
-                    this->on_stopped(i, j, time);
+                    this->on_stopped(i, j);
                 } // for (...)
             } // for (...)
 

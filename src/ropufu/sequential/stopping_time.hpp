@@ -2,11 +2,9 @@
 #ifndef ROPUFU_AFTERMATH_SEQUENTIAL_STOPPING_TIME_HPP_INCLUDED
 #define ROPUFU_AFTERMATH_SEQUENTIAL_STOPPING_TIME_HPP_INCLUDED
 
-#include "../format/cat.hpp"
 #include "../number_traits.hpp"
 #include "../simple_vector.hpp"
 #include "../vector_extender.hpp"
-#include "concepts.hpp"
 #include "statistic.hpp"
 
 #include <algorithm>   // std::sort
@@ -22,15 +20,14 @@ namespace ropufu::aftermath::sequential
 {
     namespace detail
     {
-        template <stopped_statistic t_stopped_type>
+        template <typename t_value_type>
         struct stopped_module
         {
-            using stopped_type = t_stopped_type;
-            using value_type = typename stopped_type::value_type;
+            using value_type = t_value_type;
             using statistic_type = ropufu::aftermath::simple_vector<value_type>;
 
         private:
-            stopped_type m_stopped = {};
+            value_type m_latest = {};
             statistic_type m_statistic = {};
             
         protected:
@@ -39,13 +36,15 @@ namespace ropufu::aftermath::sequential
                 this->m_statistic = statistic_type(size);
             } // on_initialized(...)
 
-            void on_stopped(std::size_t i, std::size_t time)
+            void on_stopped(std::size_t i)
             {
-                this->m_statistic[i] = this->m_stopped(time);
+                this->m_statistic[i] = this->m_latest;
             } // on_stopped(...)
 
         public:
             const statistic_type& stopped_statistic() { return this->m_statistic; }
+
+            void if_stopped(const value_type& value) noexcept { this->m_latest = value; }
         }; // struct stopped_module
 
         template <>
@@ -56,7 +55,7 @@ namespace ropufu::aftermath::sequential
             {
             } // on_initialized(...)
 
-            void on_stopped(std::size_t /*i*/, std::size_t /*time*/) noexcept
+            void on_stopped(std::size_t /*i*/) noexcept
             {
             } // on_stopped(...)
         }; // struct stopped_module
@@ -65,14 +64,14 @@ namespace ropufu::aftermath::sequential
     /** Base class for one-sided stopping times of the form inf{n : R_n > b},
      *  where R_n is the detection statistic and b is a threshold.
      */
-    template <std::totally_ordered t_value_type, stopped_statistic t_stopped_type = void>
+    template <std::totally_ordered t_value_type, typename t_stopped_value_type = void>
     struct stopping_time
         : public statistic<t_value_type, void>,
-        public detail::stopped_module<t_stopped_type>
+        public detail::stopped_module<t_stopped_value_type>
     {
-        using type = stopping_time<t_value_type, t_stopped_type>;
+        using type = stopping_time<t_value_type, t_stopped_value_type>;
         using value_type = t_value_type;
-        using stopped_type = t_stopped_type;
+        using stopped_value_type = t_stopped_value_type;
 
         template <typename t_data_type>
         using vector_t = ropufu::aftermath::simple_vector<t_data_type>;
@@ -161,7 +160,7 @@ namespace ropufu::aftermath::sequential
 
                     // Smallest uncrossed threshold has been crossed. Record the stopping time...
                     this->m_when_stopped[this->m_first_uncrossed_index] = time;
-                    this->on_stopped(this->m_first_uncrossed_index, time);
+                    this->on_stopped(this->m_first_uncrossed_index);
                     // ...and move on the next thresholds.
                     ++this->m_first_uncrossed_index;
                 } // while (...)

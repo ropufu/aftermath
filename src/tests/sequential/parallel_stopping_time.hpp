@@ -17,20 +17,6 @@
 #include <string>  // std::string
 #include <vector>  // std::vector
 
-namespace ropufu::tests
-{
-    template <typename t_value_type>
-    struct stopped_statistic_for_parallel_stopping_time
-    {
-        using value_type = t_value_type;
-
-        value_type operator ()(std::size_t time) const noexcept
-        {
-            return static_cast<value_type>(time);
-        } // operator (...)
-    }; // struct stopped_statistic_for_parallel_stopping_time
-} // namespace ropufu::tests
-
 #ifdef ROPUFU_TMP_TEST_TYPES
 #undef ROPUFU_TMP_TEST_TYPES
 #endif
@@ -91,8 +77,7 @@ TEST_CASE_TEMPLATE("testing parallel_stopping_time border crossing", value_type,
 
 TEST_CASE_TEMPLATE("testing parallel_stopping_time stopped_statistic", value_type, ROPUFU_TMP_TEST_TYPES)
 {
-    using stopped_statistic_type = ropufu::tests::stopped_statistic_for_parallel_stopping_time<std::size_t>;
-    using parallel_stopping_time_type = ropufu::aftermath::sequential::parallel_stopping_time<value_type, stopped_statistic_type>;
+    using parallel_stopping_time_type = ropufu::aftermath::sequential::parallel_stopping_time<value_type, std::size_t>;
 
     std::vector<value_type> vertical_thresholds{1, 2, 5};
     std::vector<value_type> horizontal_thresholds{4, 0};
@@ -102,8 +87,10 @@ TEST_CASE_TEMPLATE("testing parallel_stopping_time stopped_statistic", value_typ
     std::vector<value_type> process_b = {1, 4, -2, 3, 0, 7, 0, 10};
     REQUIRE_EQ(process_a.size(), process_b.size());
 
+    std::size_t time = 0;
     for (std::size_t i = 0; i < process_a.size(); ++i)
     {
+        parallel_stopping_time.if_stopped(++time);
         parallel_stopping_time.observe(std::make_pair(process_a[i], process_b[i]));
     } // for (...)
 
