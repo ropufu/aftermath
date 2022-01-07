@@ -44,7 +44,7 @@ namespace ropufu::aftermath::sequential
             } // on_stopped(...)
 
         public:
-            const statistic_type& stopped_statistic() { return this->m_statistic; }
+            const statistic_type& stopped_statistic() const noexcept { return this->m_statistic; }
 
             void if_stopped(const value_type& value) noexcept { this->m_latest = value; }
         }; // struct parallel_stopped_module
