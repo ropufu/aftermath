@@ -50,8 +50,6 @@
 #include "sequential/stopping_time.hpp"
 #include "sequential/window_limited_cusum.hpp"
 
-//#include "json_schema_to_hpp/generated_code.hpp"
-
 #include "../ropufu/concepts.hpp"
 #include "../ropufu/metadata.hpp"
 

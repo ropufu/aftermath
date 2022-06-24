@@ -3,7 +3,6 @@
     "tasks": [
         {
             "label": "GCC Tests (Debug)",
-            "dependsOn": ["Generate JSON to hpp (Test)"],
             "type": "shell",
             "command": "g++-11",
             "args": [
@@ -33,7 +32,6 @@
         },
         {
             "label": "GCC Tests (Release)",
-            "dependsOn": ["Generate JSON to hpp (Test)"],
             "type": "shell",
             "command": "g++-11",
             "args": [
@@ -59,69 +57,6 @@
                 "command": "${workspaceFolder}\\src\\tests\\MakeRelease.bat",
                 "problemMatcher": "$msCompile"
             }
-        },
-        {
-            "label": "C# Build (Debug)",
-            "dependsOn": ["Remove dotnet bin (shell)", "Remove dotnet obj (shell)"],
-            "type": "process",
-            "command": "dotnet",
-            "args": [
-                "build",
-                "${workspaceFolder}/src/JsonSchemaToHpp/JsonSchemaToHpp.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "C# Publish (Release)",
-            "dependsOn": ["Remove dotnet bin (shell)", "Remove dotnet obj (shell)"],
-            "type": "process",
-            "command": "dotnet",
-            "args": [
-                "publish",
-                "${workspaceFolder}/src/JsonSchemaToHpp/JsonSchemaToHpp.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary",
-                "-c",
-                "Release"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "Generate JSON to hpp (Test)",
-            "dependsOn": ["C# Publish (Release)"],
-            "type": "shell",
-            "command": "${workspaceFolder}/src/JsonSchemaToHpp/bin/Release/net5.0/JsonSchemaToHpp",
-            "args": [
-                "${workspaceFolder}/src/tests/json_schema_to_hpp/"
-            ],
-            "problemMatcher": [],
-            "presentation": {
-                "reveal": "always"
-            },
-            "windows": {
-                "type": "process",
-                "command": "${workspaceFolder}\\src\\JsonSchemaToHpp\\bin\\Release\\net5.0\\JsonSchemaToHpp.exe"
-            }
-        },
-        {
-            "label": "Remove dotnet bin (shell)",
-            "type": "shell",
-            "command": "rm",
-            "args": [
-                "-R",
-                "${workspaceFolder}/src/JsonSchemaToHpp/bin/",
-            ]
-        },
-        {
-            "label": "Remove dotnet obj (shell)",
-            "type": "shell",
-            "command": "rm",
-            "args": [
-                "-R",
-                "${workspaceFolder}/src/JsonSchemaToHpp/obj/",
-            ]
         }
     ]
 }

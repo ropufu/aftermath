@@ -1,15 +1,24 @@
+# gitignore/Global/Linux.gitignore
+*~
 
-.vscode/ipch
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
 
-# ~~ macOS.gitignore ~~
+# KDE directory preferences
+.directory
+
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
+
+# .nfs files are created when an open file is removed but is still being accessed
+.nfs*
+
+
+# gitignore/Global/macOS.gitignore
 # General
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# Icon must end with two \r
-Icon
-
 
 # Thumbnails
 ._*
@@ -29,3 +38,64 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# gitignore/Global/Windows.gitignore
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+
+
+# gitignore/community/DotNet/core.gitignore
+## Visual Studio Code
+#.vscode
+
+# Rider
+.idea
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Visual Studio
+.vs/
+

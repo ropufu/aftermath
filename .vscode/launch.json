@@ -35,21 +35,6 @@
                 "program": "${workspaceFolder}\\src\\tests\\tests.exe",
                 "console": "externalTerminal"
             }
-        },
-        {
-            "name": ".NET Core Launch (console)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "C# Build (Debug)",
-            // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/JsonSchemaToHpp/bin/Debug/net5.0/JsonSchemaToHpp.dll",
-            "args": [
-                "${workspaceFolder}/src/tests/json_schema_to_hpp/"
-            ],
-            "cwd": "${workspaceFolder}",
-            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
-            "console": "internalConsole",
-            "stopAtEntry": false
         }
     ]
 }

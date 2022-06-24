@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "JsonSchemaToHpp": {
-      "commandName": "Project",
-      "commandLineArgs": "./../../sequential/src/intermittent_simulator/config.schema.json"
-    }
-  }
-}
